@@ -9,6 +9,8 @@ node_modules/
 !.env.example
 !.prettierrc
 !.prettierignore
+!.github/
+!.github/**
 
 # Environment files
 .env
