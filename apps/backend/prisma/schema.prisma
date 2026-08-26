@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SUPPORT_AGENT
+}
+
+enum ConversationStatus {
+  OPEN
+  WAITING_FOR_HUMAN
+  ASSIGNED
+  WAITING_FOR_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum AutomationMode {
+  AUTOMATED
+  HUMAN
+  AI
+}
+
+enum SenderType {
+  CUSTOMER
+  AGENT
+  BOT
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model User {
+  id           String           @id @default(cuid())
+  email        String           @unique
+  passwordHash String
+  name         String
+  role         Role             @default(SUPPORT_AGENT)
+  memberships  ProjectMember[]
+  sessions     RefreshSession[]
+}
+
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+}
+
+model Project {
+  id                    String                       @id @default(cuid())
+  name                  String
+  key                   String                       @unique
+  integrationKey        String                       @unique
+  integrationSecretHash String
+  integrationRevokedAt  DateTime?
+  members               ProjectMember[]
+  contacts              Contact[]
+  conversations         Conversation[]
+  webhook               Webhook?
+  widgetChannel         WidgetChannel?
+  botConfiguration      BotConfiguration?
+  notificationSettings  ProjectNotificationSettings?
+}
+
+model WidgetChannel {
+  id              String   @id @default(cuid())
+  projectId       String   @unique
+  publicId        String   @unique
+  name            String
+  websiteUrl      String?
+  welcomeMessage  String   @default("Hi, welcome in. How can we help?")
+  colorTheme      String   @default("#0f4c42")
+  launcherPosition String @default("RIGHT")
+  enabled         Boolean  @default(true)
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BotConfiguration {
+  id              String         @id @default(cuid())
+  projectId       String         @unique
+  responseMode    AutomationMode @default(AUTOMATED)
+  botName         String         @default("Support Bot")
+  enabled         Boolean        @default(true)
+  handoffKeywords String[]       @default(["agent", "human", "help"])
+  fallbackMessage String         @default("Thanks for your message. A support agent will follow up shortly.")
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime       @updatedAt
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  userId    String
+  role      Role    @default(SUPPORT_AGENT)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model Contact {
+  id             String         @id @default(cuid())
+  projectId      String
+  externalUserId String
+  name           String?
+  phone          String?
+  email          String?
+  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  conversations  Conversation[]
+
+  @@unique([projectId, externalUserId])
+}
+
+model Conversation {
+  id              String             @id @default(cuid())
+  projectId       String
+  contactId       String
+  status          ConversationStatus @default(OPEN)
+  automationMode  AutomationMode     @default(AUTOMATED)
+  assignedAgentId String?
+  unreadCount     Int                @default(0)
+  lastMessageAt   DateTime           @default(now())
+  project         Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contact         Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  messages        Message[]
+  tickets         Ticket[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([projectId, lastMessageAt])
+}
+
+model Message {
+  id                String        @id @default(cuid())
+  conversationId    String
+  senderType        SenderType
+  senderId          String?
+  content           String
+  messageType       MessageType   @default(TEXT)
+  status            MessageStatus @default(SENT)
+  externalMessageId String?
+  conversation      Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attachments       Attachment[]
+  createdAt         DateTime      @default(now())
+
+  @@unique([conversationId, externalMessageId])
+  @@index([conversationId, createdAt])
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  messageId  String?
+  projectId  String
+  fileName   String
+  mimeType   String
+  size       Int
+  storageKey String
+  message    Message? @relation(fields: [messageId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Ticket {
+  id              String         @id @default(cuid())
+  projectId       String
+  conversationId  String
+  contactId       String
+  title           String
+  status          TicketStatus   @default(OPEN)
+  priority        TicketPriority @default(MEDIUM)
+  assignedAgentId String?
+  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([projectId, status])
+}
+
+model Webhook {
+  id             String   @id @default(cuid())
+  projectId      String   @unique
+  url            String
+  secretHash     String
+  secret         String?
+  enabled        Boolean  @default(true)
+  events         String[]
+  timeoutMs      Int      @default(5000)
+  retryCount     Int      @default(3)
+  retryBackoffMs Int      @default(1000)
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model WebhookDelivery {
+  id        String         @id @default(cuid())
+  projectId String
+  eventId   String         @unique
+  eventName String
+  status    DeliveryStatus @default(QUEUED)
+  attempts  Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model EmailNotification {
+  id        String         @id @default(cuid())
+  projectId String
+  to        String
+  subject   String
+  status    DeliveryStatus @default(QUEUED)
+  createdAt DateTime       @default(now())
+}
+
+model ProjectNotificationSettings {
+  id                          String  @id @default(cuid())
+  projectId                   String  @unique
+  notificationEmail           String
+  ticketCreatedEnabled        Boolean @default(true)
+  ticketAssignedEnabled       Boolean @default(true)
+  conversationAssignedEnabled Boolean @default(true)
+  messageReceivedEnabled      Boolean @default(false)
+  project                     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

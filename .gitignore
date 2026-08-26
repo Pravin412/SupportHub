@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm-cache/
+
+# Hidden files
+.*
+!.gitignore
+!.env.example
+!.prettierrc
+!.prettierignore
+
+# Environment files
+.env
+.env*.local
+.env.production
+.env.development
+.env.*
+!.env.example
+
+# Next.js and Turbo builds
+.next/
+dist/
+build/
+.turbo/
+out/
+coverage/
+
+# Logs
+*.log
+.backend-dev.log
+.backend-dev.err.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

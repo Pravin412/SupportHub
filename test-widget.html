@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            padding: 40px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        h1 { margin-top: 0; color: #0f766e; }
+        p { line-height: 1.6; color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Widget Integration Test</h1>
+        <p>This is a sample layout showing how the widget script integrates into a third-party application.</p>
+        <p>Click the chat bubble in the bottom right corner to test the SupportHub widget!</p>
+        <p>The snippet below simulates a logged-in user named "Jane Doe".</p>
+    </div>
+
+    <!-- Paste the generated snippet from SupportHub Dashboard below -->
+    <script 
+        src="http://localhost:3000/widget.js" 
+        data-channel-id="test-channel-xyz"
+        data-profile-id="USR-987"
+        data-name="Jane Doe"
+        data-number="+15551234567"
+    ></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+coverage
+.turbo
+.pnpm-store
+.npm-cache
+pnpm-lock.yaml
+*.tsbuildinfo
+.env
+apps/api
+apps/web
