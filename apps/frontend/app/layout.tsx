@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "../components/providers";
 
 export const metadata: Metadata = {
-  title: "Central Support",
+  title: "SupportHub",
   description: "Multi-project support inbox",
   manifest: "/manifest.json"
 };

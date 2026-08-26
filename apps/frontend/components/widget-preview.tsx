@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Bot, Code2, MessageCircle, Send, X, Copy, Check } from "lucide-react";
-import { Badge, Button, Card } from "@central-support/ui";
+import { Badge, Button, Card } from "@support-hub/ui";
 import { buildWidgetSnippet } from "../lib/helpers";
 import { useBotConfig, useChannels } from "../lib/queries";
 

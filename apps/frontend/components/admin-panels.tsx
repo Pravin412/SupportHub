@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { Globe2, KeyRound, Plus, Save, TicketCheck, UserPlus, Users, Copy, Check } from "lucide-react";
-import { Button, Card, Input } from "@central-support/ui";
+import { Button, Card, Input } from "@support-hub/ui";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -106,7 +106,7 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
               <FieldError message={agentForm.formState.errors.email?.message} />
             </label>
           </div>
-          <Button className="gap-2" disabled={!projectId || createAgent.isPending}>
+          <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={!projectId || createAgent.isPending}>
             <UserPlus size={16} /> Add Agent
           </Button>
         </form>
@@ -144,7 +144,7 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
             />
             <FieldError message={webhookForm.formState.errors.url?.message} />
           </label>
-          <Button className="gap-2" disabled={!projectId || webhookForm.formState.isSubmitting}>
+          <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={!projectId || webhookForm.formState.isSubmitting}>
             <Save size={16} /> Save Webhook
           </Button>
           {signingSecret && (

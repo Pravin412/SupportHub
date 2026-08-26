@@ -1,7 +1,7 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Bot, Save } from "lucide-react";
-import { Button, Card, Input, Select, Textarea } from "@central-support/ui";
+import { Button, Card, Input, Select, Textarea } from "@support-hub/ui";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";

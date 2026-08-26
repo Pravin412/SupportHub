@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@central-support/ui", "@central-support/shared-types"],
+  transpilePackages: ["@support-hub/ui", "@support-hub/shared-types"],
   poweredByHeader: false
 };
 

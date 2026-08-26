@@ -1,4 +1,4 @@
-# Central Support
+# SupportHub
 
 Centralized multi-project customer support MVP built as a pnpm Turborepo monorepo.
 

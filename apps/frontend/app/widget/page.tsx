@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Bot, CheckCheck, Send, X } from "lucide-react";
-import { Button, Input } from "@central-support/ui";
+import { Button, Input } from "@support-hub/ui";
 import { widgetApi } from "../../lib/api";
 import { io, Socket } from "socket.io-client";
 

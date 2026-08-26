@@ -12,7 +12,7 @@ import {
   Ticket,
   User
 } from "lucide-react";
-import { Badge, Button, Input } from "@central-support/ui";
+import { Badge, Button, Input } from "@support-hub/ui";
 import { useState, useEffect, useRef } from "react";
 import { useUiStore } from "../../../lib/store";
 import { useConversations, useMessages, useProjects, useSendMessage, keys } from "../../../lib/queries";

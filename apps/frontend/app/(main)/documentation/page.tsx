@@ -1,6 +1,6 @@
 "use client";
 import { BookOpen, Code2, Smartphone, Terminal, Users } from "lucide-react";
-import { Button } from "@central-support/ui";
+import { Button } from "@support-hub/ui";
 import { useState } from "react";
 
 export default function DocumentationPage() {

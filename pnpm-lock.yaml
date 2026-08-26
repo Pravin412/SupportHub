@@ -135,10 +135,10 @@ importers:
 
   apps/frontend:
     dependencies:
-      '@central-support/shared-types':
+      '@support-hub/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@central-support/ui':
+      '@support-hub/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@hookform/resolvers':

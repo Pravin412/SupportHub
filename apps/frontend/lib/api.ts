@@ -1,4 +1,5 @@
-import type { ConversationSummary, MessageDto } from "@central-support/shared-types";
+import type { ConversationSummary, MessageDto } from "@support-hub/shared-types";
+import type { ChannelDto, DashboardSummaryDto, ProjectDto } from "./types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 let accessToken = "";
@@ -9,27 +10,6 @@ type ApiResponse<T> = {
   statusCode: number;
   message: string;
   data: T;
-};
-
-export type ProjectDto = {
-  id: string;
-  name: string;
-  key: string;
-  widgetChannel?: { id: string; publicId: string; enabled: boolean } | null;
-};
-
-export type ChannelDto = {
-  id: string;
-  type: "WEBSITE_WIDGET";
-  projectId: string;
-  projectKey: string;
-  publicId: string;
-  name: string;
-  enabled: boolean;
-  websiteUrl?: string | null;
-  welcomeMessage: string;
-  launcherPosition: string;
-  createdAt: string;
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -89,6 +69,7 @@ export const api = {
     return data;
   },
   me: () => request<{ id: string; email: string; name: string }>("/auth/me"),
+  dashboardSummary: () => request<DashboardSummaryDto>("/dashboard/summary"),
   projects: () => request<ProjectDto[]>("/projects"),
   createProject: (name: string, key: string) =>
     request<ProjectDto & { integrationKey: string; integrationSecret: string }>("/projects", {

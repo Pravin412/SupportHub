@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 
 export const keys = {
+  dashboardSummary: ["dashboard-summary"] as const,
   projects: ["projects"] as const,
   agents: (projectId?: string) => ["agents", projectId] as const,
   conversations: (projectId?: string, search = "") => ["conversations", projectId, search] as const,
@@ -14,6 +15,10 @@ export const keys = {
 
 export function useProjects(enabled = true) {
   return useQuery({ queryKey: keys.projects, queryFn: api.projects, enabled });
+}
+
+export function useDashboardSummary(enabled = true) {
+  return useQuery({ queryKey: keys.dashboardSummary, queryFn: api.dashboardSummary, enabled });
 }
 
 export function useConversations(projectId?: string, search = "") {

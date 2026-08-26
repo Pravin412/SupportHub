@@ -51,6 +51,11 @@ export class CoreController {
     return this.core.projects(this.userId(req));
   }
 
+  @Get("dashboard/summary")
+  dashboardSummary(@Req() req: FastifyRequest) {
+    return this.core.dashboardSummary(this.userId(req));
+  }
+
   @Post("projects")
   createProject(@Req() req: FastifyRequest, @Body() dto: ProjectDto) {
     return this.core.createProject(this.userId(req), dto);

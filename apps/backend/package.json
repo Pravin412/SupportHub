@@ -5,8 +5,10 @@
   "scripts": {
     "clean": "node scripts/clean-dist.mjs",
     "dev": "pnpm run clean && nest start --watch",
+    "prebuild": "prisma generate",
     "build": "nest build",
     "lint": "eslint src --ext .ts",
+    "pretypecheck": "prisma generate",
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "prisma:generate": "prisma generate",

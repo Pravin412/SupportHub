@@ -1,6 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Card, Input } from "@central-support/ui";
+import { Button, Card, Input } from "@support-hub/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -32,7 +32,7 @@ export function Login({ onDone }: { onDone: () => void }) {
   return (
     <main className="grid min-h-screen place-items-center p-4">
       <Card className="w-full max-w-sm p-5">
-        <h1 className="text-xl font-semibold">Central Support</h1>
+        <h1 className="text-xl font-semibold">SupportHub</h1>
         <form
           className="mt-5 space-y-3"
           onSubmit={form.handleSubmit(async (v) => {

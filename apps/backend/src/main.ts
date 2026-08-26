@@ -25,7 +25,7 @@ async function bootstrap() {
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalInterceptors(new ApiResponseInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-  const config = new DocumentBuilder().setTitle("Central Support API").setVersion("0.1.0").addBearerAuth().build();
+  const config = new DocumentBuilder().setTitle("SupportHub API").setVersion("0.1.0").addBearerAuth().build();
   const swagger = SwaggerModule as unknown as {
     createDocument: (application: unknown, config: unknown) => unknown;
     setup: (path: string, application: unknown, document: unknown) => void;

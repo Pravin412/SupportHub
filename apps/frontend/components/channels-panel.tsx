@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Code2, Copy, Globe, MessageCircle, Save } from "lucide-react";
-import { Badge, Button, Card, Input } from "@central-support/ui";
+import { Badge, Button, Card, Input } from "@support-hub/ui";
 import { buildWidgetSnippet } from "../lib/helpers";
 import { useChannels, useUpdateWidget } from "../lib/queries";
 import { useUiStore } from "../lib/store";

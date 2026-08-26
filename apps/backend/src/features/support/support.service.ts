@@ -32,6 +32,53 @@ export class CoreService {
     });
   }
 
+  async dashboardSummary(userId: string) {
+    const projects = await this.projects(userId);
+    const projectIds = projects.map((project) => project.id);
+
+    if (!projectIds.length) {
+      return {
+        projectsCount: 0,
+        conversationsCount: 0,
+        openConversationsCount: 0,
+        unreadConversationsCount: 0,
+        ticketsCount: 0,
+        openTicketsCount: 0,
+        agentsCount: 0,
+        activeChannelsCount: 0
+      };
+    }
+
+    const [
+      conversationsCount,
+      openConversationsCount,
+      unreadConversationsCount,
+      ticketsCount,
+      openTicketsCount,
+      agentsCount,
+      activeChannelsCount
+    ] = await Promise.all([
+      this.db.conversation.count({ where: { projectId: { in: projectIds } } }),
+      this.db.conversation.count({ where: { projectId: { in: projectIds }, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
+      this.db.conversation.count({ where: { projectId: { in: projectIds }, unreadCount: { gt: 0 } } }),
+      this.db.ticket.count({ where: { projectId: { in: projectIds } } }),
+      this.db.ticket.count({ where: { projectId: { in: projectIds }, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
+      this.db.projectMember.count({ where: { projectId: { in: projectIds } } }),
+      this.db.widgetChannel.count({ where: { projectId: { in: projectIds }, enabled: true } })
+    ]);
+
+    return {
+      projectsCount: projects.length,
+      conversationsCount,
+      openConversationsCount,
+      unreadConversationsCount,
+      ticketsCount,
+      openTicketsCount,
+      agentsCount,
+      activeChannelsCount
+    };
+  }
+
   async createProject(userId: string, data: { name: string; key?: string }) {
     const secret = this.crypto.randomToken();
     const key = (data.key ?? data.name)
