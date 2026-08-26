@@ -403,7 +403,7 @@ export class CoreService {
     if (botConfig && botConfig.enabled && botConfig.responseMode === "AUTOMATED" && botConfig.fallbackMessage) {
       // Check if project has no external webhook enabled or message has handoff keyword
       const webhook = await this.db.webhook.findUnique({ where: { projectId: channel.projectId } });
-      const containsKeyword = botConfig.handoffKeywords.some((kw) => content.toLowerCase().includes(kw.toLowerCase()));
+      const containsKeyword = botConfig.handoffKeywords.some((kw: string) => content.toLowerCase().includes(kw.toLowerCase()));
       
       // Auto-reply fallback if explicitly requested or if no webhook is active
       if (!webhook || !webhook.enabled || containsKeyword) {
