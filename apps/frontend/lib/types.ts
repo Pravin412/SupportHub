@@ -17,6 +17,10 @@ export type ChannelDto = {
   welcomeMessage: string;
   colorTheme?: string;
   logoUrl?: string | null;
+  collectVisitorInfo: boolean;
+  visitorNameEnabled: boolean;
+  visitorEmailEnabled: boolean;
+  visitorPhoneEnabled: boolean;
   launcherPosition: string;
   createdAt: string;
 };

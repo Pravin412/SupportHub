@@ -10,6 +10,40 @@ function channelPublicId(key: string) {
   return `ch_${key.replace(/[^a-z0-9]/g, "").slice(0, 12)}_${random}`;
 }
 
+type WidgetVisitorSettings = {
+  collectVisitorInfo: boolean;
+  visitorNameEnabled: boolean;
+  visitorEmailEnabled: boolean;
+  visitorPhoneEnabled: boolean;
+};
+
+const defaultWidgetVisitorSettings: WidgetVisitorSettings = {
+  collectVisitorInfo: false,
+  visitorNameEnabled: true,
+  visitorEmailEnabled: true,
+  visitorPhoneEnabled: false
+};
+
+const widgetChannelPublicSelect = {
+  id: true,
+  projectId: true,
+  publicId: true,
+  name: true,
+  enabled: true,
+  websiteUrl: true,
+  welcomeMessage: true,
+  colorTheme: true,
+  logoUrl: true,
+  launcherPosition: true,
+  createdAt: true,
+  updatedAt: true
+} satisfies Prisma.WidgetChannelSelect;
+
+function randomVisitorName(profileId: string) {
+  const clean = profileId.replace(/^guest-/, "").replace(/[^a-z0-9]/gi, "");
+  return `chatwoot-${clean.slice(0, 6).toUpperCase() || Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
 @Injectable()
 export class CoreService {
   constructor(
@@ -129,56 +163,73 @@ export class CoreService {
       select: {
         id: true,
         key: true,
-        name: true,
-        widgetChannel: {
-          select: {
-            id: true,
-            publicId: true,
-            name: true,
-            enabled: true,
-            websiteUrl: true,
-            welcomeMessage: true,
-            colorTheme: true,
-            logoUrl: true,
-            launcherPosition: true,
-            createdAt: true
-          }
-        }
+        name: true
       }
     });
     if (!project) throw new NotFoundException();
+
+    const channelSelect = {
+      id: true,
+      publicId: true,
+      name: true,
+      enabled: true,
+      websiteUrl: true,
+      welcomeMessage: true,
+      colorTheme: true,
+      logoUrl: true,
+      launcherPosition: true,
+      createdAt: true
+    } satisfies Prisma.WidgetChannelSelect;
+
     const widgetChannel =
-      project.widgetChannel ??
+      (await this.db.widgetChannel.findUnique({
+        where: { projectId },
+        select: channelSelect
+      })) ??
       (await this.db.widgetChannel.create({
         data: { projectId, publicId: channelPublicId(project.key), name: `${project.name} Website` },
-        select: {
-          id: true,
-          publicId: true,
-          name: true,
-          enabled: true,
-          websiteUrl: true,
-          welcomeMessage: true,
-          colorTheme: true,
-          logoUrl: true,
-          launcherPosition: true,
-          createdAt: true
-        }
+        select: channelSelect
       }));
-    return [{ type: "WEBSITE_WIDGET", projectId: project.id, projectKey: project.key, ...widgetChannel }];
+
+    const visitorSettings = await this.widgetVisitorSettings(widgetChannel.id);
+    return [{ type: "WEBSITE_WIDGET", projectId: project.id, projectKey: project.key, ...widgetChannel, ...visitorSettings }];
   }
 
-  async updateWidget(userId: string, projectId: string, data: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) {
+  async updateWidget(
+    userId: string,
+    projectId: string,
+    data: {
+      welcomeMessage?: string;
+      colorTheme?: string;
+      logoUrl?: string;
+      collectVisitorInfo?: boolean;
+      visitorNameEnabled?: boolean;
+      visitorEmailEnabled?: boolean;
+      visitorPhoneEnabled?: boolean;
+    }
+  ) {
     await this.assertMember(userId, projectId);
-    const channel = await this.db.widgetChannel.findUnique({ where: { projectId } });
-    if (!channel) throw new NotFoundException("Widget channel not found");
-    return this.db.widgetChannel.update({
-      where: { id: channel.id },
-      data: {
+    const project = await this.db.project.findUnique({ where: { id: projectId }, select: { key: true, name: true } });
+    if (!project) throw new NotFoundException("Project not found");
+    const updatedChannel = await this.db.widgetChannel.upsert({
+      where: { projectId },
+      create: {
+        projectId,
+        publicId: channelPublicId(project.key),
+        name: `${project.name} Website`,
         welcomeMessage: data.welcomeMessage,
         colorTheme: data.colorTheme,
         logoUrl: data.logoUrl
-      }
+      },
+      update: {
+        welcomeMessage: data.welcomeMessage,
+        colorTheme: data.colorTheme,
+        logoUrl: data.logoUrl
+      },
+      select: widgetChannelPublicSelect
     });
+    await this.updateWidgetVisitorSettings(updatedChannel.id, data);
+    return { ...updatedChannel, ...(await this.widgetVisitorSettings(updatedChannel.id)) };
   }
 
   async agents(userId: string, projectId: string) {
@@ -332,23 +383,48 @@ export class CoreService {
   async widgetConfig(channelId: string) {
     const channel = await this.db.widgetChannel.findUnique({
       where: { publicId: channelId },
-      include: { project: { include: { botConfiguration: true } } }
+      select: {
+        ...widgetChannelPublicSelect,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            botConfiguration: {
+              select: {
+                botName: true,
+                botAvatar: true,
+                fallbackMessage: true
+              }
+            }
+          }
+        }
+      }
     });
     if (!channel || !channel.enabled) throw new NotFoundException("Widget offline");
+    const visitorSettings = await this.widgetVisitorSettings(channel.id);
+    const botConfig = channel.project.botConfiguration;
+    const botAvatar = channel.logoUrl || botConfig?.botAvatar || null;
+    const botName = botConfig?.botName || channel.name || channel.project.name || "Support Bot";
+    const welcomeMessage = channel.welcomeMessage || botConfig?.fallbackMessage || "Hi, welcome in. Send us a message and our team will reply as soon as possible.";
+
     return {
-      name: channel.name,
-      welcomeMessage: channel.welcomeMessage,
-      colorTheme: channel.colorTheme,
-      logoUrl: channel.logoUrl || channel.project.botConfiguration?.botAvatar || null,
+      name: channel.name || channel.project.name,
+      welcomeMessage,
+      colorTheme: channel.colorTheme || "#0f4c42",
+      logoUrl: botAvatar,
       launcherPosition: channel.launcherPosition,
-      botName: channel.project.botConfiguration?.botName ?? "Support Bot",
-      botAvatar: channel.project.botConfiguration?.botAvatar || channel.logoUrl || null
+      botName,
+      botAvatar,
+      ...visitorSettings
     };
   }
 
   async widgetMessages(channelId: string, profileId: string) {
     if (!profileId) return [];
-    const channel = await this.db.widgetChannel.findUnique({ where: { publicId: channelId } });
+    const channel = await this.db.widgetChannel.findUnique({
+      where: { publicId: channelId },
+      select: { id: true, projectId: true }
+    });
     if (!channel) throw new NotFoundException();
     
     const contact = await this.db.contact.findUnique({
@@ -369,17 +445,19 @@ export class CoreService {
     });
   }
 
-  async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, number?: string) {
-    const channel = await this.db.widgetChannel.findUnique({ where: { publicId: channelId } });
+  async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, email?: string, number?: string) {
+    const channel = await this.db.widgetChannel.findUnique({
+      where: { publicId: channelId },
+      select: { id: true, projectId: true, enabled: true }
+    });
     if (!channel || !channel.enabled) throw new NotFoundException();
 
-    const shortCode = profileId.replace(/^guest-/, "").slice(0, 4).toUpperCase();
-    const contactName = name?.trim() || `Visitor #${shortCode}`;
+    const contactName = name?.trim() || randomVisitorName(profileId);
 
     const contact = await this.db.contact.upsert({
       where: { projectId_externalUserId: { projectId: channel.projectId, externalUserId: profileId } },
-      create: { projectId: channel.projectId, externalUserId: profileId, name: contactName, phone: number },
-      update: { name: name?.trim() || undefined, phone: number }
+      create: { projectId: channel.projectId, externalUserId: profileId, name: contactName, email: email?.trim() || undefined, phone: number?.trim() || undefined },
+      update: { name: name?.trim() || undefined, email: email?.trim() || undefined, phone: number?.trim() || undefined }
     });
 
     let conversation = await this.db.conversation.findFirst({
@@ -438,11 +516,56 @@ export class CoreService {
             });
             this.realtime.emitProject(channel.projectId, "message.created", botMsg);
             this.realtime.emitConversation(conversation.id, "message.created", botMsg);
-          } catch {}
+          } catch {
+            return undefined;
+          }
         }, 600);
       }
     }
 
     return msg;
+  }
+
+  private async widgetVisitorSettings(channelId: string): Promise<WidgetVisitorSettings> {
+    try {
+      const rows = await this.db.$queryRaw<Array<WidgetVisitorSettings>>`
+        SELECT
+          "collectVisitorInfo",
+          "visitorNameEnabled",
+          "visitorEmailEnabled",
+          "visitorPhoneEnabled"
+        FROM "WidgetChannel"
+        WHERE "id" = ${channelId}
+        LIMIT 1
+      `;
+      if (!rows[0]) return defaultWidgetVisitorSettings;
+      return {
+        collectVisitorInfo: rows[0].collectVisitorInfo,
+        visitorNameEnabled: rows[0].visitorNameEnabled,
+        visitorEmailEnabled: rows[0].visitorEmailEnabled,
+        visitorPhoneEnabled: rows[0].visitorPhoneEnabled
+      };
+    } catch {
+      return defaultWidgetVisitorSettings;
+    }
+  }
+
+  private async updateWidgetVisitorSettings(
+    channelId: string,
+    data: Partial<WidgetVisitorSettings>
+  ) {
+    try {
+      await this.db.$executeRaw`
+        UPDATE "WidgetChannel"
+        SET
+          "collectVisitorInfo" = ${data.collectVisitorInfo ?? defaultWidgetVisitorSettings.collectVisitorInfo},
+          "visitorNameEnabled" = ${data.visitorNameEnabled ?? defaultWidgetVisitorSettings.visitorNameEnabled},
+          "visitorEmailEnabled" = ${data.visitorEmailEnabled ?? defaultWidgetVisitorSettings.visitorEmailEnabled},
+          "visitorPhoneEnabled" = ${data.visitorPhoneEnabled ?? defaultWidgetVisitorSettings.visitorPhoneEnabled}
+        WHERE "id" = ${channelId}
+      `;
+    } catch {
+      return undefined;
+    }
   }
 }

@@ -108,7 +108,15 @@ export function useCreateAgent(projectId?: string) {
 export function useUpdateWidget(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) => api.updateWidget(projectId!, v),
+    mutationFn: (v: {
+      welcomeMessage?: string;
+      colorTheme?: string;
+      logoUrl?: string;
+      collectVisitorInfo?: boolean;
+      visitorNameEnabled?: boolean;
+      visitorEmailEnabled?: boolean;
+      visitorPhoneEnabled?: boolean;
+    }) => api.updateWidget(projectId!, v),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.channels(projectId) })
   });
 }

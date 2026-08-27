@@ -3,10 +3,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Bot, Save } from "lucide-react";
 import { Button, Card, Input, Select, Textarea } from "@support-hub/ui";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
-import { useBotConfig } from "../lib/queries";
+import { keys, useBotConfig, useChannels } from "../lib/queries";
 import { useUiStore } from "../lib/store";
 
 const botSchema = z.object({
@@ -20,6 +21,8 @@ type BotForm = z.infer<typeof botSchema>;
 
 export function BotConfigPanel({ projectId }: { projectId?: string }) {
   const bot = useBotConfig(projectId);
+  const channels = useChannels(projectId);
+  const queryClient = useQueryClient();
   const showToast = useUiStore((state) => state.showToast);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const form = useForm<BotForm>({
@@ -62,6 +65,21 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
     if (!projectId) return;
     try {
       await api.updateBotConfig(projectId, { ...v, botAvatar: avatarPreview || v.botAvatar || undefined });
+      await queryClient.invalidateQueries({ queryKey: keys.botConfig(projectId) });
+      await queryClient.invalidateQueries({ queryKey: keys.channels(projectId) });
+      const channel = channels.data?.[0];
+      if (channel && avatarPreview) {
+        await api.updateWidget(projectId, {
+          logoUrl: avatarPreview,
+          welcomeMessage: channel.welcomeMessage,
+          colorTheme: channel.colorTheme,
+          collectVisitorInfo: channel.collectVisitorInfo,
+          visitorNameEnabled: channel.visitorNameEnabled,
+          visitorEmailEnabled: channel.visitorEmailEnabled,
+          visitorPhoneEnabled: channel.visitorPhoneEnabled
+        });
+        await queryClient.invalidateQueries({ queryKey: keys.channels(projectId) });
+      }
       showToast("Bot configuration saved successfully!", "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to save bot configuration", "error");

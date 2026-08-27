@@ -7,9 +7,14 @@ export function slugify(value: string) {
 }
 
 export function buildWidgetSnippet(channelId = "your-channel-id") {
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_WIDGET_ORIGIN || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   return `<script 
   id="supporthub-script"
-  src="http://localhost:3000/widget.js" 
+  src="${origin}/widget.js?v=${Date.now()}" 
   data-channel-id="${channelId}"
 ></script>`;
 }

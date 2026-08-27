@@ -2,14 +2,11 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from "@ne
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
 import { TicketPriority } from "@prisma/client";
 import { BotService } from "../bot/bot.service";
 import { CoreService } from "./support.service";
 
-class MessageDto {
-  @IsString() @MinLength(1) content!: string;
-}
 class TicketDto {
   @IsString() @MinLength(3) title!: string;
   @IsEnum(TicketPriority) @IsOptional() priority: TicketPriority = "MEDIUM";
@@ -24,6 +21,15 @@ class AgentDto {
 }
 class WebhookDto {
   @IsString() url!: string;
+}
+class WidgetSettingsDto {
+  @IsString() @IsOptional() welcomeMessage?: string;
+  @IsString() @IsOptional() colorTheme?: string;
+  @IsString() @IsOptional() logoUrl?: string;
+  @IsBoolean() @IsOptional() collectVisitorInfo?: boolean;
+  @IsBoolean() @IsOptional() visitorNameEnabled?: boolean;
+  @IsBoolean() @IsOptional() visitorEmailEnabled?: boolean;
+  @IsBoolean() @IsOptional() visitorPhoneEnabled?: boolean;
 }
 enum BotResponseMode {
   AUTOMATED = "AUTOMATED",
@@ -73,7 +79,7 @@ export class CoreController {
   }
 
   @Put("projects/:id/widget")
-  updateWidget(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) {
+  updateWidget(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: WidgetSettingsDto) {
     return this.core.updateWidget(this.userId(req), id, dto);
   }
 

@@ -18,8 +18,8 @@ export function WidgetPreview({
   const bot = useBotConfig(projectId);
   const channels = useChannels(projectId);
   const widgetChannel = channels.data?.[0];
-  const botName = bot.data?.botName ?? `${projectName ?? "Support"} Assistant`;
-  const logoUrl = widgetChannel?.logoUrl || bot.data?.botAvatar || null;
+  const botName = bot.data?.botName ?? projectName ?? "Support Bot";
+  const logoUrl = bot.data?.botAvatar || widgetChannel?.logoUrl || null;
   const colorTheme = widgetChannel?.colorTheme || "#0f4c42";
   const fallbackMessage =
     widgetChannel?.welcomeMessage ??
@@ -31,13 +31,9 @@ export function WidgetPreview({
     <Card className="overflow-hidden border-slate-200 xl:col-span-2">
       <div className="flex items-center justify-between border-b bg-white px-4 py-3">
         <div className="flex items-center gap-2">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="h-9 w-9 rounded-full object-cover border border-slate-200 shadow-xs" />
-          ) : (
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
-              <MessageCircle size={18} />
-            </span>
-          )}
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
+            <MessageCircle size={18} />
+          </span>
           <div>
             <h2 className="text-base font-semibold">Live Chatbot Widget Preview</h2>
             <p className="text-xs text-muted">Customer chat preview with your custom logo and styling.</p>
@@ -46,7 +42,7 @@ export function WidgetPreview({
         <Badge className="border-teal-100 bg-teal-50 text-brand">{widgetChannel?.publicId ?? projectKey ?? "Draft"}</Badge>
       </div>
 
-      <div className="grid gap-5 p-4 lg:grid-cols-preview">
+      <div className="grid gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
           <div className="min-h-preview rounded-md border border-slate-200 bg-white p-4 shadow-sm">
             <div className="h-8 w-36 rounded bg-slate-100" />
@@ -55,9 +51,8 @@ export function WidgetPreview({
               <div className="h-24 rounded border bg-slate-50" />
               <div className="h-24 rounded border bg-slate-50" />
             </div>
-            <div className="mt-4 h-28 rounded border bg-slate-50" />
-            <div className="relative mt-5 h-32 rounded border bg-slate-50">
-              <div className="absolute bottom-4 right-4">
+            <div className="relative mt-5 min-h-[380px] overflow-hidden rounded border bg-slate-50 p-2 sm:p-4">
+              <div className="flex justify-end">
                 <WidgetBubble botName={botName} fallbackMessage={fallbackMessage} logoUrl={logoUrl} colorTheme={colorTheme} />
               </div>
             </div>
@@ -65,7 +60,6 @@ export function WidgetPreview({
         </div>
 
         <div className="space-y-4">
-          <WidgetBubble botName={botName} fallbackMessage={fallbackMessage} logoUrl={logoUrl} colorTheme={colorTheme} expanded />
           <div className="rounded-md border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
             <div className="mb-2 flex items-center justify-between text-slate-300">
               <div className="flex items-center gap-2">
@@ -113,7 +107,7 @@ function WidgetBubble({
   expanded?: boolean;
 }) {
   return (
-    <div className={expanded ? "w-full" : "w-widget"}>
+    <div className={expanded ? "w-full" : "w-full max-w-widget"}>
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: colorTheme }}>
           <div className="flex items-center gap-2.5">
@@ -132,14 +126,7 @@ function WidgetBubble({
           <X size={16} />
         </div>
         <div className="space-y-3 bg-chat p-4">
-          <div className="flex items-start gap-2">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-6 w-6 rounded-full object-cover border border-slate-200 mt-0.5 shrink-0" />
-            ) : (
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold mt-0.5 shrink-0">
-                <Bot size={12} />
-              </span>
-            )}
+          <div className="flex items-start">
             <div className="max-w-chat-msg rounded-md rounded-tl-sm bg-white p-3 text-xs leading-relaxed shadow-sm">
               {fallbackMessage}
             </div>
@@ -149,14 +136,7 @@ function WidgetBubble({
             I need help with my order.
           </div>
 
-          <div className="flex items-start gap-2">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-6 w-6 rounded-full object-cover border border-slate-200 mt-0.5 shrink-0" />
-            ) : (
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold mt-0.5 shrink-0">
-                <Bot size={12} />
-              </span>
-            )}
+          <div className="flex items-start">
             <div className="max-w-chat-msg rounded-md rounded-tl-sm bg-white p-3 text-xs leading-relaxed shadow-sm">
               Sure. Share your order email and we&apos;ll look it up.
             </div>
@@ -171,11 +151,7 @@ function WidgetBubble({
       </div>
       {!expanded && (
         <Button className="ml-auto mt-3 h-12 w-12 rounded-full border-0 px-0 text-white shadow-lg relative overflow-hidden" style={{ backgroundColor: colorTheme }}>
-          {logoUrl ? (
-            <img src={logoUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <MessageCircle size={20} />
-          )}
+          <MessageCircle size={20} />
         </Button>
       )}
     </div>

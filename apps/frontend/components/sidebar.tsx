@@ -1,17 +1,21 @@
 "use client";
-import { Contact, Gauge, HelpCircle, Inbox, LogOut, Settings, Folder } from "lucide-react";
+import { Gauge, HelpCircle, Inbox, LogOut, Folder } from "lucide-react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUiStore } from "../lib/store";
 import { NavButton, NavLink } from "./shared";
 import { api } from "../lib/api";
+import { Button } from "@support-hub/ui";
 
 export function Sidebar() {
   const ui = useUiStore();
   const pathname = usePathname();
   const router = useRouter();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const logout = async () => {
-    if (!window.confirm("Are you sure you want to logout?")) return;
+    setIsLoggingOut(true);
     await api.logout().catch(() => undefined);
     api.setToken("");
     router.replace("/login");
@@ -51,11 +55,42 @@ export function Sidebar() {
         </nav>
 
         <div className="mt-auto border-t border-border p-3">
-          <NavButton active={false} icon={<LogOut size={15} />} onClick={logout}>
+          <NavButton active={false} icon={<LogOut size={15} />} onClick={() => setShowLogoutModal(true)}>
             Logout
           </NavButton>
         </div>
       </aside>
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/40 px-4">
+          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-red-50 text-red-600">
+                <LogOut size={18} />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">Confirm logout</h2>
+                <p className="mt-1 text-sm text-muted">Are you sure you want to logout from SupportHub?</p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                className="h-9 border-slate-200 bg-white px-4 text-sm text-slate-900"
+                disabled={isLoggingOut}
+                onClick={() => setShowLogoutModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="h-9 bg-red-600 px-4 text-sm text-white hover:bg-red-700"
+                disabled={isLoggingOut}
+                onClick={logout}
+              >
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

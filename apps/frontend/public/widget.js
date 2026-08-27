@@ -14,7 +14,7 @@
     try {
       const scriptUrl = new URL(currentScript.src);
       baseUrl = scriptUrl.origin;
-    } catch (e) {
+    } catch {
       console.warn('SupportHub: Could not parse script URL, using fallback.');
     }
   }
@@ -22,7 +22,9 @@
   const channelId = currentScript?.getAttribute('data-channel-id') || '';
   const profileId = currentScript?.getAttribute('data-profile-id') || '';
   const name = currentScript?.getAttribute('data-name') || '';
+  const email = currentScript?.getAttribute('data-email') || '';
   const number = currentScript?.getAttribute('data-number') || '';
+  const apiUrl = currentScript?.getAttribute('data-api-url') || 'http://localhost:4000';
 
   if (!channelId) {
     console.error('SupportHub Widget: data-channel-id is required.');
@@ -35,36 +37,60 @@
     channelId,
     ...(profileId && { profileId }),
     ...(name && { name }),
+    ...(email && { email }),
     ...(number && { number })
   });
   
-  const iframeUrl = `${iframeBaseUrl}?${queryParams.toString()}`;
+  const buildIframeUrl = function() {
+    const freshParams = new URLSearchParams(queryParams);
+    freshParams.set('v', Date.now().toString());
+    return `${iframeBaseUrl}?${freshParams.toString()}`;
+  };
+  const iframeUrl = buildIframeUrl();
 
-  // Create Container
-  const container = document.createElement('div');
-  container.id = 'supporthub-widget-container';
-  container.style.position = 'fixed';
-  container.style.bottom = '20px';
-  container.style.right = '20px';
-  container.style.zIndex = '999999';
-  container.style.display = 'flex';
-  container.style.flexDirection = 'column';
-  container.style.alignItems = 'flex-end';
-  container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+  // Create Launcher Button
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'supporthub-widget-button';
+  toggleBtn.style.position = 'fixed';
+  toggleBtn.style.bottom = '20px';
+  toggleBtn.style.right = '20px';
+  toggleBtn.style.left = 'auto';
+  toggleBtn.style.top = 'auto';
+  toggleBtn.style.width = '56px';
+  toggleBtn.style.height = '56px';
+  toggleBtn.style.borderRadius = '28px';
+  toggleBtn.style.backgroundColor = '#0f766e';
+  toggleBtn.style.color = '#fff';
+  toggleBtn.style.border = 'none';
+  toggleBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+  toggleBtn.style.cursor = 'pointer';
+  toggleBtn.style.touchAction = 'none';
+  toggleBtn.style.zIndex = '999999';
+  toggleBtn.title = 'Drag to move, click to open chat';
+  toggleBtn.style.display = 'flex';
+  toggleBtn.style.alignItems = 'center';
+  toggleBtn.style.justifyContent = 'center';
+  toggleBtn.style.transition = 'transform 0.2s';
+  toggleBtn.style.opacity = '0';
+  toggleBtn.style.fontFamily = 'system-ui, -apple-system, sans-serif';
 
   // Create Iframe Container
   const iframeWrapper = document.createElement('div');
-  iframeWrapper.style.width = '380px';
-  iframeWrapper.style.height = '600px';
+  iframeWrapper.id = 'supporthub-widget-frame-wrapper';
+  const isMobile = window.innerWidth < 640;
+  iframeWrapper.style.position = 'fixed';
+  iframeWrapper.style.zIndex = '999998';
+  iframeWrapper.style.width = isMobile ? 'calc(100vw - 32px)' : '380px';
+  iframeWrapper.style.maxWidth = isMobile ? '380px' : 'none';
+  iframeWrapper.style.height = isMobile ? 'min(580px, calc(100vh - 110px))' : '600px';
   iframeWrapper.style.maxHeight = 'calc(100vh - 100px)';
-  iframeWrapper.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)';
+  iframeWrapper.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)';
   iframeWrapper.style.borderRadius = '12px';
   iframeWrapper.style.overflow = 'hidden';
-  iframeWrapper.style.marginBottom = '16px';
   iframeWrapper.style.display = 'none';
   iframeWrapper.style.opacity = '0';
   iframeWrapper.style.transform = 'translateY(10px)';
-  iframeWrapper.style.transition = 'all 0.2s ease-out';
+  iframeWrapper.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
   iframeWrapper.style.backgroundColor = '#fff';
 
   // Create Iframe
@@ -74,31 +100,130 @@
   iframe.style.height = '100%';
   iframe.style.border = 'none';
   iframe.title = 'Support Chat Widget';
-  
   iframeWrapper.appendChild(iframe);
 
-  // Create Toggle Button
-  const toggleBtn = document.createElement('button');
-  toggleBtn.style.width = '56px';
-  toggleBtn.style.height = '56px';
-  toggleBtn.style.borderRadius = '28px';
-  toggleBtn.style.backgroundColor = '#0f766e'; // Teal 700 (brand color)
-  toggleBtn.style.color = '#fff';
-  toggleBtn.style.border = 'none';
-  toggleBtn.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)';
-  toggleBtn.style.cursor = 'pointer';
-  toggleBtn.style.display = 'flex';
-  toggleBtn.style.alignItems = 'center';
-  toggleBtn.style.justifyContent = 'center';
-  toggleBtn.style.transition = 'transform 0.2s';
-  
+  // Drag Handle for Open Widget
+  const dragHandle = document.createElement('div');
+  dragHandle.style.position = 'absolute';
+  dragHandle.style.left = '0';
+  dragHandle.style.top = '0';
+  dragHandle.style.right = '44px';
+  dragHandle.style.height = '64px';
+  dragHandle.style.zIndex = '2';
+  dragHandle.style.cursor = 'move';
+  dragHandle.style.touchAction = 'none';
+  dragHandle.title = 'Drag to move chat';
+  iframeWrapper.appendChild(dragHandle);
+
   // Icon SVG
   const chatIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
   const closeIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-  
   toggleBtn.innerHTML = chatIcon;
 
   let isOpen = false;
+  let isDragging = false;
+  let didDrag = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let btnStartX = 0;
+  let btnStartY = 0;
+  let currentBtnLeft = null;
+  let currentBtnTop = null;
+  let latestLogoUrl = '';
+  let latestColorTheme = '#0f766e';
+  let hasCustomPosition = false;
+  let dragActuallyMoved = false;
+
+  const clamp = function(value, min, max) {
+    if (max < min) return min;
+    return Math.max(min, Math.min(value, max));
+  };
+
+  const updateIframePosition = function() {
+    if (!isOpen) return;
+    const padding = 12;
+    const isSmall = window.innerWidth < 640;
+    const frameW = isSmall ? Math.min(380, window.innerWidth - 32) : 380;
+    const frameH = isSmall ? Math.min(580, window.innerHeight - 110) : 600;
+
+    const btnRect = toggleBtn.getBoundingClientRect();
+    
+    // Position iframe above the button aligned to its right
+    let targetLeft = btnRect.right - frameW;
+    let targetTop = btnRect.top - frameH - 12;
+
+    // Boundary checks
+    if (targetLeft < padding) targetLeft = padding;
+    if (targetLeft + frameW > window.innerWidth - padding) targetLeft = window.innerWidth - frameW - padding;
+    if (targetTop < padding) {
+      // If no room above, position below button
+      targetTop = btnRect.bottom + 12;
+      if (targetTop + frameH > window.innerHeight - padding) {
+        targetTop = window.innerHeight - frameH - padding;
+      }
+    }
+
+    iframeWrapper.style.left = `${targetLeft}px`;
+    iframeWrapper.style.top = `${targetTop}px`;
+    iframeWrapper.style.right = 'auto';
+    iframeWrapper.style.bottom = 'auto';
+  };
+
+  const setBtnPosition = function(left, top) {
+    const padding = 10;
+    const nextLeft = clamp(left, padding, window.innerWidth - 56 - padding);
+    const nextTop = clamp(top, padding, window.innerHeight - 56 - padding);
+
+    toggleBtn.style.left = `${nextLeft}px`;
+    toggleBtn.style.top = `${nextTop}px`;
+    toggleBtn.style.right = 'auto';
+    toggleBtn.style.bottom = 'auto';
+    currentBtnLeft = nextLeft;
+    currentBtnTop = nextTop;
+
+    if (isOpen) {
+      updateIframePosition();
+    }
+  };
+
+  const beginDrag = function(clientX, clientY) {
+    const rect = toggleBtn.getBoundingClientRect();
+    isDragging = true;
+    didDrag = false;
+    dragActuallyMoved = false;
+    dragStartX = clientX;
+    dragStartY = clientY;
+    btnStartX = rect.left;
+    btnStartY = rect.top;
+  };
+
+  const moveDrag = function(clientX, clientY) {
+    if (!isDragging) return;
+    const dx = clientX - dragStartX;
+    const dy = clientY - dragStartY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+      didDrag = true;
+      dragActuallyMoved = true;
+    }
+    if (didDrag) {
+      setBtnPosition(btnStartX + dx, btnStartY + dy);
+    }
+  };
+
+  const endDrag = function() {
+    if (dragActuallyMoved) {
+      hasCustomPosition = true;
+    }
+    isDragging = false;
+  };
+
+  const iframePointToPage = function(clientX, clientY) {
+    const rect = iframe.getBoundingClientRect();
+    return {
+      clientX: rect.left + clientX,
+      clientY: rect.top + clientY
+    };
+  };
 
   toggleBtn.onmouseover = function() {
     toggleBtn.style.transform = 'scale(1.05)';
@@ -107,11 +232,62 @@
     toggleBtn.style.transform = 'scale(1)';
   };
 
-  toggleBtn.onclick = function() {
+  const applyLauncherIcon = function() {
+    toggleBtn.style.backgroundColor = latestColorTheme;
+    if (!isOpen) {
+      toggleBtn.innerHTML = chatIcon;
+    }
+    toggleBtn.style.opacity = '1';
+  };
+
+  const attachDragEvents = function(element) {
+    element.addEventListener('pointerdown', function(event) {
+      beginDrag(event.clientX, event.clientY);
+    });
+
+    element.addEventListener('pointermove', function(event) {
+      moveDrag(event.clientX, event.clientY);
+    });
+
+    element.addEventListener('pointerup', function() {
+      endDrag();
+    });
+
+    element.addEventListener('pointercancel', function() {
+      endDrag();
+    });
+  };
+
+  attachDragEvents(toggleBtn);
+  attachDragEvents(dragHandle);
+
+  window.addEventListener('resize', function() {
+    const isSmall = window.innerWidth < 640;
+    iframeWrapper.style.width = isSmall ? 'calc(100vw - 32px)' : '380px';
+    iframeWrapper.style.maxWidth = isSmall ? '380px' : 'none';
+    iframeWrapper.style.height = isSmall ? 'min(580px, calc(100vh - 110px))' : '600px';
+
+    if (hasCustomPosition && currentBtnLeft !== null && currentBtnTop !== null) {
+      setBtnPosition(currentBtnLeft, currentBtnTop);
+    }
+    if (isOpen) {
+      updateIframePosition();
+    }
+  });
+
+  toggleBtn.onclick = function(event) {
+    if (didDrag) {
+      event.preventDefault();
+      didDrag = false;
+      return;
+    }
     isOpen = !isOpen;
     if (isOpen) {
+      if (!iframe.src || iframe.src === 'about:blank') {
+        iframe.src = buildIframeUrl();
+      }
+      updateIframePosition();
       iframeWrapper.style.display = 'block';
-      // trigger reflow
       void iframeWrapper.offsetWidth;
       iframeWrapper.style.opacity = '1';
       iframeWrapper.style.transform = 'translateY(0)';
@@ -123,26 +299,58 @@
         iframeWrapper.style.display = 'none';
       }, 200);
       toggleBtn.innerHTML = chatIcon;
+      applyLauncherIcon();
     }
   };
 
-  container.appendChild(iframeWrapper);
-  container.appendChild(toggleBtn);
-  document.body.appendChild(container);
+  document.body.appendChild(iframeWrapper);
+  document.body.appendChild(toggleBtn);
 
   window.addEventListener('message', function(event) {
     if (event.data === 'supporthub-close-widget' && isOpen) {
       toggleBtn.click();
     }
-    if (event.data && event.data.type === 'supporthub-config') {
-      if (event.data.colorTheme) {
-        toggleBtn.style.backgroundColor = event.data.colorTheme;
-      }
-      if (event.data.logoUrl && !isOpen) {
-        toggleBtn.innerHTML = `<img src="${event.data.logoUrl}" alt="Support" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
+    if (event.data && event.data.type === 'supporthub-drag-start') {
+      const point = iframePointToPage(event.data.clientX, event.data.clientY);
+      beginDrag(point.clientX, point.clientY);
+    }
+    if (event.data && event.data.type === 'supporthub-drag-move') {
+      const point = iframePointToPage(event.data.clientX, event.data.clientY);
+      moveDrag(point.clientX, point.clientY);
+    }
+    if (event.data && event.data.type === 'supporthub-drag-end') {
+      endDrag();
+      if (event.data.didDrag || dragActuallyMoved) {
+        didDrag = true;
+        hasCustomPosition = true;
       }
     }
+    if (event.data && event.data.type === 'supporthub-config') {
+      if (event.data.colorTheme) {
+        latestColorTheme = event.data.colorTheme;
+      }
+      if (event.data.logoUrl) {
+        latestLogoUrl = event.data.logoUrl;
+      }
+      applyLauncherIcon();
+    }
   });
+
+  fetch(`${apiUrl}/widget/${encodeURIComponent(channelId)}/config?v=${Date.now()}`, { cache: 'no-store' })
+    .then(function(response) {
+      return response.ok ? response.json() : null;
+    })
+    .then(function(payload) {
+      const config = payload && payload.data ? payload.data : payload;
+      if (!config) return;
+      if (config.colorTheme) latestColorTheme = config.colorTheme;
+      if (config.logoUrl || config.botAvatar) latestLogoUrl = config.logoUrl || config.botAvatar;
+      applyLauncherIcon();
+    })
+    .catch(function() {
+      toggleBtn.style.opacity = '1';
+      return undefined;
+    });
 
   // Expose global SupportHub API
   window.SupportHub = {
@@ -153,6 +361,7 @@
         type: 'supporthub-set-user',
         profileId: profileId,
         name: userData.name || '',
+        email: userData.email || '',
         number: userData.number || ''
       };
       

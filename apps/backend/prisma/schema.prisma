@@ -114,6 +114,10 @@ model WidgetChannel {
   welcomeMessage  String   @default("Hi, welcome in. How can we help?")
   colorTheme      String   @default("#0f4c42")
   logoUrl         String?
+  collectVisitorInfo Boolean @default(false)
+  visitorNameEnabled Boolean @default(true)
+  visitorEmailEnabled Boolean @default(true)
+  visitorPhoneEnabled Boolean @default(false)
   launcherPosition String @default("RIGHT")
   enabled         Boolean  @default(true)
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

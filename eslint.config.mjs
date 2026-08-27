@@ -20,7 +20,22 @@ export default [
     }
   },
   {
-    files: ["apps/web/public/**/*.js", "*.config.js"],
-    languageOptions: { globals: { self: "readonly", caches: "readonly", URL: "readonly", module: "readonly" } }
+    files: ["apps/web/public/**/*.js", "apps/frontend/public/**/*.js", "*.config.js"],
+    languageOptions: {
+      globals: {
+        self: "readonly",
+        caches: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        module: "readonly",
+        window: "readonly",
+        document: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        Date: "readonly",
+        Math: "readonly",
+        setTimeout: "readonly"
+      }
+    }
   }
 ];
