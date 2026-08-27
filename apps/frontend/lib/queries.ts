@@ -84,7 +84,15 @@ export function useSendMessage(id?: string) {
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { name: string; key: string }) => api.createProject(v.name, v.key),
+    mutationFn: (v: { name: string; key?: string }) => api.createProject(v.name, v.key),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.projects })
+  });
+}
+
+export function useDeleteProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => api.deleteProject(projectId),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.projects })
   });
 }
@@ -100,7 +108,7 @@ export function useCreateAgent(projectId?: string) {
 export function useUpdateWidget(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { welcomeMessage?: string; colorTheme?: string }) => api.updateWidget(projectId!, v),
+    mutationFn: (v: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) => api.updateWidget(projectId!, v),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.channels(projectId) })
   });
 }

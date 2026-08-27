@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "../../lib/api";
 import { Sidebar } from "../../components/sidebar";
@@ -8,6 +8,7 @@ import { Header } from "../../components/header";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const initialPathname = useRef(pathname);
   const [authed, setAuthed] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -17,10 +18,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then(() => setAuthed(true))
       .catch(() => {
         setAuthed(false);
-        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+        router.replace(`/login?redirect=${encodeURIComponent(initialPathname.current)}`);
       })
       .finally(() => setCheckingSession(false));
-  }, [pathname, router]);
+  }, [router]);
 
   if (checkingSession) {
     return (

@@ -81,11 +81,10 @@ export class CoreService {
 
   async createProject(userId: string, data: { name: string; key?: string }) {
     const secret = this.crypto.randomToken();
-    const key = (data.key ?? data.name)
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+    const cleanPrefix = data.name.toLowerCase().trim().replace(/[^a-z0-9]/g, "").slice(0, 8);
+    const uniqueSuffix = this.crypto.randomToken(8).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16);
+    const key = data.key?.trim() ? data.key.toLowerCase().trim().replace(/[^a-z0-9-]/g, "-") : `${cleanPrefix ? cleanPrefix + "-" : ""}${uniqueSuffix}`;
+
     const project = await this.db.project.create({
       data: {
         name: data.name,
@@ -112,6 +111,17 @@ export class CoreService {
     return { ...project, integrationSecret: secret };
   }
 
+  async deleteProject(userId: string, projectId: string) {
+    const member = await this.assertMember(userId, projectId);
+    if (member.role !== "ADMIN") {
+      throw new ForbiddenException("Only project admins can delete a project.");
+    }
+    await this.db.project.delete({
+      where: { id: projectId }
+    });
+    return { ok: true, deletedId: projectId };
+  }
+
   async channels(userId: string, projectId: string) {
     await this.assertMember(userId, projectId);
     const project = await this.db.project.findUnique({
@@ -129,6 +139,7 @@ export class CoreService {
             websiteUrl: true,
             welcomeMessage: true,
             colorTheme: true,
+            logoUrl: true,
             launcherPosition: true,
             createdAt: true
           }
@@ -148,6 +159,7 @@ export class CoreService {
           websiteUrl: true,
           welcomeMessage: true,
           colorTheme: true,
+          logoUrl: true,
           launcherPosition: true,
           createdAt: true
         }
@@ -155,7 +167,7 @@ export class CoreService {
     return [{ type: "WEBSITE_WIDGET", projectId: project.id, projectKey: project.key, ...widgetChannel }];
   }
 
-  async updateWidget(userId: string, projectId: string, data: { welcomeMessage?: string; colorTheme?: string }) {
+  async updateWidget(userId: string, projectId: string, data: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) {
     await this.assertMember(userId, projectId);
     const channel = await this.db.widgetChannel.findUnique({ where: { projectId } });
     if (!channel) throw new NotFoundException("Widget channel not found");
@@ -163,7 +175,8 @@ export class CoreService {
       where: { id: channel.id },
       data: {
         welcomeMessage: data.welcomeMessage,
-        colorTheme: data.colorTheme
+        colorTheme: data.colorTheme,
+        logoUrl: data.logoUrl
       }
     });
   }
@@ -326,8 +339,10 @@ export class CoreService {
       name: channel.name,
       welcomeMessage: channel.welcomeMessage,
       colorTheme: channel.colorTheme,
+      logoUrl: channel.logoUrl || channel.project.botConfiguration?.botAvatar || null,
       launcherPosition: channel.launcherPosition,
-      botName: channel.project.botConfiguration?.botName ?? "Support Bot"
+      botName: channel.project.botConfiguration?.botName ?? "Support Bot",
+      botAvatar: channel.project.botConfiguration?.botAvatar || channel.logoUrl || null
     };
   }
 

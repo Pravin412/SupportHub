@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
@@ -34,6 +34,7 @@ class BotConfigDto {
   @IsEnum(BotResponseMode) responseMode!: BotResponseMode;
   @IsString() @MinLength(2) botName!: string;
   @IsString() @MinLength(8) fallbackMessage!: string;
+  @IsString() @IsOptional() botAvatar?: string;
 }
 
 @ApiTags("core")
@@ -61,13 +62,18 @@ export class CoreController {
     return this.core.createProject(this.userId(req), dto);
   }
 
+  @Delete("projects/:id")
+  deleteProject(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.deleteProject(this.userId(req), id);
+  }
+
   @Get("projects/:id/channels")
   channels(@Req() req: FastifyRequest, @Param("id") id: string) {
     return this.core.channels(this.userId(req), id);
   }
 
   @Put("projects/:id/widget")
-  updateWidget(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: { welcomeMessage?: string; colorTheme?: string }) {
+  updateWidget(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) {
     return this.core.updateWidget(this.userId(req), id, dto);
   }
 

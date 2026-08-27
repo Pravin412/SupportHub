@@ -79,8 +79,12 @@ function WidgetContent() {
         if (!isMounted) return;
         
         setConfig(configData);
-        if (configData.colorTheme) {
-          window.parent.postMessage({ type: 'supporthub-config', colorTheme: configData.colorTheme }, '*');
+        if (configData.colorTheme || configData.logoUrl) {
+          window.parent.postMessage({ 
+            type: 'supporthub-config', 
+            colorTheme: configData.colorTheme,
+            logoUrl: configData.logoUrl 
+          }, '*');
         }
 
         if (activeUser.profileId) {
@@ -220,15 +224,24 @@ function WidgetContent() {
   };
 
   const themeColor = config?.colorTheme || "#0f4c42";
+  const botLogo = config?.logoUrl || config?.botAvatar || null;
 
   return (
     <div className="flex flex-col h-full w-full bg-white text-slate-900 overflow-hidden shadow-xl border border-slate-200" style={{ borderRadius: '12px' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: themeColor }}>
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20">
-            <Bot size={20} />
-          </span>
+          {botLogo ? (
+            <img
+              src={botLogo}
+              alt={config?.botName || "Bot"}
+              className="h-10 w-10 rounded-full object-cover border border-white/30 shadow-xs"
+            />
+          ) : (
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20">
+              <Bot size={20} />
+            </span>
+          )}
           <div>
             <div className="text-sm font-semibold">{config?.botName || "Support Bot"}</div>
             <div className="text-xs text-white/80">Typically replies in a few minutes</div>
@@ -260,53 +273,69 @@ function WidgetContent() {
 
           return (
             <div key={msg.id} className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
-              <div
-                style={isUser ? { backgroundColor: themeColor, color: "white", borderRadius: "16px 16px 0px 16px" } : { borderRadius: "16px 16px 16px 0px" }}
-                className={`max-w-[85%] p-3 text-sm shadow-sm whitespace-pre-wrap ${
-                  isUser
-                    ? ""
-                    : "bg-white border border-slate-200 text-slate-800"
-                }`}
-              >
-                {displayText}
-
-                {/* Render interactive options/buttons */}
-                {optionsList.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2 pt-1 border-t border-slate-100">
-                    {optionsList.map((opt, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={async () => {
-                          const optionText = opt.value || opt.title;
-                          if (!optionText || isSending) return;
-                          
-                          // Send option selection back as a user reply
-                          const tempId = `temp-${Date.now()}`;
-                          setMessages(prev => [...prev, { id: tempId, content: optionText, senderType: "CUSTOMER" }]);
-                          
-                          try {
-                            const sentMsg = await widgetApi.sendMessage(
-                              channelId!,
-                              activeUser.profileId!,
-                              optionText,
-                              activeUser.name,
-                              activeUser.number
-                            );
-                            setMessages(prev => prev.map(m => m.id === tempId ? sentMsg : m));
-                            subscribeToConversation(sentMsg.conversationId);
-                          } catch (err) {
-                            console.error("Failed to send option", err);
-                          }
-                        }}
-                        style={{ borderColor: themeColor, color: themeColor }}
-                        className="rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-2xs transition-all hover:bg-slate-50 active:scale-95 cursor-pointer"
-                      >
-                        {opt.title}
-                      </button>
-                    ))}
-                  </div>
+              <div className={`flex items-start gap-2 max-w-[90%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+                {!isUser && (
+                  botLogo ? (
+                    <img
+                      src={botLogo}
+                      alt="Bot"
+                      className="h-7 w-7 rounded-full object-cover border border-slate-200 mt-0.5 shrink-0 shadow-2xs"
+                    />
+                  ) : (
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold mt-0.5 shrink-0">
+                      <Bot size={13} />
+                    </span>
+                  )
                 )}
+
+                <div
+                  style={isUser ? { backgroundColor: themeColor, color: "white", borderRadius: "16px 16px 0px 16px" } : { borderRadius: "16px 16px 16px 0px" }}
+                  className={`p-3 text-sm shadow-sm whitespace-pre-wrap ${
+                    isUser
+                      ? ""
+                      : "bg-white border border-slate-200 text-slate-800"
+                  }`}
+                >
+                  {displayText}
+
+                  {/* Render interactive options/buttons */}
+                  {optionsList.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                      {optionsList.map((opt, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={async () => {
+                            const optionText = opt.value || opt.title;
+                            if (!optionText || isSending) return;
+                            
+                            // Send option selection back as a user reply
+                            const tempId = `temp-${Date.now()}`;
+                            setMessages(prev => [...prev, { id: tempId, content: optionText, senderType: "CUSTOMER" }]);
+                            
+                            try {
+                              const sentMsg = await widgetApi.sendMessage(
+                                channelId!,
+                                activeUser.profileId!,
+                                optionText,
+                                activeUser.name,
+                                activeUser.number
+                              );
+                              setMessages(prev => prev.map(m => m.id === tempId ? sentMsg : m));
+                              subscribeToConversation(sentMsg.conversationId);
+                            } catch (err) {
+                              console.error("Failed to send option", err);
+                            }
+                          }}
+                          style={{ borderColor: themeColor, color: themeColor }}
+                          className="rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-2xs transition-all hover:bg-slate-50 active:scale-95 cursor-pointer"
+                        >
+                          {opt.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               {msg.id !== "welcome" && (
                 <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isUser ? "pr-1" : "pl-1"}`}>

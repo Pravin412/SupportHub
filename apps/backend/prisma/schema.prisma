@@ -113,6 +113,7 @@ model WidgetChannel {
   websiteUrl      String?
   welcomeMessage  String   @default("Hi, welcome in. How can we help?")
   colorTheme      String   @default("#0f4c42")
+  logoUrl         String?
   launcherPosition String @default("RIGHT")
   enabled         Boolean  @default(true)
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -125,6 +126,7 @@ model BotConfiguration {
   projectId       String         @unique
   responseMode    AutomationMode @default(AUTOMATED)
   botName         String         @default("Support Bot")
+  botAvatar       String?
   enabled         Boolean        @default(true)
   handoffKeywords String[]       @default(["agent", "human", "help"])
   fallbackMessage String         @default("Thanks for your message. A support agent will follow up shortly.")

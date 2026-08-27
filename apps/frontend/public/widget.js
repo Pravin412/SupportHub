@@ -138,6 +138,9 @@
       if (event.data.colorTheme) {
         toggleBtn.style.backgroundColor = event.data.colorTheme;
       }
+      if (event.data.logoUrl && !isOpen) {
+        toggleBtn.innerHTML = `<img src="${event.data.logoUrl}" alt="Support" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
+      }
     }
   });
 

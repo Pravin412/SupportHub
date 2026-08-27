@@ -71,11 +71,13 @@ export const api = {
   me: () => request<{ id: string; email: string; name: string }>("/auth/me"),
   dashboardSummary: () => request<DashboardSummaryDto>("/dashboard/summary"),
   projects: () => request<ProjectDto[]>("/projects"),
-  createProject: (name: string, key: string) =>
+  createProject: (name: string, key?: string) =>
     request<ProjectDto & { integrationKey: string; integrationSecret: string }>("/projects", {
       method: "POST",
       body: JSON.stringify({ name, key: key || undefined })
     }),
+  deleteProject: (projectId: string) =>
+    request<{ ok: boolean; deletedId: string }>(`/projects/${projectId}`, { method: "DELETE" }),
   channels: (projectId: string) => request<ChannelDto[]>(`/projects/${projectId}/channels`),
   agents: (projectId: string) =>
     request<Array<{ id: string; role: string; user: { name: string; email: string } }>>(
@@ -105,15 +107,16 @@ export const api = {
     request<{
       responseMode: "AUTOMATED" | "HUMAN" | "AI";
       botName: string;
+      botAvatar?: string | null;
       enabled: boolean;
       fallbackMessage: string;
       handoffKeywords: string[];
     }>(`/projects/${projectId}/bot`),
   updateBotConfig: (
     projectId: string,
-    data: { responseMode: "AUTOMATED" | "HUMAN" | "AI"; botName: string; fallbackMessage: string }
+    data: { responseMode: "AUTOMATED" | "HUMAN" | "AI"; botName: string; fallbackMessage: string; botAvatar?: string }
   ) => request(`/projects/${projectId}/bot`, { method: "PUT", body: JSON.stringify(data) }),
-  updateWidget: (projectId: string, data: { welcomeMessage?: string; colorTheme?: string }) =>
+  updateWidget: (projectId: string, data: { welcomeMessage?: string; colorTheme?: string; logoUrl?: string }) =>
     request(`/projects/${projectId}/widget`, { method: "PUT", body: JSON.stringify(data) })
 };
 

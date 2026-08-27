@@ -15,6 +15,8 @@ export type ChannelDto = {
   enabled: boolean;
   websiteUrl?: string | null;
   welcomeMessage: string;
+  colorTheme?: string;
+  logoUrl?: string | null;
   launcherPosition: string;
   createdAt: string;
 };

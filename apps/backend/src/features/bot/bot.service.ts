@@ -6,12 +6,14 @@ type BotConfigInput = {
   responseMode: "AUTOMATED" | "HUMAN" | "AI";
   botName: string;
   fallbackMessage: string;
+  botAvatar?: string;
 };
 
 const botSelect = {
   id: true,
   responseMode: true,
   botName: true,
+  botAvatar: true,
   enabled: true,
   handoffKeywords: true,
   fallbackMessage: true
