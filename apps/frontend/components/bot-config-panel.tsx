@@ -46,8 +46,8 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
       showToast("Please select a valid image file.", "error");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("Image must be smaller than 2MB.", "error");
+    if (file.size > 600 * 1024) {
+      showToast("Image must be smaller than 600KB for widget upload.", "error");
       return;
     }
     const reader = new FileReader();

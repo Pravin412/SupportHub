@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { Prisma } from "@prisma/client";
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
+import { SupportEvent } from "../../common/events/support-events";
 import { QueueService } from "../../common/queue/queue.service";
 import { RealtimeGateway } from "../../common/realtime/realtime.gateway";
 
@@ -34,14 +35,24 @@ const widgetChannelPublicSelect = {
   welcomeMessage: true,
   colorTheme: true,
   logoUrl: true,
+  collectVisitorInfo: true,
+  visitorNameEnabled: true,
+  visitorEmailEnabled: true,
+  visitorPhoneEnabled: true,
   launcherPosition: true,
   createdAt: true,
   updatedAt: true
 } satisfies Prisma.WidgetChannelSelect;
 
-function randomVisitorName(profileId: string) {
+function randomVisitorName(profileId: string, projectName?: string) {
   const clean = profileId.replace(/^guest-/, "").replace(/[^a-z0-9]/gi, "");
-  return `chatwoot-${clean.slice(0, 6).toUpperCase() || Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const projectPrefix = (projectName || "supporthub")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 16);
+  const code = clean.slice(0, 6).toUpperCase() || Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `${projectPrefix || "supporthub"}-${code}`;
 }
 
 @Injectable()
@@ -177,6 +188,10 @@ export class CoreService {
       welcomeMessage: true,
       colorTheme: true,
       logoUrl: true,
+      collectVisitorInfo: true,
+      visitorNameEnabled: true,
+      visitorEmailEnabled: true,
+      visitorPhoneEnabled: true,
       launcherPosition: true,
       createdAt: true
     } satisfies Prisma.WidgetChannelSelect;
@@ -191,7 +206,7 @@ export class CoreService {
         select: channelSelect
       }));
 
-    const visitorSettings = await this.widgetVisitorSettings(widgetChannel.id);
+    const visitorSettings = this.widgetVisitorSettings(widgetChannel);
     return [{ type: "WEBSITE_WIDGET", projectId: project.id, projectKey: project.key, ...widgetChannel, ...visitorSettings }];
   }
 
@@ -211,25 +226,40 @@ export class CoreService {
     await this.assertMember(userId, projectId);
     const project = await this.db.project.findUnique({ where: { id: projectId }, select: { key: true, name: true } });
     if (!project) throw new NotFoundException("Project not found");
-    const updatedChannel = await this.db.widgetChannel.upsert({
+    const existingChannel = await this.db.widgetChannel.findUnique({
       where: { projectId },
-      create: {
-        projectId,
-        publicId: channelPublicId(project.key),
-        name: `${project.name} Website`,
-        welcomeMessage: data.welcomeMessage,
-        colorTheme: data.colorTheme,
-        logoUrl: data.logoUrl
-      },
-      update: {
-        welcomeMessage: data.welcomeMessage,
-        colorTheme: data.colorTheme,
-        logoUrl: data.logoUrl
-      },
-      select: widgetChannelPublicSelect
+      select: { id: true }
     });
-    await this.updateWidgetVisitorSettings(updatedChannel.id, data);
-    return { ...updatedChannel, ...(await this.widgetVisitorSettings(updatedChannel.id)) };
+    const updatedChannel = existingChannel
+      ? await this.db.widgetChannel.update({
+          where: { id: existingChannel.id },
+          data: {
+            welcomeMessage: data.welcomeMessage,
+            colorTheme: data.colorTheme,
+            logoUrl: data.logoUrl,
+            collectVisitorInfo: data.collectVisitorInfo,
+            visitorNameEnabled: data.visitorNameEnabled,
+            visitorEmailEnabled: data.visitorEmailEnabled,
+            visitorPhoneEnabled: data.visitorPhoneEnabled
+          },
+          select: widgetChannelPublicSelect
+        })
+      : await this.db.widgetChannel.create({
+          data: {
+            projectId,
+            publicId: channelPublicId(project.key),
+            name: `${project.name} Website`,
+            welcomeMessage: data.welcomeMessage,
+            colorTheme: data.colorTheme,
+            logoUrl: data.logoUrl,
+            collectVisitorInfo: data.collectVisitorInfo,
+            visitorNameEnabled: data.visitorNameEnabled,
+            visitorEmailEnabled: data.visitorEmailEnabled,
+            visitorPhoneEnabled: data.visitorPhoneEnabled
+          },
+          select: widgetChannelPublicSelect
+        });
+    return updatedChannel;
   }
 
   async agents(userId: string, projectId: string) {
@@ -316,9 +346,9 @@ export class CoreService {
       data: { conversationId, senderType: "AGENT", senderId: userId, content, status: "PENDING" }
     });
     await this.db.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date(), unreadCount: 0 } });
-    this.realtime.emitProject(c.projectId, "message.created", msg);
-    this.realtime.emitConversation(conversationId, "message.created", msg);
-    await this.queues.queueWebhook("message.created", c.projectId, msg);
+    this.realtime.emitProject(c.projectId, SupportEvent.MessageCreated, msg);
+    this.realtime.emitConversation(conversationId, SupportEvent.MessageCreated, msg);
+    await this.queues.queueWebhook(SupportEvent.MessageCreated, c.projectId, msg);
     return msg;
   }
 
@@ -339,7 +369,7 @@ export class CoreService {
         priority: data.priority
       }
     });
-    this.realtime.emitProject(c.projectId, "ticket.created", ticket);
+    this.realtime.emitProject(c.projectId, SupportEvent.TicketCreated, ticket);
     return ticket;
   }
 
@@ -373,7 +403,7 @@ export class CoreService {
         url: data.url,
         secretHash: await this.crypto.hashSecret(signingSecret),
         secret: signingSecret,
-        events: ["message.created", "ticket.created", "conversation.assigned"]
+        events: [SupportEvent.MessageCreated, SupportEvent.TicketCreated, SupportEvent.ConversationAssigned]
       },
       select: { id: true, url: true, enabled: true, events: true, secret: true }
     });
@@ -401,7 +431,6 @@ export class CoreService {
       }
     });
     if (!channel || !channel.enabled) throw new NotFoundException("Widget offline");
-    const visitorSettings = await this.widgetVisitorSettings(channel.id);
     const botConfig = channel.project.botConfiguration;
     const botAvatar = channel.logoUrl || botConfig?.botAvatar || null;
     const botName = botConfig?.botName || channel.name || channel.project.name || "Support Bot";
@@ -415,7 +444,10 @@ export class CoreService {
       launcherPosition: channel.launcherPosition,
       botName,
       botAvatar,
-      ...visitorSettings
+      collectVisitorInfo: channel.collectVisitorInfo,
+      visitorNameEnabled: channel.visitorNameEnabled,
+      visitorEmailEnabled: channel.visitorEmailEnabled,
+      visitorPhoneEnabled: channel.visitorPhoneEnabled
     };
   }
 
@@ -448,11 +480,11 @@ export class CoreService {
   async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, email?: string, number?: string) {
     const channel = await this.db.widgetChannel.findUnique({
       where: { publicId: channelId },
-      select: { id: true, projectId: true, enabled: true }
+      select: { id: true, projectId: true, enabled: true, project: { select: { name: true } } }
     });
     if (!channel || !channel.enabled) throw new NotFoundException();
 
-    const contactName = name?.trim() || randomVisitorName(profileId);
+    const contactName = name?.trim() || randomVisitorName(profileId, channel.project.name);
 
     const contact = await this.db.contact.upsert({
       where: { projectId_externalUserId: { projectId: channel.projectId, externalUserId: profileId } },
@@ -484,12 +516,12 @@ export class CoreService {
     });
     
     // Emit to agents viewing the inbox
-    this.realtime.emitProject(channel.projectId, "message.created", msg);
+    this.realtime.emitProject(channel.projectId, SupportEvent.MessageCreated, msg);
     
     // Try emitting to widget (requires realtime gateway update)
-    this.realtime.emitConversation(conversation.id, "message.created", msg);
+    this.realtime.emitConversation(conversation.id, SupportEvent.MessageCreated, msg);
 
-    await this.queues.queueWebhook("message.created", channel.projectId, msg);
+    await this.queues.queueWebhook(SupportEvent.MessageCreated, channel.projectId, msg);
 
     // If botConfiguration is enabled and set to AUTOMATED (internal fallback bot)
     const botConfig = await this.db.botConfiguration.findUnique({ where: { projectId: channel.projectId } });
@@ -514,8 +546,8 @@ export class CoreService {
               where: { id: conversation.id },
               data: { lastMessageAt: new Date() }
             });
-            this.realtime.emitProject(channel.projectId, "message.created", botMsg);
-            this.realtime.emitConversation(conversation.id, "message.created", botMsg);
+            this.realtime.emitProject(channel.projectId, SupportEvent.MessageCreated, botMsg);
+            this.realtime.emitConversation(conversation.id, SupportEvent.MessageCreated, botMsg);
           } catch {
             return undefined;
           }
@@ -526,46 +558,12 @@ export class CoreService {
     return msg;
   }
 
-  private async widgetVisitorSettings(channelId: string): Promise<WidgetVisitorSettings> {
-    try {
-      const rows = await this.db.$queryRaw<Array<WidgetVisitorSettings>>`
-        SELECT
-          "collectVisitorInfo",
-          "visitorNameEnabled",
-          "visitorEmailEnabled",
-          "visitorPhoneEnabled"
-        FROM "WidgetChannel"
-        WHERE "id" = ${channelId}
-        LIMIT 1
-      `;
-      if (!rows[0]) return defaultWidgetVisitorSettings;
-      return {
-        collectVisitorInfo: rows[0].collectVisitorInfo,
-        visitorNameEnabled: rows[0].visitorNameEnabled,
-        visitorEmailEnabled: rows[0].visitorEmailEnabled,
-        visitorPhoneEnabled: rows[0].visitorPhoneEnabled
-      };
-    } catch {
-      return defaultWidgetVisitorSettings;
-    }
-  }
-
-  private async updateWidgetVisitorSettings(
-    channelId: string,
-    data: Partial<WidgetVisitorSettings>
-  ) {
-    try {
-      await this.db.$executeRaw`
-        UPDATE "WidgetChannel"
-        SET
-          "collectVisitorInfo" = ${data.collectVisitorInfo ?? defaultWidgetVisitorSettings.collectVisitorInfo},
-          "visitorNameEnabled" = ${data.visitorNameEnabled ?? defaultWidgetVisitorSettings.visitorNameEnabled},
-          "visitorEmailEnabled" = ${data.visitorEmailEnabled ?? defaultWidgetVisitorSettings.visitorEmailEnabled},
-          "visitorPhoneEnabled" = ${data.visitorPhoneEnabled ?? defaultWidgetVisitorSettings.visitorPhoneEnabled}
-        WHERE "id" = ${channelId}
-      `;
-    } catch {
-      return undefined;
-    }
+  private widgetVisitorSettings(channel: WidgetVisitorSettings): WidgetVisitorSettings {
+    return {
+      collectVisitorInfo: channel.collectVisitorInfo ?? defaultWidgetVisitorSettings.collectVisitorInfo,
+      visitorNameEnabled: channel.visitorNameEnabled ?? defaultWidgetVisitorSettings.visitorNameEnabled,
+      visitorEmailEnabled: channel.visitorEmailEnabled ?? defaultWidgetVisitorSettings.visitorEmailEnabled,
+      visitorPhoneEnabled: channel.visitorPhoneEnabled ?? defaultWidgetVisitorSettings.visitorPhoneEnabled
+    };
   }
 }

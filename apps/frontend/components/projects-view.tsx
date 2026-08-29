@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useProjects, useCreateProject, useDeleteProject } from "../lib/queries";
 import { useUiStore } from "../lib/store";
 import { useState } from "react";
+import { ConfirmationModal } from "./confirmation-modal";
 
 const projectSchema = z.object({
   name: z.string().min(2, "Project name must be at least 2 characters.")
@@ -25,6 +26,7 @@ export function ProjectsView() {
   const deleteProject = useDeleteProject();
   const { setProject, selectedProjectId, showToast } = useUiStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
@@ -32,13 +34,11 @@ export function ProjectsView() {
   });
 
   const handleDelete = (projectId: string, projectName: string) => {
-    if (!confirm(`Are you sure you want to permanently delete project "${projectName}" and all its conversations?`)) {
-      return;
-    }
     setDeletingId(projectId);
     deleteProject.mutate(projectId, {
       onSuccess: () => {
         showToast(`Project "${projectName}" deleted.`, "success");
+        setProjectToDelete(null);
         if (selectedProjectId === projectId) {
           setProject("");
         }
@@ -61,7 +61,9 @@ export function ProjectsView() {
           </span>
           <div>
             <h2 className="text-base font-semibold">Create Project</h2>
-            <p className="text-xs text-muted">Enter project name. A unique 16-character key is assigned automatically.</p>
+            <p className="text-xs text-muted">
+              Enter project name. A unique 16-character key is assigned automatically.
+            </p>
           </div>
         </div>
         <form
@@ -81,11 +83,7 @@ export function ProjectsView() {
         >
           <label className="block">
             <span className="text-sm font-medium">Project Name</span>
-            <Input
-              className="mt-1"
-              placeholder="e.g. TeleDoctor Central"
-              {...projectForm.register("name")}
-            />
+            <Input className="mt-1" placeholder="e.g. Project Name" {...projectForm.register("name")} />
             <FieldError message={projectForm.formState.errors.name?.message} />
           </label>
           <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={createProject.isPending}>
@@ -107,8 +105,11 @@ export function ProjectsView() {
           <h2 className="text-base font-semibold">Available Projects ({projects.data?.length ?? 0})</h2>
         </div>
         <div className="p-4 space-y-3">
-          {projects.data?.map(p => (
-            <div key={p.id} className="flex flex-wrap justify-between items-center gap-3 rounded-lg border bg-white p-3.5 shadow-2xs hover:border-slate-300 transition-all">
+          {projects.data?.map((p) => (
+            <div
+              key={p.id}
+              className="flex flex-wrap justify-between items-center gap-3 rounded-lg border bg-white p-3.5 shadow-2xs hover:border-slate-300 transition-all"
+            >
               <div>
                 <div className="font-semibold text-sm text-slate-900">{p.name}</div>
                 <div className="text-xs font-mono text-slate-500 mt-0.5">Key: {p.key}</div>
@@ -124,7 +125,7 @@ export function ProjectsView() {
                   type="button"
                   title="Delete project"
                   disabled={deletingId === p.id}
-                  onClick={() => handleDelete(p.id, p.name)}
+                  onClick={() => setProjectToDelete({ id: p.id, name: p.name })}
                   className="p-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   <Trash2 size={16} />
@@ -137,6 +138,18 @@ export function ProjectsView() {
           )}
         </div>
       </Card>
+      <ConfirmationModal
+        open={Boolean(projectToDelete)}
+        title="Delete project"
+        message={`Are you sure you want to permanently delete project "${projectToDelete?.name ?? ""}" and all its conversations?`}
+        confirmLabel={deletingId ? "Deleting..." : "Delete"}
+        icon={<Trash2 size={18} />}
+        isLoading={Boolean(deletingId)}
+        onCancel={() => setProjectToDelete(null)}
+        onConfirm={() => {
+          if (projectToDelete) handleDelete(projectToDelete.id, projectToDelete.name);
+        }}
+      />
     </div>
   );
 }

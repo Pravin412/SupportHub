@@ -3,6 +3,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import { CryptoService } from "../crypto/crypto.service";
 import { PrismaService } from "../database/prisma.service";
+import { ExternalWebhookEvent, SupportEvent, WebhookMessageType, WebhookSenderType } from "../events/support-events";
 
 type WebhookJob = {
   projectId: string;
@@ -40,30 +41,72 @@ export class WebhookProcessor extends WorkerHost {
 
     const timestamp = new Date().toISOString();
     
-    // Extract message fields if payload represents a message
     const rawPayload = job.data.payload as Record<string, any> | undefined;
-    const conversationId = rawPayload?.conversationId ?? undefined;
-    const content = rawPayload?.content ?? undefined;
-    const isCustomer = rawPayload?.senderType === "CUSTOMER" || !rawPayload?.senderType;
 
-    const body: Record<string, any> = {
-      id: eventId,
-      event: eventName,
-      projectId: job.data.projectId,
-      createdAt: timestamp,
-      data: job.data.payload
-    };
+    let body: Record<string, any>;
 
-    // If event is message.created, provide the Chatwoot/TeleDoctor bot expected structure
-    if (eventName === "message.created" || eventName === "message_created") {
-      body.message_type = isCustomer ? "incoming" : "outgoing";
-      if (content !== undefined) body.content = content;
-      if (conversationId) {
-        body.conversation = {
-          id: conversationId,
+    if (eventName === SupportEvent.MessageCreated || eventName === ExternalWebhookEvent.MessageCreated) {
+      const message = await this.db.message.findUnique({
+        where: { id: messageId },
+        select: {
+          id: true,
+          content: true,
+          senderType: true,
+          conversation: {
+            select: {
+              id: true,
+              status: true,
+              contact: {
+                select: {
+                  name: true,
+                  phone: true,
+                  email: true
+                }
+              },
+              project: {
+                select: {
+                  key: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const senderType = message?.senderType ?? rawPayload?.senderType;
+      const isIncoming = senderType === "CUSTOMER" || !senderType;
+      const contact = message?.conversation.contact;
+
+      body = {
+        event: ExternalWebhookEvent.MessageCreated,
+        message_type: isIncoming ? WebhookMessageType.Incoming : WebhookMessageType.Outgoing,
+        message: {
+          id: message?.id ?? messageId,
+          content: message?.content ?? rawPayload?.content ?? "",
+          content_attributes: {
+            submitted_values: []
+          }
+        },
+        conversation: {
+          id: message?.conversation.id ?? rawPayload?.conversationId ?? "",
           status: "pending"
-        };
-      }
+        },
+        sender: {
+          type: isIncoming ? WebhookSenderType.Contact : WebhookSenderType.Agent,
+          name: contact?.name ?? "Customer",
+          phone_number: contact?.phone ?? null,
+          email: contact?.email ?? null
+        },
+        project_key: message?.conversation.project.key ?? ""
+      };
+    } else {
+      body = {
+        id: eventId,
+        event: eventName,
+        projectId: job.data.projectId,
+        createdAt: timestamp,
+        data: job.data.payload
+      };
     }
 
     const signature = webhook.secret

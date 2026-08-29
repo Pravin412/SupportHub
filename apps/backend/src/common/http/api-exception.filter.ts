@@ -11,9 +11,13 @@ type ErrorPayload = {
 export class ApiExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<FastifyReply>();
-    const statusCode = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const statusCode = this.getStatusCode(exception);
     const payload = this.getPayload(exception);
     const message = Array.isArray(payload.message) ? payload.message.join(", ") : payload.message;
+
+    if (statusCode === HttpStatus.INTERNAL_SERVER_ERROR) {
+      console.error(exception);
+    }
 
     response.status(statusCode).send({
       success: false,
@@ -27,6 +31,15 @@ export class ApiExceptionFilter implements ExceptionFilter {
     if (!(exception instanceof HttpException)) return {};
     const response = exception.getResponse();
     return typeof response === "string" ? { message: response } : (response as ErrorPayload);
+  }
+
+  private getStatusCode(exception: unknown) {
+    if (exception instanceof HttpException) return exception.getStatus();
+    if (exception && typeof exception === "object" && "statusCode" in exception) {
+      const statusCode = Number((exception as { statusCode?: number }).statusCode);
+      if (statusCode >= 400 && statusCode < 600) return statusCode;
+    }
+    return HttpStatus.INTERNAL_SERVER_ERROR;
   }
 
   private messageFor(statusCode: number) {

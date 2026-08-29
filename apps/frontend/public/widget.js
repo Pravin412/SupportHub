@@ -144,7 +144,11 @@
     const padding = 12;
     const isSmall = window.innerWidth < 640;
     const frameW = isSmall ? Math.min(380, window.innerWidth - 32) : 380;
-    const frameH = isSmall ? Math.min(580, window.innerHeight - 110) : 600;
+    // Adapt height dynamically to window height so it never exceeds screen limits
+    const maxAvailableH = Math.max(320, window.innerHeight - 100);
+    const frameH = Math.min(600, maxAvailableH);
+
+    iframeWrapper.style.height = `${frameH}px`;
 
     const btnRect = toggleBtn.getBoundingClientRect();
     
@@ -156,11 +160,10 @@
     if (targetLeft < padding) targetLeft = padding;
     if (targetLeft + frameW > window.innerWidth - padding) targetLeft = window.innerWidth - frameW - padding;
     if (targetTop < padding) {
-      // If no room above, position below button
-      targetTop = btnRect.bottom + 12;
-      if (targetTop + frameH > window.innerHeight - padding) {
-        targetTop = window.innerHeight - frameH - padding;
-      }
+      targetTop = padding;
+    }
+    if (targetTop + frameH > window.innerHeight - padding) {
+      targetTop = Math.max(padding, window.innerHeight - frameH - padding);
     }
 
     iframeWrapper.style.left = `${targetLeft}px`;
@@ -265,7 +268,8 @@
     const isSmall = window.innerWidth < 640;
     iframeWrapper.style.width = isSmall ? 'calc(100vw - 32px)' : '380px';
     iframeWrapper.style.maxWidth = isSmall ? '380px' : 'none';
-    iframeWrapper.style.height = isSmall ? 'min(580px, calc(100vh - 110px))' : '600px';
+    const maxAvailableH = Math.max(320, window.innerHeight - 100);
+    iframeWrapper.style.height = `${Math.min(600, maxAvailableH)}px`;
 
     if (hasCustomPosition && currentBtnLeft !== null && currentBtnTop !== null) {
       setBtnPosition(currentBtnLeft, currentBtnTop);
@@ -373,6 +377,11 @@
     },
     close: function() {
       if (isOpen) toggleBtn.click();
+    },
+    destroy: function() {
+      iframeWrapper.remove();
+      toggleBtn.remove();
+      delete window.SupportHub;
     }
   };
 })();

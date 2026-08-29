@@ -5,6 +5,7 @@ import { useUiStore } from "../lib/store";
 import { useConversations, useMessages, useProjects, useSendMessage, keys } from "../lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
+import { ClientEvent } from "../lib/events";
 import { InboxProjectsList, InboxConversationsList } from "./inbox-lists";
 import { InboxChatView, InboxEmptyState } from "./inbox-chat-view";
 
@@ -42,7 +43,7 @@ export function InboxView() {
     if (selectedProjectId) socket.emit("project:subscribe", selectedProjectId);
     if (activeId) socket.emit("conversation:subscribe", activeId);
 
-    socket.on("message.created", (newMsg) => {
+    socket.on(ClientEvent.MessageCreated, (newMsg) => {
       if (newMsg.conversationId) {
         queryClient.invalidateQueries({ queryKey: keys.messages(newMsg.conversationId) });
       }

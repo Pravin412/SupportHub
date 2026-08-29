@@ -1,6 +1,7 @@
 "use client";
 import { use } from "react";
 import { AdminPanels } from "../../../../../components/admin-panels";
+import { LoadingIndicator } from "../../../../../components/loading-indicator";
 import { useProjects } from "../../../../../lib/queries";
 
 export default function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
@@ -9,7 +10,11 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ proj
   const selectedProject = projects.data?.find((p) => p.id === projectId);
 
   if (projects.isLoading) {
-    return <div className="p-8 text-sm text-muted">Loading settings...</div>;
+    return (
+      <div className="grid min-h-[calc(100vh-56px)] place-items-center">
+        <LoadingIndicator />
+      </div>
+    );
   }
 
   if (!selectedProject) {

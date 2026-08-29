@@ -1,6 +1,7 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 import { Queue } from "bullmq";
+import { SupportEvent } from "../events/support-events";
 
 @Injectable()
 export class QueueService {
@@ -11,7 +12,7 @@ export class QueueService {
     @InjectQueue("email") private email: Queue
   ) {}
 
-  async queueWebhook(eventName: string, projectId: string, payload: unknown) {
+  async queueWebhook(eventName: SupportEvent, projectId: string, payload: unknown) {
     const job = await this.webhook.add(
       eventName,
       { projectId, payload },

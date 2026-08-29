@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { api } from "../../lib/api";
 import { Sidebar } from "../../components/sidebar";
 import { Header } from "../../components/header";
+import { LoadingIndicator } from "../../components/loading-indicator";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -25,8 +26,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (checkingSession) {
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-muted">
-        Loading dashboard...
+      <main className="grid min-h-screen place-items-center bg-slate-50">
+        <LoadingIndicator />
       </main>
     );
   }

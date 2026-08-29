@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUiStore } from "../lib/store";
 import { NavButton, NavLink } from "./shared";
 import { api } from "../lib/api";
-import { Button } from "@support-hub/ui";
+import { ConfirmationModal } from "./confirmation-modal";
 
 export function Sidebar() {
   const ui = useUiStore();
@@ -60,37 +60,16 @@ export function Sidebar() {
           </NavButton>
         </div>
       </aside>
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/40 px-4">
-          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
-            <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-red-50 text-red-600">
-                <LogOut size={18} />
-              </span>
-              <div>
-                <h2 className="text-base font-semibold text-slate-950">Confirm logout</h2>
-                <p className="mt-1 text-sm text-muted">Are you sure you want to logout from SupportHub?</p>
-              </div>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button
-                className="h-9 border-slate-200 bg-white px-4 text-sm text-slate-900"
-                disabled={isLoggingOut}
-                onClick={() => setShowLogoutModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="h-9 bg-red-600 px-4 text-sm text-white hover:bg-red-700"
-                disabled={isLoggingOut}
-                onClick={logout}
-              >
-                {isLoggingOut ? "Logging out..." : "Logout"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        open={showLogoutModal}
+        title="Confirm logout"
+        message="Are you sure you want to logout from SupportHub?"
+        confirmLabel={isLoggingOut ? "Logging out..." : "Logout"}
+        icon={<LogOut size={18} />}
+        isLoading={isLoggingOut}
+        onCancel={() => setShowLogoutModal(false)}
+        onConfirm={logout}
+      />
     </>
   );
 }

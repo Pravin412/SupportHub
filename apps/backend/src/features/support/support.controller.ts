@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
 import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
 import { TicketPriority } from "@prisma/client";
+import { SupportEvent } from "../../common/events/support-events";
 import { BotService } from "../bot/bot.service";
 import { CoreService } from "./support.service";
 
@@ -142,8 +143,8 @@ export class CoreController {
         data: { lastMessageAt: new Date() }
       });
 
-      this.core["realtime"]?.emitProject(conversation.projectId, "message.created", msg);
-      this.core["realtime"]?.emitConversation(id, "message.created", msg);
+      this.core["realtime"]?.emitProject(conversation.projectId, SupportEvent.MessageCreated, msg);
+      this.core["realtime"]?.emitConversation(id, SupportEvent.MessageCreated, msg);
 
       return msg;
     }

@@ -53,12 +53,13 @@ export function DocumentationView() {
 if (window.SupportHub) {
   window.SupportHub.setUser('user_12345', {
     name: 'Jane Doe',
+    email: 'jane@example.com',
     number: '+15551234567'
   });
 }`}
           />
           <p className="text-xs text-slate-500">
-            <code>profileId</code> (first argument) is required and should be your application's unique user ID. <code>name</code> and <code>number</code> are optional.
+            The first argument is required and should be your application's stable unique user ID. <code>name</code>, <code>email</code>, and <code>number</code> are optional.
           </p>
         </div>
       </div>

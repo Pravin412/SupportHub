@@ -166,9 +166,6 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                   >
                     <Save size={14} /> {updateWidget.isPending ? "Saving..." : "Save Settings"}
                   </Button>
-                  {updateWidget.isSuccess && (
-                    <span className="text-xs font-semibold text-emerald-600">Saved successfully!</span>
-                  )}
                 </div>
               </div>
 

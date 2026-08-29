@@ -1,24 +1,17 @@
 "use client";
 import { CheckCheck } from "lucide-react";
-import { widgetApi } from "../lib/api";
 
 export function WidgetMessagesList({
   messages,
   themeColor,
-  channelId,
-  activeUser,
   isSending,
-  setMessages,
-  subscribeToConversation,
+  onSendOption,
   messagesEndRef
 }: {
   messages: any[];
   themeColor: string;
-  channelId?: string;
-  activeUser: { profileId?: string; name?: string; email?: string; number?: string };
   isSending: boolean;
-  setMessages: React.Dispatch<React.SetStateAction<any[]>>;
-  subscribeToConversation: (id?: string) => void;
+  onSendOption: (text: string) => Promise<void>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
@@ -59,24 +52,7 @@ export function WidgetMessagesList({
                         onClick={async () => {
                           const optionText = opt.value || opt.title;
                           if (!optionText || isSending) return;
-
-                          const tempId = `temp-${Date.now()}`;
-                          setMessages((prev) => [...prev, { id: tempId, content: optionText, senderType: "CUSTOMER" }]);
-
-                          try {
-                            const sentMsg = await widgetApi.sendMessage(
-                              channelId!,
-                              activeUser.profileId!,
-                              optionText,
-                              activeUser.name,
-                              activeUser.email,
-                              activeUser.number
-                            );
-                            setMessages((prev) => prev.map((m) => (m.id === tempId ? sentMsg : m)));
-                            subscribeToConversation(sentMsg.conversationId);
-                          } catch (err) {
-                            console.error("Failed to send option", err);
-                          }
+                          await onSendOption(optionText);
                         }}
                         style={{ borderColor: themeColor, color: themeColor }}
                         className="rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-2xs transition-all hover:bg-slate-50 active:scale-95 cursor-pointer"

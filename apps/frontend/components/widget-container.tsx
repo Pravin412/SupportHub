@@ -2,14 +2,19 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Bot, Send, X } from "lucide-react";
+import { Bot, ChevronRight, Send, X } from "lucide-react";
 import { Button, Input } from "@support-hub/ui";
 import { widgetApi } from "../lib/api";
+import { ClientEvent } from "../lib/events";
 import { io, Socket } from "socket.io-client";
 import { WidgetMessagesList } from "./widget-messages-list";
 import { WidgetVisitorForm, WidgetLoadingSkeleton } from "./widget-form-and-loading";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+function guestProfileStorageKey(channelId: string) {
+  return `supporthub:guest-profile:${channelId}`;
+}
 
 export function WidgetContainer() {
   const searchParams = useSearchParams();
@@ -25,7 +30,11 @@ export function WidgetContainer() {
     profileId: initProfileId, name: initName, email: initEmail, number: initNumber 
   });
   const [visitorForm, setVisitorForm] = useState({ name: initName ?? "", email: initEmail ?? "", number: initNumber ?? "" });
-  const [visitorFormSubmitted, setVisitorFormSubmitted] = useState(Boolean(initProfileId || initName || initEmail || initNumber));
+  const [visitorFormSubmitted, setVisitorFormSubmitted] = useState(Boolean(initName || initEmail || initNumber));
+  const [visitorFormRequested, setVisitorFormRequested] = useState(false);
+  const [conversationStarted, setConversationStarted] = useState(false);
+  const [hasExistingConversation, setHasExistingConversation] = useState(false);
+  const [hasHostUser, setHasHostUser] = useState(Boolean(initProfileId && (initName || initEmail || initNumber)));
   const [config, setConfig] = useState<any>(null);
   const [isSending, setIsSending] = useState(false);
   const isSendingRef = useRef(false);
@@ -44,9 +53,15 @@ export function WidgetContainer() {
 
   useEffect(() => {
     if (!channelId || activeUser.profileId) return;
+    const storageKey = guestProfileStorageKey(channelId);
+    const storedProfileId = window.localStorage.getItem(storageKey);
+    const profileId = storedProfileId || `guest-${crypto.randomUUID()}`;
+    if (!storedProfileId) {
+      window.localStorage.setItem(storageKey, profileId);
+    }
     setActiveUser((current) => ({
       ...current,
-      profileId: current.profileId ?? `guest-${crypto.randomUUID()}`
+      profileId: current.profileId ?? profileId
     }));
   }, [activeUser.profileId, channelId]);
 
@@ -75,12 +90,18 @@ export function WidgetContainer() {
           if (history && history.length > 0) {
             const orderedHistory = history.reverse();
             setMessages(orderedHistory);
+            setHasExistingConversation(true);
+            setConversationStarted(true);
             subscribeToConversation(orderedHistory.find((msg) => msg.conversationId)?.conversationId);
           } else {
             setMessages([{ id: "welcome", content: configData.welcomeMessage, senderType: "BOT" }]);
+            setHasExistingConversation(false);
+            setConversationStarted(hasHostUser);
           }
         } else {
           setMessages([{ id: "welcome", content: configData.welcomeMessage, senderType: "BOT" }]);
+          setHasExistingConversation(false);
+          setConversationStarted(hasHostUser);
         }
       } catch (err) {
         console.error("Failed to load widget data", err);
@@ -89,13 +110,13 @@ export function WidgetContainer() {
 
     loadData();
     return () => { isMounted = false; };
-  }, [channelId, activeUser.profileId]);
+  }, [channelId, activeUser.profileId, hasHostUser]);
 
   useEffect(() => {
     const socket = io(API_URL, { transports: ["websocket", "polling"], reconnection: true });
     socketRef.current = socket;
 
-    socket.on("message.created", (newMsg) => {
+    socket.on(ClientEvent.MessageCreated, (newMsg) => {
       setMessages((prev) => {
         const currentConvId = prev.find((m) => m.conversationId)?.conversationId;
         if (currentConvId && newMsg.conversationId && newMsg.conversationId !== currentConvId) return prev;
@@ -125,32 +146,36 @@ export function WidgetContainer() {
       const { profileId, name, email, number } = event.data;
       setActiveUser({ profileId, name, email, number });
       setVisitorForm({ name: name || "", email: email || "", number: number || "" });
-      setVisitorFormSubmitted(true);
+      setVisitorFormSubmitted(Boolean(name || email || number));
+      setVisitorFormRequested(false);
+      setHasHostUser(true);
+      setConversationStarted(true);
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || !channelId || !activeUser.profileId || isSendingRef.current) return;
-    
-    const text = message.trim();
+  const sendWidgetMessage = async (
+    text: string,
+    user = activeUser
+  ) => {
+    if (!text.trim() || !channelId || !user.profileId || isSendingRef.current) return;
+
+    const content = text.trim();
     isSendingRef.current = true;
     setIsSending(true);
-    setMessage("");
 
     const tempId = `temp-${Date.now()}`;
-    setMessages(prev => [...prev, { id: tempId, content: text, senderType: "CUSTOMER" }]);
+    setMessages(prev => [...prev, { id: tempId, content, senderType: "CUSTOMER" }]);
 
     try {
       const sentMsg = await widgetApi.sendMessage(
         channelId, 
-        activeUser.profileId, 
-        text, 
-        activeUser.name, 
-        activeUser.email, 
-        activeUser.number
+        user.profileId, 
+        content, 
+        user.name, 
+        user.email, 
+        user.number
       );
       setMessages(prev => prev.some(m => m.id === sentMsg.id) ? prev.filter(m => m.id !== tempId) : prev.map(m => m.id === tempId ? sentMsg : m));
       subscribeToConversation(sentMsg.conversationId);
@@ -163,19 +188,53 @@ export function WidgetContainer() {
     }
   };
 
+  const shouldCollectVisitorInfo = Boolean(
+    config?.collectVisitorInfo && activeUser.profileId && !visitorFormSubmitted && !hasExistingConversation
+    && !hasHostUser
+  );
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = message.trim();
+    if (!text || !channelId || !activeUser.profileId || isSendingRef.current) return;
+    if (!conversationStarted) return;
+
+    setMessage("");
+    await sendWidgetMessage(text);
+  };
+
   const themeColor = config?.colorTheme || "#0f4c42";
   const botLogo = config?.logoUrl || config?.botAvatar || null;
-  const shouldShowVisitorForm = Boolean(config?.collectVisitorInfo && activeUser.profileId && !visitorFormSubmitted);
+  const shouldShowVisitorForm = Boolean(shouldCollectVisitorInfo && visitorFormRequested);
+  const shouldShowNewConversationScreen = Boolean(config && !conversationStarted && !hasExistingConversation);
 
-  const saveVisitorForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    setActiveUser((current) => ({
-      ...current,
-      name: config?.visitorNameEnabled ? visitorForm.name.trim() || undefined : undefined,
-      email: config?.visitorEmailEnabled ? visitorForm.email.trim() || undefined : undefined,
-      number: config?.visitorPhoneEnabled ? visitorForm.number.trim() || undefined : undefined
-    }));
+  const saveVisitorForm = (values: { name: string; email: string; number: string }) => {
+    const nextUser = {
+      ...activeUser,
+      name: config?.visitorNameEnabled ? values.name.trim() : undefined,
+      email: config?.visitorEmailEnabled ? values.email.trim() : undefined,
+      number: config?.visitorPhoneEnabled ? values.number.trim() : undefined
+    };
+    setVisitorForm(values);
+    setActiveUser(nextUser);
     setVisitorFormSubmitted(true);
+    setVisitorFormRequested(false);
+    setConversationStarted(true);
+  };
+
+  const handleOptionSend = async (text: string) => {
+    if (!text || !channelId || !activeUser.profileId || isSendingRef.current) return;
+    if (!conversationStarted) return;
+    await sendWidgetMessage(text);
+  };
+
+  const startConversation = () => {
+    if (shouldCollectVisitorInfo) {
+      setVisitorFormRequested(true);
+      return;
+    }
+    setVisitorFormSubmitted(true);
+    setConversationStarted(true);
   };
 
   return (
@@ -201,45 +260,110 @@ export function WidgetContainer() {
 
         {/* Chat / Message List */}
         <div className="flex-1 flex flex-col min-h-0">
-          {shouldShowVisitorForm && (
-            <div className="p-4 bg-slate-50 border-b border-slate-200">
-              <WidgetVisitorForm config={config} visitorForm={visitorForm} setVisitorForm={setVisitorForm} onSubmit={saveVisitorForm} themeColor={themeColor} />
-            </div>
+          {shouldShowNewConversationScreen ? (
+            <NewConversationScreen
+              botName={config?.botName || "Support Bot"}
+              botLogo={botLogo}
+              themeColor={themeColor}
+              showForm={shouldShowVisitorForm}
+              config={config}
+              visitorForm={visitorForm}
+              onFormSubmit={saveVisitorForm}
+              onStart={startConversation}
+            />
+          ) : (
+            <>
+              <WidgetMessagesList
+                messages={messages}
+                themeColor={themeColor}
+                isSending={isSending}
+                onSendOption={handleOptionSend}
+                messagesEndRef={messagesEndRef}
+              />
+            </>
           )}
-          <WidgetMessagesList
-            messages={messages}
-            themeColor={themeColor}
-            channelId={channelId}
-            activeUser={activeUser}
-            isSending={isSending}
-            setMessages={setMessages}
-            subscribeToConversation={subscribeToConversation}
-            messagesEndRef={messagesEndRef}
-          />
         </div>
 
         {/* Input Area */}
-        <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-200 flex gap-2">
-          <Input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Write a message..."
-            disabled={isSending || shouldShowVisitorForm || !config}
-            className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition-all disabled:opacity-75"
-          />
-          <Button
-            type="submit"
-            disabled={!message.trim() || !channelId || !activeUser.profileId || isSending || shouldShowVisitorForm || !config}
-            style={{ backgroundColor: themeColor }}
-            className="h-10 w-10 rounded-lg border-0 px-0 text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Send size={16} />
-          </Button>
-        </form>
+        {!shouldShowNewConversationScreen && (
+          <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-200 flex gap-2">
+            <Input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Write a message..."
+              disabled={isSending || !conversationStarted || !config}
+              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition-all disabled:opacity-75"
+            />
+            <Button
+              type="submit"
+              disabled={!message.trim() || !channelId || !activeUser.profileId || isSending || !conversationStarted || !config}
+              style={{ backgroundColor: themeColor }}
+              className="h-10 w-10 rounded-lg border-0 px-0 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send size={16} />
+            </Button>
+          </form>
+        )}
       </div>
 
       {!config && <WidgetLoadingSkeleton themeColor={themeColor} />}
+    </div>
+  );
+}
+
+function NewConversationScreen({
+  botName,
+  botLogo,
+  themeColor,
+  showForm,
+  config,
+  visitorForm,
+  onFormSubmit,
+  onStart
+}: {
+  botName: string;
+  botLogo?: string | null;
+  themeColor: string;
+  showForm: boolean;
+  config: any;
+  visitorForm: { name: string; email: string; number: string };
+  onFormSubmit: (values: { name: string; email: string; number: string }) => void;
+  onStart: () => void;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col bg-slate-50">
+      <div className="flex-1 px-5 py-8">
+        {botLogo ? (
+          <img src={botLogo} alt={botName} className="h-14 w-14 rounded-full border border-slate-200 bg-white object-cover shadow-sm" />
+        ) : (
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm">
+            <Bot size={24} />
+          </span>
+        )}
+        <h1 className="mt-7 text-2xl font-bold leading-snug text-slate-950">
+          Hello! Welcome to {botName}. How can I assist you today?
+        </h1>
+      </div>
+      <div className="rounded-t-2xl border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
+        {showForm ? (
+          <WidgetVisitorForm config={config} visitorForm={visitorForm} onSubmit={onFormSubmit} themeColor={themeColor} />
+        ) : (
+          <div>
+            <div className="text-sm font-bold text-slate-950">We are away at the moment</div>
+            <div className="mt-2 text-sm text-slate-500">Typically replies in a few minutes</div>
+            <button
+              type="button"
+              onClick={onStart}
+              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold"
+              style={{ color: themeColor }}
+            >
+              Start conversation
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
+import { SupportEvent } from "../../common/events/support-events";
 import { QueueService } from "../../common/queue/queue.service";
 import { RealtimeGateway } from "../../common/realtime/realtime.gateway";
 
@@ -12,6 +13,7 @@ class CustomerMessageDto {
   @IsString() @IsOptional() externalMessageId?: string;
   @IsString() @IsOptional() name?: string;
   @IsEmail() @IsOptional() email?: string;
+  @IsString() @IsOptional() number?: string;
 }
 
 @ApiTags("integrations")
@@ -39,8 +41,14 @@ export class IntegrationController {
       throw new UnauthorizedException();
     const contact = await this.db.contact.upsert({
       where: { projectId_externalUserId: { projectId: project.id, externalUserId: dto.externalUserId } },
-      create: { projectId: project.id, externalUserId: dto.externalUserId, name: dto.name, email: dto.email },
-      update: { name: dto.name, email: dto.email }
+      create: {
+        projectId: project.id,
+        externalUserId: dto.externalUserId,
+        name: dto.name,
+        email: dto.email,
+        phone: dto.number
+      },
+      update: { name: dto.name, email: dto.email, phone: dto.number }
     });
     const conversation = await this.db.conversation
       .upsert({
@@ -64,7 +72,7 @@ export class IntegrationController {
         unreadCount: { increment: 1 }
       }
     });
-    await this.queues.queueWebhook("message.created", project.id, msg);
+    await this.queues.queueWebhook(SupportEvent.MessageCreated, project.id, msg);
     return { conversationId: conversation.id, messageId: msg.id };
   }
 
@@ -109,8 +117,8 @@ export class IntegrationController {
     });
 
     // Realtime notification to inbox & widget
-    this.realtime.emitProject(conversation.projectId, "message.created", msg);
-    this.realtime.emitConversation(conversationId, "message.created", msg);
+    this.realtime.emitProject(conversation.projectId, SupportEvent.MessageCreated, msg);
+    this.realtime.emitConversation(conversationId, SupportEvent.MessageCreated, msg);
 
     return {
       id: msg.id,

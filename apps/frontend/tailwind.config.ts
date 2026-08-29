@@ -43,6 +43,9 @@ const config: Config = {
       },
       width: {
         widget: "300px",
+      },
+      transitionDuration: {
+        loader: "1.25s",
       }
     }
   },
