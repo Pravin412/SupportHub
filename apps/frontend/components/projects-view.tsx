@@ -195,7 +195,7 @@ export function ProjectsView() {
             </div>
 
             <div className="flex items-center gap-2 border-t border-slate-100 pt-4 mt-auto">
-              <Button asChild className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none" variant="outline">
+              <Button asChild className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none">
                 <Link href={`/projects/${p.id}/settings`}>
                   <Settings size={16} className="mr-2" />
                   Settings
