@@ -258,10 +258,10 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
           </Button>
         </form>
         <div className="space-y-2 border-t bg-slate-50 p-4">
-          {agents.data?.map((a) => (
-            <div key={a.id} className="flex items-center justify-between rounded-md border bg-white px-3 py-2 text-sm">
-              <span>{a.user.name}</span>
-              <span className="text-muted">{a.user.email}</span>
+          {agents.data?.map((agent) => (
+            <div key={agent.id} className="flex items-center justify-between rounded-md border bg-white px-3 py-2 text-sm">
+              <span>{agent.user.name}</span>
+              <span className="text-muted">{agent.user.email}</span>
             </div>
           ))}
         </div>

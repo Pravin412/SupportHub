@@ -34,33 +34,33 @@ function ToastContainer() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4">
       <AnimatePresence>
-        {toasts.map((t) => (
+        {toasts.map((toast) => (
           <motion.div
-            key={t.id}
+            key={toast.id}
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className={`pointer-events-auto flex min-w-[280px] max-w-md items-center justify-between gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-xs ${
-              t.type === "error"
+              toast.type === "error"
                 ? "border-red-200 bg-red-50/95 text-red-800"
-                : t.type === "info"
+                : toast.type === "info"
                 ? "border-blue-200 bg-blue-50/95 text-blue-800"
                 : "border-emerald-200 bg-emerald-50/95 text-emerald-900"
             }`}
           >
             <div className="flex items-center gap-2.5">
-              {t.type === "error" ? (
+              {toast.type === "error" ? (
                 <AlertCircle size={18} className="text-red-600 shrink-0" />
-              ) : t.type === "info" ? (
+              ) : toast.type === "info" ? (
                 <Info size={18} className="text-blue-600 shrink-0" />
               ) : (
                 <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
               )}
-              <span className="text-sm font-semibold">{t.message}</span>
+              <span className="text-sm font-semibold">{toast.message}</span>
             </div>
             <button
-              onClick={() => removeToast(t.id)}
+              onClick={() => removeToast(toast.id)}
               className="rounded p-1 text-slate-400 hover:text-slate-600"
             >
               <X size={14} />

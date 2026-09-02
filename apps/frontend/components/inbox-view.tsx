@@ -11,20 +11,32 @@ import { InboxChatView, InboxEmptyState } from "./inbox-chat-view";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
 export function InboxView() {
   const [draft, setDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const ui = useUiStore();
   const queryClient = useQueryClient();
   const projects = useProjects(true);
 
   const selectedProjectId = ui.selectedProjectId;
-  const selectedProject = projects.data?.find((p) => p.id === selectedProjectId);
+  const selectedProject = projects.data?.find((project) => project.id === selectedProjectId);
 
-  const conversations = useConversations(selectedProjectId, searchQuery);
+  const conversations = useConversations(selectedProjectId, debouncedSearch);
 
   const activeConversation =
-    conversations.data?.find((c) => c.id === ui.selectedConversationId) ??
+    conversations.data?.find((conversation) => conversation.id === ui.selectedConversationId) ??
     (ui.selectedConversationId ? undefined : conversations.data?.[0]);
   const activeId = activeConversation?.id;
 

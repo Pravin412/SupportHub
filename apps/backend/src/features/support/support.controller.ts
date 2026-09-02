@@ -72,6 +72,11 @@ export class CoreController {
     return this.core.projects(this.userId(req));
   }
 
+  @Get("search")
+  search(@Req() req: FastifyRequest, @Query("query") query?: string) {
+    return this.core.globalSearch(this.userId(req), query ?? "");
+  }
+
   @Get("dashboard/summary")
   dashboardSummary(@Req() req: FastifyRequest, @Query("range") range?: "today" | "week" | "month" | "all") {
     return this.core.dashboardSummary(this.userId(req), range);
@@ -85,6 +90,11 @@ export class CoreController {
   @Delete("projects/:id")
   deleteProject(@Req() req: FastifyRequest, @Param("id") id: string) {
     return this.core.deleteProject(this.userId(req), id);
+  }
+
+  @Delete("projects/:id/contacts/:contactId")
+  deleteContact(@Req() req: FastifyRequest, @Param("id") id: string, @Param("contactId") contactId: string) {
+    return this.core.deleteContact(this.userId(req), id, contactId);
   }
 
   @Get("projects/:id/channels")

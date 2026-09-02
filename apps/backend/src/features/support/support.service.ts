@@ -200,6 +200,14 @@ export class CoreService {
     return { ok: true, deletedId: projectId };
   }
 
+  async deleteContact(userId: string, projectId: string, contactId: string) {
+    await this.assertMember(userId, projectId);
+    await this.db.contact.delete({
+      where: { id: contactId, projectId }
+    });
+    return { ok: true, deletedId: contactId };
+  }
+
   async channels(userId: string, projectId: string) {
     await this.assertMember(userId, projectId);
     const project = await this.db.project.findUnique({
@@ -357,6 +365,7 @@ export class CoreService {
       select: {
         id: true,
         projectId: true,
+        contactId: true,
         status: true,
         automationMode: true,
         unreadCount: true,
@@ -368,6 +377,7 @@ export class CoreService {
       conversations.map((conversation) => ({
         id: conversation.id,
         projectId: conversation.projectId,
+        contactId: conversation.contactId,
         contactName: conversation.contact?.name ?? "Customer",
         contactPhone: conversation.contact?.phone ?? null,
         contactEmail: conversation.contact?.email ?? null,
@@ -749,7 +759,7 @@ export class CoreService {
 
     if (!conversation) {
       conversation = await this.db.conversation.create({
-        data: { projectId: channel.projectId, contactId: contact.id }
+        data: { projectId: channel.projectId, contactId: contact.id, status: "PENDING" }
       });
     } else if (conversation.status === "RESOLVED") {
       conversation = await this.db.conversation.update({
@@ -848,6 +858,83 @@ export class CoreService {
     }
 
     return msg;
+  }
+
+  async globalSearch(userId: string, query: string) {
+    if (!query || query.trim().length === 0) {
+      return { projects: [], tickets: [], contacts: [], conversations: [] };
+    }
+    const searchQuery = query.trim();
+
+    const userProjects = await this.projects(userId);
+    const projectIds = userProjects.map((project) => project.id);
+
+    if (projectIds.length === 0) {
+      return { projects: [], tickets: [], contacts: [], conversations: [] };
+    }
+
+    const [projects, tickets, contacts, conversations] = await Promise.all([
+      this.db.project.findMany({
+        where: {
+          id: { in: projectIds },
+          OR: [
+            { name: { contains: searchQuery, mode: "insensitive" } },
+            { key: { contains: searchQuery, mode: "insensitive" } }
+          ]
+        },
+        take: 5,
+        select: { id: true, name: true, key: true }
+      }),
+
+      this.db.ticket.findMany({
+        where: {
+          projectId: { in: projectIds },
+          OR: [
+            { title: { contains: searchQuery, mode: "insensitive" } },
+            { id: { contains: searchQuery, mode: "insensitive" } }
+          ]
+        },
+        take: 5,
+        select: { id: true, title: true, status: true, projectId: true }
+      }),
+
+      this.db.contact.findMany({
+        where: {
+          projectId: { in: projectIds },
+          OR: [
+            { name: { contains: searchQuery, mode: "insensitive" } },
+            { email: { contains: searchQuery, mode: "insensitive" } },
+            { phone: { contains: searchQuery, mode: "insensitive" } }
+          ]
+        },
+        take: 5,
+        select: { id: true, name: true, email: true, phone: true, projectId: true }
+      }),
+
+      this.db.conversation.findMany({
+        where: {
+          projectId: { in: projectIds },
+          messages: {
+            some: {
+              content: { contains: searchQuery, mode: "insensitive" }
+            }
+          }
+        },
+        take: 5,
+        select: {
+          id: true,
+          projectId: true,
+          contact: { select: { name: true } },
+          messages: {
+            where: { content: { contains: searchQuery, mode: "insensitive" } },
+            take: 1,
+            select: { content: true }
+          }
+        }
+      })
+    ]);
+
+    return { projects, tickets, contacts, conversations };
   }
 
   private widgetVisitorSettings(channel: WidgetVisitorSettings): WidgetVisitorSettings {

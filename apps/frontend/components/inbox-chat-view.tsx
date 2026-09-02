@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, CheckCheck, CirclePlus, Loader2, MessageSquare, Send, Smile, User, ChevronDown } from "lucide-react";
+import { ArrowLeft, CheckCheck, CirclePlus, Loader2, MessageSquare, Send, Smile, User, ChevronDown, Trash2 } from "lucide-react";
 import { Button, Input } from "@support-hub/ui";
 import { useUiStore } from "../lib/store";
 import { api } from "../lib/api";
-import { useUpdateConversationStatus } from "../lib/queries";
+import { useUpdateConversationStatus, useDeleteContact } from "../lib/queries";
 import { parseMessageOptions } from "../lib/messages";
+import { ConfirmationModal } from "./confirmation-modal";
 
 export function InboxChatView({
   activeConversation,
@@ -28,6 +29,8 @@ export function InboxChatView({
   const ui = useUiStore();
   const activeId = activeConversation?.id;
   const updateStatus = useUpdateConversationStatus();
+  const deleteContact = useDeleteContact();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isResolved = activeConversation?.status === "RESOLVED";
   const isAssignedToAgent = activeConversation?.automationMode === "HUMAN" || activeConversation?.status === "OPEN";
   const chatStateLabel = isResolved ? "Resolved" : isAssignedToAgent ? "Assigned to agent" : "Bot active";
@@ -115,7 +118,7 @@ export function InboxChatView({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 ml-2">
-          {!isResolved && (
+          {activeConversation?.status === "OPEN" && (
             <Button
               className="h-7 gap-1.5 rounded border border-teal-600 bg-teal-50 px-3 text-xs font-semibold text-teal-700 shadow-sm hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => activeId && updateStatus.mutate({ id: activeId, status: "RESOLVED" })}
@@ -125,6 +128,14 @@ export function InboxChatView({
               {updateStatus.isPending ? "Resolving..." : "Resolve"}
             </Button>
           )}
+          <Button
+            className="h-7 w-7 p-0 text-muted hover:text-red-600 hover:bg-red-50 bg-transparent border-none shadow-none"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleteContact.isPending}
+            title="Delete contact"
+          >
+            {deleteContact.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          </Button>
         </div>
       </div>
 
@@ -248,6 +259,27 @@ export function InboxChatView({
           </Button>
         </div>
       </form>
+      <ConfirmationModal
+        open={showDeleteConfirm}
+        title="Delete contact"
+        message="Are you sure you want to permanently delete this contact and all their conversations? This cannot be undone."
+        confirmLabel={deleteContact.isPending ? "Deleting..." : "Delete Contact"}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          if (activeConversation?.contactId && activeConversation?.projectId) {
+            deleteContact.mutate({ projectId: activeConversation.projectId, contactId: activeConversation.contactId }, {
+              onSuccess: () => {
+                ui.showToast("Contact deleted.", "success");
+                ui.setConversation(undefined);
+                setShowDeleteConfirm(false);
+              },
+              onError: (err: any) => {
+                ui.showToast(err.message || "Failed to delete contact.", "error");
+              }
+            });
+          }
+        }}
+      />
     </div>
   );
 }

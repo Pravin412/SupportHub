@@ -8,7 +8,7 @@ import { useProjects } from "../../../../../lib/queries";
 export default function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
   const projects = useProjects(true);
-  const selectedProject = projects.data?.find((p) => p.id === projectId);
+  const selectedProject = projects.data?.find((project) => project.id === projectId);
 
   if (projects.isLoading) {
     return (

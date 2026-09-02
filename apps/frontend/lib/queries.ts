@@ -13,7 +13,8 @@ export const keys = {
   integrationCredentials: (projectId?: string) => ["integration-credentials", projectId] as const,
   webhook: (projectId?: string) => ["webhook", projectId] as const,
   notificationSettings: (projectId?: string) => ["notification-settings", projectId] as const,
-  botConfig: (projectId?: string) => ["bot-config", projectId] as const
+  botConfig: (projectId?: string) => ["bot-config", projectId] as const,
+  globalSearch: (query: string) => ["global-search", query] as const
 };
 
 export function useProjects(enabled = true) {
@@ -133,6 +134,16 @@ export function useDeleteProject() {
   });
 }
 
+export function useDeleteContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, contactId }: { projectId: string; contactId: string }) => api.deleteContact(projectId, contactId),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: keys.conversations(variables.projectId) });
+    }
+  });
+}
+
 export function useCreateAgent(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -154,5 +165,13 @@ export function useUpdateWidget(projectId?: string) {
       visitorPhoneEnabled?: boolean;
     }) => api.updateWidget(projectId!, v),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.channels(projectId) })
+  });
+}
+
+export function useGlobalSearch(query: string) {
+  return useQuery({
+    queryKey: keys.globalSearch(query),
+    queryFn: () => api.search(query),
+    enabled: query.trim().length > 1
   });
 }

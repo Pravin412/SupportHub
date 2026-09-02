@@ -12,7 +12,7 @@ type UiState = {
   sidebarOpen: boolean;
   toasts: Toast[];
   setProject: (id: string) => void;
-  setConversation: (id: string) => void;
+  setConversation: (id?: string) => void;
   setSidebar: (open: boolean) => void;
   showToast: (message: string, type?: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
@@ -31,13 +31,13 @@ export const useUiStore = create<UiState>((set) => ({
     }));
     setTimeout(() => {
       set((state) => ({
-        toasts: state.toasts.filter((t) => t.id !== id)
+        toasts: state.toasts.filter((toast) => toast.id !== id)
       }));
     }, 3500);
   },
   removeToast: (id) =>
     set((state) => ({
-      toasts: state.toasts.filter((t) => t.id !== id)
+      toasts: state.toasts.filter((toast) => toast.id !== id)
     }))
 }));
 

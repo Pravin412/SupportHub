@@ -166,7 +166,7 @@ model Conversation {
   id              String             @id @default(cuid())
   projectId       String
   contactId       String
-  status          ConversationStatus @default(OPEN)
+  status          ConversationStatus @default(PENDING)
   automationMode  AutomationMode     @default(AUTOMATED)
   assignedAgentId String?
   unreadCount     Int                @default(0)

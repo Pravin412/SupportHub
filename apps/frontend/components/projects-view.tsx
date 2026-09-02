@@ -166,23 +166,24 @@ export function ProjectsView() {
         </Card>
 
         {/* Existing Projects List */}
-        {projects.data?.map((p) => (
-          <Card key={p.id} className="flex flex-col p-5 border-slate-200 shadow-sm transition-all hover:border-slate-300">
+        {projects.data?.map((project) => (
+          <Card
+            key={project.id}
+            className="flex flex-col p-5 border-slate-200 shadow-sm transition-all hover:border-slate-300"
+          >
             <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-600">
                   <Globe2 size={20} />
                 </span>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">{p.name}</h3>
-                  <p className="text-xs font-mono text-slate-500">{p.key}</p>
+                  <h3 className="text-base font-bold text-slate-900">{project.name}</h3>
+                  <p className="text-xs font-mono text-slate-500">{project.key}</p>
                 </div>
               </div>
-              <Badge className="bg-teal-50 text-brand border-0">
-                Active
-              </Badge>
+              <Badge className="bg-teal-50 text-brand border-0">Active</Badge>
             </div>
-            
+
             <div className="mb-4 flex items-center gap-4 text-sm text-slate-500 flex-1">
               <div className="flex items-center gap-1.5">
                 <Ticket size={16} />
@@ -195,8 +196,11 @@ export function ProjectsView() {
             </div>
 
             <div className="flex items-center gap-2 border-t border-slate-100 pt-4 mt-auto">
-              <Button asChild className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none">
-                <Link href={`/projects/${p.id}/settings`}>
+              <Button
+                asChild
+                className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none"
+              >
+                <Link href={`/projects/${project.id}/settings`}>
                   <Settings size={16} className="mr-2" />
                   Settings
                 </Link>
@@ -204,8 +208,8 @@ export function ProjectsView() {
               <Button
                 type="button"
                 title="Delete project"
-                disabled={deletingId === p.id}
-                onClick={() => setProjectToDelete({ id: p.id, name: p.name })}
+                disabled={deletingId === project.id}
+                onClick={() => setProjectToDelete({ id: project.id, name: project.name })}
                 className="shrink-0 border-slate-200 bg-white text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border shadow-none px-3"
               >
                 <Trash2 size={16} />
@@ -213,7 +217,9 @@ export function ProjectsView() {
             </div>
           </Card>
         ))}
-        {!projects.data?.length && <div className="py-8 text-center text-sm text-slate-500 col-span-full">No projects found</div>}
+        {!projects.data?.length && (
+          <div className="py-8 text-center text-sm text-slate-500 col-span-full">No projects found</div>
+        )}
       </div>
 
       <ConfirmationModal

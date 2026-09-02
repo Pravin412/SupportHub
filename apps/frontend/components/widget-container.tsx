@@ -121,12 +121,12 @@ export function WidgetContainer() {
 
     socket.on(ClientEvent.MessageCreated, (newMsg) => {
       setMessages((prev) => {
-        const currentConvId = prev.find((m) => m.conversationId)?.conversationId;
+        const currentConvId = prev.find((msg) => msg.conversationId)?.conversationId;
         if (currentConvId && newMsg.conversationId && newMsg.conversationId !== currentConvId) return prev;
-        if (prev.some((m) => m.id === newMsg.id)) return prev;
+        if (prev.some((msg) => msg.id === newMsg.id)) return prev;
 
         const pendingIdx = prev.findIndex(
-          (m) => m.id.startsWith("temp-") && m.content === newMsg.content && m.senderType === "CUSTOMER"
+          (msg) => msg.id.startsWith("temp-") && msg.content === newMsg.content && msg.senderType === "CUSTOMER"
         );
         if (pendingIdx !== -1) {
           const updated = [...prev];
@@ -180,11 +180,11 @@ export function WidgetContainer() {
         user.email, 
         user.number
       );
-      setMessages(prev => prev.some(m => m.id === sentMsg.id) ? prev.filter(m => m.id !== tempId) : prev.map(m => m.id === tempId ? sentMsg : m));
+      setMessages(prev => prev.some(msg => msg.id === sentMsg.id) ? prev.filter(msg => msg.id !== tempId) : prev.map(msg => msg.id === tempId ? sentMsg : msg));
       subscribeToConversation(sentMsg.conversationId);
     } catch (err) {
       console.error("Failed to send", err);
-      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
     } finally {
       isSendingRef.current = false;
       setIsSending(false);
