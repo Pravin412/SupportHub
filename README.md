@@ -292,12 +292,12 @@ SMTP email sending uses Nodemailer directly:
 
 ```ini
 EMAIL_PROVIDER="smtp"
-SMTP_FROM_ADDRESS="pravin@itoi.org"
-SMTP_HOST="smtp.gmail.com"
+SMTP_FROM_ADDRESS="no-reply@example.com"
+SMTP_HOST="smtp.example.com"
 SMTP_PORT="465"
-SMTP_LOGIN_USER="noreply@teledoctor.life"
+SMTP_LOGIN_USER="smtp-user@example.com"
 SMTP_LOGIN_PASSWORD="<gmail-app-password>"
-BCC_EMAIL="teledoctor.life@itoi.org"
+BCC_EMAIL="notifications@example.com"
 ```
 
 Use `EMAIL_PROVIDER="log"` to print email jobs in the backend logs without sending real email.
