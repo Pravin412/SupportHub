@@ -184,17 +184,6 @@ export function ProjectsView() {
               <Badge className="bg-teal-50 text-brand border-0">Active</Badge>
             </div>
 
-            <div className="mb-4 flex items-center gap-4 text-sm text-slate-500 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Ticket size={16} />
-                <span>Tickets</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Users size={16} />
-                <span>Members</span>
-              </div>
-            </div>
-
             <div className="flex items-center gap-2 border-t border-slate-100 pt-4 mt-auto">
               <Button
                 asChild
