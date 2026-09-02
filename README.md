@@ -251,9 +251,11 @@ App commands:
 ```bash
 pnpm --filter frontend dev
 pnpm --filter frontend build
+pnpm --filter frontend start
 pnpm --filter frontend typecheck
 pnpm --filter backend dev
 pnpm --filter backend build
+pnpm --filter backend start
 pnpm --filter backend typecheck
 pnpm --filter backend test
 ```
