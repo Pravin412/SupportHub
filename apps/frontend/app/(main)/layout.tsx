@@ -10,12 +10,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const initialPathname = useRef(pathname);
+  const checkedSessionRef = useRef(false);
   const [authed, setAuthed] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
+    if (checkedSessionRef.current) return;
+    checkedSessionRef.current = true;
+
     api
-      .refresh()
+      .me()
       .then(() => setAuthed(true))
       .catch(() => {
         setAuthed(false);

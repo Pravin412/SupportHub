@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
 import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
-import { TicketPriority } from "@prisma/client";
+import { TicketPriority, TicketStatus, ConversationStatus } from "@prisma/client";
 import { SupportEvent } from "../../common/events/support-events";
 import { BotService } from "../bot/bot.service";
 import { CoreService } from "./support.service";
@@ -11,6 +11,12 @@ import { CoreService } from "./support.service";
 class TicketDto {
   @IsString() @MinLength(3) title!: string;
   @IsEnum(TicketPriority) @IsOptional() priority: TicketPriority = "MEDIUM";
+}
+class ConversationStatusDto {
+  @IsEnum(ConversationStatus) status!: ConversationStatus;
+}
+class TicketStatusDto {
+  @IsEnum(TicketStatus) status!: TicketStatus;
 }
 class ProjectDto {
   @IsString() @MinLength(2) name!: string;
@@ -22,6 +28,13 @@ class AgentDto {
 }
 class WebhookDto {
   @IsString() url!: string;
+}
+class NotificationSettingsDto {
+  @IsString() notificationEmail!: string;
+  @IsBoolean() @IsOptional() ticketCreatedEnabled?: boolean;
+  @IsBoolean() @IsOptional() ticketAssignedEnabled?: boolean;
+  @IsBoolean() @IsOptional() conversationAssignedEnabled?: boolean;
+  @IsBoolean() @IsOptional() messageReceivedEnabled?: boolean;
 }
 class WidgetSettingsDto {
   @IsString() @IsOptional() welcomeMessage?: string;
@@ -60,8 +73,8 @@ export class CoreController {
   }
 
   @Get("dashboard/summary")
-  dashboardSummary(@Req() req: FastifyRequest) {
-    return this.core.dashboardSummary(this.userId(req));
+  dashboardSummary(@Req() req: FastifyRequest, @Query("range") range?: "today" | "week" | "month" | "all") {
+    return this.core.dashboardSummary(this.userId(req), range);
   }
 
   @Post("projects")
@@ -77,6 +90,16 @@ export class CoreController {
   @Get("projects/:id/channels")
   channels(@Req() req: FastifyRequest, @Param("id") id: string) {
     return this.core.channels(this.userId(req), id);
+  }
+
+  @Get("projects/:id/integration")
+  integrationCredentials(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.integrationCredentials(this.userId(req), id);
+  }
+
+  @Post("projects/:id/integration/rotate-secret")
+  rotateIntegrationSecret(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.rotateIntegrationSecret(this.userId(req), id);
   }
 
   @Put("projects/:id/widget")
@@ -102,6 +125,11 @@ export class CoreController {
     @Query("search") search?: string
   ) {
     return this.core.conversations(this.userId(req), id, cursor, search);
+  }
+
+  @Put("conversations/:id/status")
+  updateConversationStatus(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: ConversationStatusDto) {
+    return this.core.updateConversationStatus(this.userId(req), id, dto.status);
   }
 
   @Get("conversations/:id/messages")
@@ -162,6 +190,11 @@ export class CoreController {
     return this.core.tickets(this.userId(req), projectId);
   }
 
+  @Put("tickets/:id/status")
+  updateTicketStatus(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: TicketStatusDto) {
+    return this.core.updateTicketStatus(this.userId(req), id, dto.status);
+  }
+
   @Get("projects/:id/webhook")
   webhook(@Req() req: FastifyRequest, @Param("id") id: string) {
     return this.core.webhook(this.userId(req), id);
@@ -170,6 +203,16 @@ export class CoreController {
   @Put("projects/:id/webhook")
   updateWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: WebhookDto) {
     return this.core.updateWebhook(this.userId(req), id, dto);
+  }
+
+  @Get("projects/:id/notifications")
+  notificationSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.notificationSettings(this.userId(req), id);
+  }
+
+  @Put("projects/:id/notifications")
+  updateNotificationSettings(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: NotificationSettingsDto) {
+    return this.core.updateNotificationSettings(this.userId(req), id, dto);
   }
 
   @Get("projects/:id/bot")

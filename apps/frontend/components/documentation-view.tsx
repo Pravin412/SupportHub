@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import { BookOpen, Smartphone, Terminal, Users, Webhook, KeyRound } from "lucide-react";
+import { BookOpen, Settings, Smartphone, Terminal, Users, Webhook, KeyRound } from "lucide-react";
 import {
   CodeBlock,
   TabButton,
+  ProjectSetupDocs,
   NextjsDocs,
   FlutterDocs,
   WebhookDocs,
@@ -11,7 +12,7 @@ import {
 } from "./documentation-tabs";
 
 export function DocumentationView() {
-  const [activeTab, setActiveTab] = useState<"nextjs" | "flutter" | "webhook" | "api">("nextjs");
+  const [activeTab, setActiveTab] = useState<"setup" | "nextjs" | "flutter" | "webhook" | "api">("setup");
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
@@ -21,11 +22,12 @@ export function DocumentationView() {
         </span>
         <div>
           <h1 className="text-xl font-bold text-slate-900">SupportHub Integration Guides & Docs</h1>
-          <p className="text-sm text-slate-500">Comprehensive guides for Next.js, Mobile Flutter, Webhooks, and AI Bot REST API integration.</p>
+          <p className="text-sm text-slate-500">Project setup, widget configuration, webhooks, mobile embedding, and bot REST API integration.</p>
         </div>
       </div>
 
       <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+        <TabButton active={activeTab === "setup"} onClick={() => setActiveTab("setup")} icon={<Settings size={16} />}>Project Setup</TabButton>
         <TabButton active={activeTab === "nextjs"} onClick={() => setActiveTab("nextjs")} icon={<Terminal size={16} />}>Next.js / React</TabButton>
         <TabButton active={activeTab === "flutter"} onClick={() => setActiveTab("flutter")} icon={<Smartphone size={16} />}>Flutter / Mobile</TabButton>
         <TabButton active={activeTab === "webhook"} onClick={() => setActiveTab("webhook")} icon={<Webhook size={16} />}>Webhooks & Automation</TabButton>
@@ -33,6 +35,7 @@ export function DocumentationView() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        {activeTab === "setup" && <ProjectSetupDocs />}
         {activeTab === "nextjs" && <NextjsDocs />}
         {activeTab === "flutter" && <FlutterDocs />}
         {activeTab === "webhook" && <WebhookDocs />}

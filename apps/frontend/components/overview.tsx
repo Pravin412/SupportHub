@@ -1,15 +1,26 @@
-import { Folder, Inbox, MessageSquare, Radio, Ticket, Users } from "lucide-react";
+import { CalendarDays, Folder, Inbox, MessageSquare, Radio, Ticket, Users } from "lucide-react";
 import { Button } from "@support-hub/ui";
 import { MetricCard } from "./shared";
-import type { DashboardSummaryDto } from "../lib/types";
+import type { DashboardRange, DashboardSummaryDto } from "../lib/types";
+
+const dashboardRangeOptions: Array<{ value: DashboardRange; label: string }> = [
+  { value: "today", label: "Today" },
+  { value: "week", label: "This week" },
+  { value: "month", label: "This month" },
+  { value: "all", label: "All time" }
+];
 
 export function Overview({
   summary,
   isLoading,
+  range,
+  onRangeChange,
   onInbox
 }: {
   summary?: DashboardSummaryDto;
   isLoading?: boolean;
+  range: DashboardRange;
+  onRangeChange: (range: DashboardRange) => void;
   onInbox: () => void;
 }) {
   const data = summary ?? {
@@ -23,21 +34,44 @@ export function Overview({
     activeChannelsCount: 0
   };
   const loadingLabel = isLoading ? "Loading..." : "Live summary";
+  const selectedRangeLabel = dashboardRangeOptions.find((option) => option.value === range)?.label ?? "Selected range";
 
   return (
     <main className="mx-auto w-full max-w-6xl p-4 md:p-6 lg:p-8">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-primary md:text-3xl">Dashboard</h1>
-          <p className="mt-1 text-sm text-secondary">Summary from all available projects.</p>
+          <p className="mt-1 text-sm text-secondary">Activity summary from all available projects for {selectedRangeLabel.toLowerCase()}.</p>
         </div>
-        <Button
-          className="h-9 gap-2 rounded border-brand bg-brand px-4 text-xs font-semibold text-white shadow-sm hover:bg-brand/90"
-          onClick={onInbox}
-        >
-          <Inbox size={14} />
-          Open Inbox
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex h-9 items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm">
+            <span className="grid h-7 w-7 place-items-center text-slate-500">
+              <CalendarDays size={14} />
+            </span>
+            {dashboardRangeOptions.map((option) => {
+              const active = option.value === range;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`h-7 rounded px-2 text-xs font-semibold transition-colors ${
+                    active ? "bg-teal-50 text-teal-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                  }`}
+                  onClick={() => onRangeChange(option.value)}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <Button
+            className="h-9 gap-2 rounded border-brand bg-brand px-4 text-xs font-semibold text-white shadow-sm hover:bg-brand/90"
+            onClick={onInbox}
+          >
+            <Inbox size={14} />
+            Open Inbox
+          </Button>
+        </div>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:gap-6">
@@ -76,7 +110,7 @@ export function Overview({
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-base font-bold text-primary">Conversation Summary</h2>
-              <p className="mt-1 text-xs text-secondary">Current workload across every project you can access.</p>
+              <p className="mt-1 text-xs text-secondary">Conversation activity for {selectedRangeLabel.toLowerCase()}.</p>
             </div>
             <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
               <MessageSquare size={18} />

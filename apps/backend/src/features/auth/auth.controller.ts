@@ -25,6 +25,7 @@ export class AuthController {
 
   @Post("refresh")
   refresh(@Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+    console.log("Cookies received:", req.cookies);
     if (!req.cookies.refresh_token) throw new UnauthorizedException();
     return this.auth.refresh(req.cookies.refresh_token, reply);
   }

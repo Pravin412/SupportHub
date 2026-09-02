@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { CryptoService } from "../common/crypto/crypto.service";
 import { PrismaService } from "../common/database/prisma.service";
+import { EmailProcessor } from "../common/queue/email.processor";
 import { WebhookProcessor } from "../common/queue/webhook.processor";
 import { AuthModule } from "../features/auth/auth.module";
 import { IntegrationsModule } from "../features/integrations/integrations.module";
@@ -19,6 +20,6 @@ import { SupportModule } from "../features/support/support.module";
     SupportModule,
     IntegrationsModule
   ],
-  providers: [WebhookProcessor, PrismaService, CryptoService]
+  providers: [WebhookProcessor, EmailProcessor, PrismaService, CryptoService]
 })
 export class AppModule {}

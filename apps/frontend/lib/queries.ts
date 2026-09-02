@@ -1,15 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
+import type { DashboardRange } from "./types";
 
 export const keys = {
-  dashboardSummary: ["dashboard-summary"] as const,
+  dashboardSummary: (range: DashboardRange = "all") => ["dashboard-summary", range] as const,
   projects: ["projects"] as const,
   agents: (projectId?: string) => ["agents", projectId] as const,
   conversations: (projectId?: string, search = "") => ["conversations", projectId, search] as const,
   messages: (id?: string) => ["messages", id] as const,
   tickets: (projectId?: string) => ["tickets", projectId] as const,
   channels: (projectId?: string) => ["channels", projectId] as const,
+  integrationCredentials: (projectId?: string) => ["integration-credentials", projectId] as const,
   webhook: (projectId?: string) => ["webhook", projectId] as const,
+  notificationSettings: (projectId?: string) => ["notification-settings", projectId] as const,
   botConfig: (projectId?: string) => ["bot-config", projectId] as const
 };
 
@@ -17,8 +20,8 @@ export function useProjects(enabled = true) {
   return useQuery({ queryKey: keys.projects, queryFn: api.projects, enabled });
 }
 
-export function useDashboardSummary(enabled = true) {
-  return useQuery({ queryKey: keys.dashboardSummary, queryFn: api.dashboardSummary, enabled });
+export function useDashboardSummary(range: DashboardRange = "all", enabled = true) {
+  return useQuery({ queryKey: keys.dashboardSummary(range), queryFn: () => api.dashboardSummary(range), enabled });
 }
 
 export function useConversations(projectId?: string, search = "") {
@@ -57,10 +60,26 @@ export function useChannels(projectId?: string) {
   });
 }
 
+export function useIntegrationCredentials(projectId?: string) {
+  return useQuery({
+    queryKey: keys.integrationCredentials(projectId),
+    queryFn: () => api.integrationCredentials(projectId!),
+    enabled: Boolean(projectId)
+  });
+}
+
 export function useWebhook(projectId?: string) {
   return useQuery({
     queryKey: keys.webhook(projectId),
     queryFn: () => api.webhook(projectId!),
+    enabled: Boolean(projectId)
+  });
+}
+
+export function useNotificationSettings(projectId?: string) {
+  return useQuery({
+    queryKey: keys.notificationSettings(projectId),
+    queryFn: () => api.notificationSettings(projectId!),
     enabled: Boolean(projectId)
   });
 }
@@ -77,7 +96,24 @@ export function useSendMessage(id?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (content: string) => api.sendMessage(id!, content),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.messages(id) })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.messages(id) });
+      qc.invalidateQueries({ predicate: (query) => query.queryKey[0] === "conversations" });
+    }
+  });
+}
+
+export function useUpdateConversationStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: "OPEN" | "PENDING" | "SNOOZED" | "RESOLVED" }) =>
+      api.updateConversationStatus(id, status),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "conversations" });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "tickets" });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "dashboard-summary" });
+      queryClient.invalidateQueries({ queryKey: keys.messages(id) });
+    }
   });
 }
 

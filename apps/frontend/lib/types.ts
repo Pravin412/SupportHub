@@ -2,7 +2,7 @@ export type ProjectDto = {
   id: string;
   name: string;
   key: string;
-  widgetChannel?: { id: string; publicId: string; enabled: boolean } | null;
+  widgetChannel?: { id: string; channelId: string; enabled: boolean } | null;
 };
 
 export type ChannelDto = {
@@ -10,7 +10,7 @@ export type ChannelDto = {
   type: "WEBSITE_WIDGET";
   projectId: string;
   projectKey: string;
-  publicId: string;
+  channelId: string;
   name: string;
   enabled: boolean;
   websiteUrl?: string | null;
@@ -35,3 +35,5 @@ export type DashboardSummaryDto = {
   agentsCount: number;
   activeChannelsCount: number;
 };
+
+export type DashboardRange = "today" | "week" | "month" | "all";

@@ -1,12 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma, TicketStatus, ConversationStatus } from "@prisma/client";
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
 import { SupportEvent } from "../../common/events/support-events";
 import { QueueService } from "../../common/queue/queue.service";
 import { RealtimeGateway } from "../../common/realtime/realtime.gateway";
 
-function channelPublicId(key: string) {
+function makeChannelId(key: string) {
   const random = Math.random().toString(36).slice(2, 8);
   return `ch_${key.replace(/[^a-z0-9]/g, "").slice(0, 12)}_${random}`;
 }
@@ -28,7 +28,7 @@ const defaultWidgetVisitorSettings: WidgetVisitorSettings = {
 const widgetChannelPublicSelect = {
   id: true,
   projectId: true,
-  publicId: true,
+  channelId: true,
   name: true,
   enabled: true,
   websiteUrl: true,
@@ -44,6 +44,17 @@ const widgetChannelPublicSelect = {
   updatedAt: true
 } satisfies Prisma.WidgetChannelSelect;
 
+function parseEmailList(value?: string | null) {
+  return Array.from(
+    new Set(
+      (value ?? "")
+        .split(/[\s,;]+/)
+        .map((email) => email.trim())
+        .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    )
+  );
+}
+
 function randomVisitorName(profileId: string, projectName?: string) {
   const clean = profileId.replace(/^guest-/, "").replace(/[^a-z0-9]/gi, "");
   const projectPrefix = (projectName || "supporthub")
@@ -53,6 +64,25 @@ function randomVisitorName(profileId: string, projectName?: string) {
     .slice(0, 16);
   const code = clean.slice(0, 6).toUpperCase() || Math.random().toString(36).slice(2, 8).toUpperCase();
   return `${projectPrefix || "supporthub"}-${code}`;
+}
+
+type DashboardRange = "today" | "week" | "month" | "all";
+
+function dashboardDateFilter(range: DashboardRange = "all") {
+  if (range === "all") return undefined;
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  if (range === "week") {
+    start.setDate(start.getDate() - 6);
+  }
+
+  if (range === "month") {
+    start.setDate(1);
+  }
+
+  return { gte: start };
 }
 
 @Injectable()
@@ -73,13 +103,16 @@ export class CoreService {
   projects(userId: string) {
     return this.db.project.findMany({
       where: { members: { some: { userId } } },
-      select: { id: true, name: true, key: true, widgetChannel: { select: { id: true, publicId: true, enabled: true } } }
+      select: { id: true, name: true, key: true, widgetChannel: { select: { id: true, channelId: true, enabled: true } } }
     });
   }
 
-  async dashboardSummary(userId: string) {
+  async dashboardSummary(userId: string, range: DashboardRange = "all") {
     const projects = await this.projects(userId);
     const projectIds = projects.map((project) => project.id);
+    const createdAt = dashboardDateFilter(range);
+    const conversationWhere = { projectId: { in: projectIds }, ...(createdAt ? { createdAt } : {}) };
+    const ticketWhere = { projectId: { in: projectIds }, ...(createdAt ? { createdAt } : {}) };
 
     if (!projectIds.length) {
       return {
@@ -103,11 +136,11 @@ export class CoreService {
       agentsCount,
       activeChannelsCount
     ] = await Promise.all([
-      this.db.conversation.count({ where: { projectId: { in: projectIds } } }),
-      this.db.conversation.count({ where: { projectId: { in: projectIds }, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
-      this.db.conversation.count({ where: { projectId: { in: projectIds }, unreadCount: { gt: 0 } } }),
-      this.db.ticket.count({ where: { projectId: { in: projectIds } } }),
-      this.db.ticket.count({ where: { projectId: { in: projectIds }, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
+      this.db.conversation.count({ where: conversationWhere }),
+      this.db.conversation.count({ where: { ...conversationWhere, status: { not: "RESOLVED" } } }),
+      this.db.conversation.count({ where: { ...conversationWhere, unreadCount: { gt: 0 } } }),
+      this.db.ticket.count({ where: ticketWhere }),
+      this.db.ticket.count({ where: { ...ticketWhere, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
       this.db.projectMember.count({ where: { projectId: { in: projectIds } } }),
       this.db.widgetChannel.count({ where: { projectId: { in: projectIds }, enabled: true } })
     ]);
@@ -135,22 +168,22 @@ export class CoreService {
         name: data.name,
         key,
         integrationKey: key,
-        integrationSecretHash: await this.crypto.hashSecret(secret),
+        integrationSecret: secret,
         members: { create: { userId, role: "ADMIN" } },
         botConfiguration: { create: { botName: `${data.name} Bot` } },
         widgetChannel: {
           create: {
-            publicId: channelPublicId(key),
+            channelId: makeChannelId(key),
             name: `${data.name} Website`
           }
         }
-      },
+      } as Prisma.ProjectCreateInput,
       select: {
         id: true,
         name: true,
         key: true,
         integrationKey: true,
-        widgetChannel: { select: { id: true, publicId: true, name: true, enabled: true, welcomeMessage: true } }
+        widgetChannel: { select: { id: true, channelId: true, name: true, enabled: true, welcomeMessage: true } }
       }
     });
     return { ...project, integrationSecret: secret };
@@ -181,7 +214,7 @@ export class CoreService {
 
     const channelSelect = {
       id: true,
-      publicId: true,
+      channelId: true,
       name: true,
       enabled: true,
       websiteUrl: true,
@@ -202,12 +235,41 @@ export class CoreService {
         select: channelSelect
       })) ??
       (await this.db.widgetChannel.create({
-        data: { projectId, publicId: channelPublicId(project.key), name: `${project.name} Website` },
+        data: { projectId, channelId: makeChannelId(project.key), name: `${project.name} Website` },
         select: channelSelect
       }));
 
     const visitorSettings = this.widgetVisitorSettings(widgetChannel);
     return [{ type: "WEBSITE_WIDGET", projectId: project.id, projectKey: project.key, ...widgetChannel, ...visitorSettings }];
+  }
+
+  async integrationCredentials(userId: string, projectId: string) {
+    await this.assertMember(userId, projectId);
+    const project = await this.db.project.findUnique({
+      where: { id: projectId },
+      select: { integrationKey: true, integrationSecret: true, integrationRevokedAt: true } as Prisma.ProjectSelect
+    });
+    if (!project) throw new NotFoundException("Project not found");
+    return project;
+  }
+
+  async rotateIntegrationSecret(userId: string, projectId: string) {
+    const member = await this.assertMember(userId, projectId);
+    if (member.role !== "ADMIN") {
+      throw new ForbiddenException("Only project admins can rotate the integration secret.");
+    }
+
+    const secret = this.crypto.randomToken();
+    const project = await this.db.project.update({
+      where: { id: projectId },
+      data: {
+        integrationSecret: secret,
+        integrationRevokedAt: null
+      } as Prisma.ProjectUpdateInput,
+      select: { integrationKey: true, integrationSecret: true, integrationRevokedAt: true } as Prisma.ProjectSelect
+    });
+
+    return project;
   }
 
   async updateWidget(
@@ -247,7 +309,7 @@ export class CoreService {
       : await this.db.widgetChannel.create({
           data: {
             projectId,
-            publicId: channelPublicId(project.key),
+            channelId: makeChannelId(project.key),
             name: `${project.name} Website`,
             welcomeMessage: data.welcomeMessage,
             colorTheme: data.colorTheme,
@@ -319,6 +381,35 @@ export class CoreService {
     );
   }
 
+  async updateConversationStatus(userId: string, conversationId: string, status: ConversationStatus) {
+    const c = await this.db.conversation.findUnique({ where: { id: conversationId } });
+    if (!c) throw new NotFoundException();
+    await this.assertMember(userId, c.projectId);
+
+    const updated = await this.db.conversation.update({
+      where: { id: conversationId },
+      data: {
+        status,
+        automationMode: status === "RESOLVED" ? "AUTOMATED" : status === "OPEN" ? "HUMAN" : undefined
+      }
+    });
+
+    if (status === "RESOLVED") {
+      await this.db.ticket.updateMany({
+        where: {
+          conversationId,
+          status: { notIn: ["RESOLVED", "CLOSED"] }
+        },
+        data: { status: "RESOLVED" }
+      });
+    }
+    
+    // Optional: Emit a real-time event so the UI updates instantly
+    this.realtime.emitProject(c.projectId, SupportEvent.ConversationAssigned, updated);
+
+    return { ok: true };
+  }
+
   async messages(userId: string, conversationId: string, cursor?: string) {
     const c = await this.db.conversation.findUnique({ where: { id: conversationId }, select: { projectId: true } });
     if (!c) throw new NotFoundException();
@@ -345,7 +436,10 @@ export class CoreService {
     const msg = await this.db.message.create({
       data: { conversationId, senderType: "AGENT", senderId: userId, content, status: "PENDING" }
     });
-    await this.db.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date(), unreadCount: 0 } });
+    await this.db.conversation.update({
+      where: { id: conversationId },
+      data: { lastMessageAt: new Date(), unreadCount: 0, status: "OPEN", automationMode: "HUMAN" }
+    });
     this.realtime.emitProject(c.projectId, SupportEvent.MessageCreated, msg);
     this.realtime.emitConversation(conversationId, SupportEvent.MessageCreated, msg);
     await this.queues.queueWebhook(SupportEvent.MessageCreated, c.projectId, msg);
@@ -360,6 +454,24 @@ export class CoreService {
     const c = await this.db.conversation.findUnique({ where: { id: conversationId } });
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
+
+    const existingActiveTicket = await this.db.ticket.findFirst({
+      where: {
+        conversationId,
+        status: { notIn: ["RESOLVED", "CLOSED"] }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    await this.db.conversation.update({
+      where: { id: conversationId },
+      data: { status: "OPEN", automationMode: "HUMAN", lastMessageAt: new Date() }
+    });
+
+    if (existingActiveTicket) {
+      return existingActiveTicket;
+    }
+
     const ticket = await this.db.ticket.create({
       data: {
         projectId: c.projectId,
@@ -370,6 +482,54 @@ export class CoreService {
       }
     });
     this.realtime.emitProject(c.projectId, SupportEvent.TicketCreated, ticket);
+    await this.queueTicketEmail(c.projectId, "created", ticket);
+    return ticket;
+  }
+
+  async updateTicketStatus(userId: string, ticketId: string, status: TicketStatus) {
+    const current = await this.db.ticket.findUnique({ where: { id: ticketId } });
+    if (!current) throw new NotFoundException("Ticket not found");
+    await this.assertMember(userId, current.projectId);
+
+    const ticket = await this.db.ticket.update({
+      where: { id: ticketId },
+      data: { status }
+    });
+
+    if (status === "RESOLVED" || status === "CLOSED") {
+      await this.db.ticket.updateMany({
+        where: {
+          conversationId: ticket.conversationId,
+          id: { not: ticket.id },
+          status: { notIn: ["RESOLVED", "CLOSED"] }
+        },
+        data: { status }
+      });
+
+      const activeTicketCount = await this.db.ticket.count({
+        where: {
+          conversationId: ticket.conversationId,
+          status: { notIn: ["RESOLVED", "CLOSED"] }
+        }
+      });
+
+      if (activeTicketCount === 0) {
+        await this.db.conversation.update({
+          where: { id: ticket.conversationId },
+          data: { status: "RESOLVED", automationMode: "AUTOMATED" }
+        });
+      }
+    } else {
+      await this.db.conversation.update({
+        where: { id: ticket.conversationId },
+        data: { status: "OPEN", automationMode: "HUMAN" }
+      });
+    }
+
+    if (current.status !== ticket.status) {
+      await this.queueTicketEmail(ticket.projectId, "status", ticket, current.status);
+    }
+
     return ticket;
   }
 
@@ -380,8 +540,39 @@ export class CoreService {
     return this.db.ticket.findMany({
       where: { projectId: scopedProject },
       take: 50,
-      orderBy: { createdAt: "desc" }
-    });
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        projectId: true,
+        conversationId: true,
+        title: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        conversation: {
+          select: {
+            contact: {
+              select: {
+                name: true,
+                phone: true
+              }
+            }
+          }
+        }
+      }
+    }).then((tickets) =>
+      tickets.map((ticket) => ({
+        id: ticket.id,
+        projectId: ticket.projectId,
+        conversationId: ticket.conversationId,
+        title: ticket.title,
+        status: ticket.status,
+        createdAt: ticket.createdAt,
+        updatedAt: ticket.updatedAt,
+        customerName: ticket.conversation.contact.name ?? "Customer",
+        customerPhone: ticket.conversation.contact.phone ?? null
+      }))
+    );
   }
 
   async webhook(userId: string, projectId: string) {
@@ -410,9 +601,68 @@ export class CoreService {
     return { ...webhook, signingSecret };
   }
 
+  async notificationSettings(userId: string, projectId: string) {
+    await this.assertMember(userId, projectId);
+    const settings = await this.db.projectNotificationSettings.findUnique({
+      where: { projectId },
+      select: {
+        notificationEmail: true,
+        ticketCreatedEnabled: true,
+        ticketAssignedEnabled: true,
+        conversationAssignedEnabled: true,
+        messageReceivedEnabled: true
+      }
+    });
+    if (!settings) return null;
+    return { ...settings, notificationEmails: parseEmailList(settings.notificationEmail) };
+  }
+
+  async updateNotificationSettings(
+    userId: string,
+    projectId: string,
+    data: {
+      notificationEmail: string;
+      ticketCreatedEnabled?: boolean;
+      ticketAssignedEnabled?: boolean;
+      conversationAssignedEnabled?: boolean;
+      messageReceivedEnabled?: boolean;
+    }
+  ) {
+    await this.assertMember(userId, projectId);
+    const emails = parseEmailList(data.notificationEmail);
+    if (!emails.length) throw new BadRequestException("Add at least one valid notification email.");
+
+    const settings = await this.db.projectNotificationSettings.upsert({
+      where: { projectId },
+      update: {
+        notificationEmail: emails.join(","),
+        ticketCreatedEnabled: data.ticketCreatedEnabled,
+        ticketAssignedEnabled: data.ticketAssignedEnabled,
+        conversationAssignedEnabled: data.conversationAssignedEnabled,
+        messageReceivedEnabled: data.messageReceivedEnabled
+      },
+      create: {
+        projectId,
+        notificationEmail: emails.join(","),
+        ticketCreatedEnabled: data.ticketCreatedEnabled ?? true,
+        ticketAssignedEnabled: data.ticketAssignedEnabled ?? true,
+        conversationAssignedEnabled: data.conversationAssignedEnabled ?? true,
+        messageReceivedEnabled: data.messageReceivedEnabled ?? false
+      },
+      select: {
+        notificationEmail: true,
+        ticketCreatedEnabled: true,
+        ticketAssignedEnabled: true,
+        conversationAssignedEnabled: true,
+        messageReceivedEnabled: true
+      }
+    });
+    return { ...settings, notificationEmails: emails };
+  }
+
   async widgetConfig(channelId: string) {
     const channel = await this.db.widgetChannel.findUnique({
-      where: { publicId: channelId },
+      where: { channelId },
       select: {
         ...widgetChannelPublicSelect,
         project: {
@@ -454,7 +704,7 @@ export class CoreService {
   async widgetMessages(channelId: string, profileId: string) {
     if (!profileId) return [];
     const channel = await this.db.widgetChannel.findUnique({
-      where: { publicId: channelId },
+      where: { channelId },
       select: { id: true, projectId: true }
     });
     if (!channel) throw new NotFoundException();
@@ -479,7 +729,7 @@ export class CoreService {
 
   async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, email?: string, number?: string) {
     const channel = await this.db.widgetChannel.findUnique({
-      where: { publicId: channelId },
+      where: { channelId },
       select: { id: true, projectId: true, enabled: true, project: { select: { name: true } } }
     });
     if (!channel || !channel.enabled) throw new NotFoundException();
@@ -500,6 +750,11 @@ export class CoreService {
     if (!conversation) {
       conversation = await this.db.conversation.create({
         data: { projectId: channel.projectId, contactId: contact.id }
+      });
+    } else if (conversation.status === "RESOLVED") {
+      conversation = await this.db.conversation.update({
+        where: { id: conversation.id },
+        data: { status: "PENDING", automationMode: "AUTOMATED" }
       });
     }
 
@@ -523,35 +778,72 @@ export class CoreService {
 
     await this.queues.queueWebhook(SupportEvent.MessageCreated, channel.projectId, msg);
 
-    // If botConfiguration is enabled and set to AUTOMATED (internal fallback bot)
+    // If an external webhook is active, let the external bot handle handoff logic.
+    // Otherwise, check for internal bot handoff keywords.
+    const webhook = await this.db.webhook.findUnique({ where: { projectId: channel.projectId } });
     const botConfig = await this.db.botConfiguration.findUnique({ where: { projectId: channel.projectId } });
-    if (botConfig && botConfig.enabled && botConfig.responseMode === "AUTOMATED" && botConfig.fallbackMessage) {
-      // Check if project has no external webhook enabled or message has handoff keyword
-      const webhook = await this.db.webhook.findUnique({ where: { projectId: channel.projectId } });
-      const containsKeyword = botConfig.handoffKeywords.some((kw: string) => content.toLowerCase().includes(kw.toLowerCase()));
-      
-      // Auto-reply fallback if explicitly requested or if no webhook is active
-      if (!webhook || !webhook.enabled || containsKeyword) {
-        setTimeout(async () => {
-          try {
-            const botMsg = await this.db.message.create({
-              data: {
-                conversationId: conversation.id,
-                senderType: "BOT",
-                content: botConfig.fallbackMessage,
-                status: "SENT"
-              }
-            });
-            await this.db.conversation.update({
-              where: { id: conversation.id },
-              data: { lastMessageAt: new Date() }
-            });
-            this.realtime.emitProject(channel.projectId, SupportEvent.MessageCreated, botMsg);
-            this.realtime.emitConversation(conversation.id, SupportEvent.MessageCreated, botMsg);
-          } catch {
-            return undefined;
+    
+    const containsKeyword = Boolean(
+      (!webhook || !webhook.enabled) &&
+      botConfig?.enabled &&
+      botConfig?.handoffKeywords.some((kw: string) => content.toLowerCase().includes(kw.toLowerCase()))
+    );
+
+    if (containsKeyword) {
+      await this.db.conversation.update({
+        where: { id: conversation.id },
+        data: { status: "OPEN", automationMode: "HUMAN" }
+      });
+      const existingOpenTicket = await this.db.ticket.findFirst({
+        where: {
+          conversationId: conversation.id,
+          status: { notIn: ["RESOLVED", "CLOSED"] }
+        }
+      });
+      if (!existingOpenTicket) {
+        const ticket = await this.db.ticket.create({
+          data: {
+            projectId: channel.projectId,
+            conversationId: conversation.id,
+            contactId: contact.id,
+            title: `Handoff requested: ${content.slice(0, 80)}`,
+            priority: "MEDIUM"
           }
-        }, 600);
+        });
+        this.realtime.emitProject(channel.projectId, SupportEvent.TicketCreated, ticket);
+        await this.queueTicketEmail(channel.projectId, "created", ticket);
+      }
+    }
+
+    if (botConfig && botConfig.enabled && botConfig.responseMode === "AUTOMATED" && botConfig.fallbackMessage && !containsKeyword) {
+      const canBotReply = conversation.status === "PENDING" || conversation.status === "RESOLVED";
+      if (canBotReply) {
+
+        
+        // Auto-reply only when no external webhook is active. If a webhook is enabled,
+        // the external bot/support workflow owns the customer-facing reply.
+        if (!webhook || !webhook.enabled) {
+          setTimeout(async () => {
+            try {
+              const botMsg = await this.db.message.create({
+                data: {
+                  conversationId: conversation.id,
+                  senderType: "BOT",
+                  content: botConfig.fallbackMessage,
+                  status: "SENT"
+                }
+              });
+              await this.db.conversation.update({
+                where: { id: conversation.id },
+                data: { lastMessageAt: new Date() }
+              });
+              this.realtime.emitProject(channel.projectId, SupportEvent.MessageCreated, botMsg);
+              this.realtime.emitConversation(conversation.id, SupportEvent.MessageCreated, botMsg);
+            } catch {
+              return undefined;
+            }
+          }, 600);
+        }
       }
     }
 
@@ -566,4 +858,50 @@ export class CoreService {
       visitorPhoneEnabled: channel.visitorPhoneEnabled ?? defaultWidgetVisitorSettings.visitorPhoneEnabled
     };
   }
+
+  async queueTicketEmail(
+    projectId: string,
+    event: "created" | "status",
+    ticket: { id: string; title: string; status: TicketStatus },
+    oldStatus?: TicketStatus
+  ) {
+    const settings = await this.db.projectNotificationSettings.findUnique({ where: { projectId } });
+    const enabled =
+      event === "created" ? settings?.ticketCreatedEnabled !== false : settings?.ticketAssignedEnabled !== false;
+    if (!enabled) return;
+
+    const recipients = parseEmailList(settings?.notificationEmail);
+    if (!recipients.length) return;
+
+    const ticketDetails = await this.db.ticket.findUnique({
+      where: { id: ticket.id },
+      select: {
+        title: true,
+        status: true,
+        conversation: {
+          select: {
+            contact: {
+              select: {
+                name: true,
+                phone: true
+              }
+            }
+          }
+        }
+      }
+    });
+    const customerName = ticketDetails?.conversation?.contact?.name?.trim() || "Customer";
+    const mobileNumber = ticketDetails?.conversation?.contact?.phone?.trim() || "Not provided";
+    const subject =
+      event === "created"
+        ? `${customerName} raised a ticket`
+        : `${customerName}'s ticket status changed`;
+    const text =
+      event === "created"
+        ? `${customerName} raised a ticket.\n\nMobile number: ${mobileNumber}\nTicket: ${ticketDetails?.title ?? ticket.title}\nStatus: ${ticketDetails?.status ?? ticket.status}`
+        : `${customerName}'s ticket status changed from ${oldStatus} to ${ticketDetails?.status ?? ticket.status}.\n\nMobile number: ${mobileNumber}\nTicket: ${ticketDetails?.title ?? ticket.title}`;
+
+    await Promise.all(recipients.map((to) => this.queues.queueEmail(projectId, to, subject, text)));
+  }
 }
+

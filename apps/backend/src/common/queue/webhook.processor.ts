@@ -56,6 +56,7 @@ export class WebhookProcessor extends WorkerHost {
             select: {
               id: true,
               status: true,
+              automationMode: true,
               contact: {
                 select: {
                   name: true,
@@ -83,13 +84,15 @@ export class WebhookProcessor extends WorkerHost {
         message: {
           id: message?.id ?? messageId,
           content: message?.content ?? rawPayload?.content ?? "",
+          senderType: senderType ?? "CUSTOMER",
           content_attributes: {
             submitted_values: []
           }
         },
         conversation: {
           id: message?.conversation.id ?? rawPayload?.conversationId ?? "",
-          status: "pending"
+          status: message?.conversation.status ?? "OPEN",
+          assignedTo: message?.conversation.automationMode === "HUMAN" ? "human" : "bot"
         },
         sender: {
           type: isIncoming ? WebhookSenderType.Contact : WebhookSenderType.Agent,

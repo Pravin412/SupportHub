@@ -64,9 +64,9 @@ export function InboxView() {
   };
 
   return (
-    <div className="grid h-main md:grid-cols-inbox">
+    <div className="flex h-main md:grid md:grid-cols-inbox">
       {/* Left Sidebar: Projects List OR Contacts List */}
-      <section className="flex h-full flex-col border-r border-border bg-white">
+      <section className={`h-full flex-col border-r border-border bg-white w-full md:w-auto ${ui.selectedConversationId ? "hidden md:flex" : "flex"}`}>
         {!selectedProjectId ? (
           <InboxProjectsList
             projects={projects}
@@ -89,7 +89,7 @@ export function InboxView() {
       </section>
 
       {/* Right Section: Active Chat View */}
-      <section className="flex min-h-0 flex-col bg-[#f3f6f4]">
+      <section className={`min-h-0 flex-col bg-chat-pane w-full md:w-auto ${ui.selectedConversationId ? "flex" : "hidden md:flex"}`}>
         {activeId ? (
           <InboxChatView
             activeConversation={activeConversation}

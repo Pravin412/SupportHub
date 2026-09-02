@@ -26,7 +26,7 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["authorization", "content-type"]
+    allowedHeaders: ["authorization", "content-type", "x-integration-secret"]
   });
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalInterceptors(new ApiResponseInterceptor());

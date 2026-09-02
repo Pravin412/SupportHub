@@ -18,7 +18,9 @@ const config: Config = {
         "primary-light": "#344154",
         secondary: "#405066",
         tertiary: "#536174",
-        "tertiary-light": "#66758a"
+        "tertiary-light": "#66758a",
+        "chat-pane": "#f3f6f4",
+        "chat-bubble-bg": "#0a6f66"
       },
       fontSize: {
         "2xs": "11px",
@@ -32,6 +34,7 @@ const config: Config = {
       },
       height: {
         main: "calc(100vh - 56px)",
+        "chat-header": "72px"
       },
       minHeight: {
         preview: "360px",
@@ -40,6 +43,7 @@ const config: Config = {
         message: "78%",
         "chat-msg": "86%",
         "chat-reply": "82%",
+        "chat-bubble": "320px"
       },
       width: {
         widget: "300px",

@@ -1,7 +1,10 @@
 import type { ConversationSummary, MessageDto } from "@support-hub/shared-types";
-import type { ChannelDto, DashboardSummaryDto, ProjectDto } from "./types";
+import type { ChannelDto, DashboardRange, DashboardSummaryDto, ProjectDto } from "./types";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+let API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
+  API = `${window.location.protocol}//${window.location.hostname}:4000`;
+}
 let accessToken = "";
 let refreshPromise: Promise<{ accessToken: string }> | null = null;
 
@@ -47,7 +50,7 @@ async function parseResponse<T>(res: Response): Promise<T> {
 }
 
 async function refreshAccessToken() {
-  refreshPromise ??= fetchApi("/auth/refresh", { method: "POST" })
+  refreshPromise ??= fetchApi("/auth/refresh", { method: "POST", body: JSON.stringify({}) })
     .then((res) => parseResponse<{ accessToken: string }>(res))
     .then((data) => {
       accessToken = data.accessToken;
@@ -89,7 +92,7 @@ export const api = {
     return data;
   },
   me: () => request<{ id: string; email: string; name: string }>("/auth/me"),
-  dashboardSummary: () => request<DashboardSummaryDto>("/dashboard/summary"),
+  dashboardSummary: (range: DashboardRange = "all") => request<DashboardSummaryDto>(`/dashboard/summary?range=${range}`),
   projects: () => request<ProjectDto[]>("/projects"),
   createProject: (name: string, key?: string) =>
     request<ProjectDto & { integrationKey: string; integrationSecret: string }>("/projects", {
@@ -98,6 +101,15 @@ export const api = {
     }),
   deleteProject: (projectId: string) =>
     request<{ ok: boolean; deletedId: string }>(`/projects/${projectId}`, { method: "DELETE" }),
+  integrationCredentials: (projectId: string) =>
+    request<{ integrationKey: string; integrationSecret: string; integrationRevokedAt?: string | null }>(
+      `/projects/${projectId}/integration`
+    ),
+  rotateIntegrationSecret: (projectId: string) =>
+    request<{ integrationKey: string; integrationSecret: string; integrationRevokedAt?: string | null }>(
+      `/projects/${projectId}/integration/rotate-secret`,
+      { method: "POST" }
+    ),
   channels: (projectId: string) => request<ChannelDto[]>(`/projects/${projectId}/channels`),
   agents: (projectId: string) =>
     request<Array<{ id: string; role: string; user: { name: string; email: string } }>>(
@@ -110,10 +122,26 @@ export const api = {
   messages: (id: string) => request<MessageDto[]>(`/conversations/${id}/messages`),
   sendMessage: (id: string, content: string) =>
     request<MessageDto>(`/conversations/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
+  updateConversationStatus: (id: string, status: "OPEN" | "PENDING" | "SNOOZED" | "RESOLVED") =>
+    request<{ ok: boolean }>(`/conversations/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) }),
   createTicket: (id: string, title: string) =>
-    request(`/conversations/${id}/ticket`, { method: "POST", body: JSON.stringify({ title, priority: "MEDIUM" }) }),
+    request(`/conversations/${id}/ticket`, { method: "POST", body: JSON.stringify({ title }) }),
+  updateTicketStatus: (id: string, status: "OPEN" | "IN_PROGRESS" | "ASSIGNED" | "WAITING" | "RESOLVED" | "CLOSED") =>
+    request(`/tickets/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) }),
   tickets: (projectId?: string) =>
-    request<Array<{ id: string; title: string; status: string; priority: string }>>(
+    request<
+      Array<{
+        id: string;
+        projectId: string;
+        conversationId: string;
+        title: string;
+        status: string;
+        createdAt: string;
+        updatedAt: string;
+        customerName: string;
+        customerPhone?: string | null;
+      }>
+    >(
       `/tickets${projectId ? `?projectId=${projectId}` : ""}`
     ),
   webhook: (projectId: string) =>
@@ -122,6 +150,29 @@ export const api = {
     request<{ url: string; enabled: boolean; events: string[]; signingSecret: string }>(`/projects/${projectId}/webhook`, {
       method: "PUT",
       body: JSON.stringify({ url })
+    }),
+  notificationSettings: (projectId: string) =>
+    request<{
+      notificationEmail: string;
+      ticketCreatedEnabled: boolean;
+      ticketAssignedEnabled: boolean;
+      conversationAssignedEnabled: boolean;
+      messageReceivedEnabled: boolean;
+      notificationEmails?: string[];
+    } | null>(`/projects/${projectId}/notifications`),
+  updateNotificationSettings: (
+    projectId: string,
+    data: {
+      notificationEmail: string;
+      ticketCreatedEnabled?: boolean;
+      ticketAssignedEnabled?: boolean;
+      conversationAssignedEnabled?: boolean;
+      messageReceivedEnabled?: boolean;
+    }
+  ) =>
+    request(`/projects/${projectId}/notifications`, {
+      method: "PUT",
+      body: JSON.stringify(data)
     }),
   botConfig: (projectId: string) =>
     request<{

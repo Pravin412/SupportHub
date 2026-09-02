@@ -14,11 +14,9 @@ enum Role {
 
 enum ConversationStatus {
   OPEN
-  WAITING_FOR_HUMAN
-  ASSIGNED
-  WAITING_FOR_CUSTOMER
+  PENDING
+  SNOOZED
   RESOLVED
-  CLOSED
 }
 
 enum AutomationMode {
@@ -50,6 +48,7 @@ enum MessageStatus {
 enum TicketStatus {
   OPEN
   IN_PROGRESS
+  ASSIGNED
   WAITING
   RESOLVED
   CLOSED
@@ -94,7 +93,8 @@ model Project {
   name                  String
   key                   String                       @unique
   integrationKey        String                       @unique
-  integrationSecretHash String
+  integrationSecret     String
+  integrationSecretHash String?
   integrationRevokedAt  DateTime?
   members               ProjectMember[]
   contacts              Contact[]
@@ -108,7 +108,7 @@ model Project {
 model WidgetChannel {
   id              String   @id @default(cuid())
   projectId       String   @unique
-  publicId        String   @unique
+  channelId       String   @unique
   name            String
   websiteUrl      String?
   welcomeMessage  String   @default("Hi, welcome in. How can we help?")

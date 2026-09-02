@@ -1,8 +1,11 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCheck, CirclePlus, MessageSquare, Send, Smile, Ticket, User } from "lucide-react";
+import { ArrowLeft, CheckCheck, CirclePlus, Loader2, MessageSquare, Send, Smile, User, ChevronDown } from "lucide-react";
 import { Button, Input } from "@support-hub/ui";
+import { useUiStore } from "../lib/store";
 import { api } from "../lib/api";
+import { useUpdateConversationStatus } from "../lib/queries";
 import { parseMessageOptions } from "../lib/messages";
 
 export function InboxChatView({
@@ -22,46 +25,115 @@ export function InboxChatView({
   onSend: () => void;
   isSending: boolean;
 }) {
+  const ui = useUiStore();
   const activeId = activeConversation?.id;
+  const updateStatus = useUpdateConversationStatus();
+  const isResolved = activeConversation?.status === "RESOLVED";
+  const isAssignedToAgent = activeConversation?.automationMode === "HUMAN" || activeConversation?.status === "OPEN";
+  const chatStateLabel = isResolved ? "Resolved" : isAssignedToAgent ? "Assigned to agent" : "Bot active";
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const prevMessagesLength = useRef(messages.data?.length ?? 0);
+  const currentUserIsSender = useRef(false);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior
+      });
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+    const atBottom = distanceToBottom < 100;
+    setIsAtBottom(atBottom);
+    if (atBottom) {
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    const currentLength = messages.data?.length ?? 0;
+    if (currentLength > prevMessagesLength.current) {
+      const newMessages = currentLength - prevMessagesLength.current;
+      if (isAtBottom || currentUserIsSender.current) {
+        requestAnimationFrame(() => scrollToBottom("smooth"));
+      } else {
+        setUnreadCount((prev) => prev + newMessages);
+      }
+    }
+    prevMessagesLength.current = currentLength;
+    currentUserIsSender.current = false;
+  }, [messages.data?.length, isAtBottom]);
+
+  useEffect(() => {
+    setIsAtBottom(true);
+    setUnreadCount(0);
+    prevMessagesLength.current = messages.data?.length ?? 0;
+    requestAnimationFrame(() => scrollToBottom("auto"));
+  }, [activeId]);
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4">
-        <div className="flex items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-teal-100 text-brand">
+      <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0">
+        <div className="flex flex-1 min-w-0 items-center gap-3">
+          <button 
+            type="button"
+            className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-600 hover:bg-slate-200" 
+            onClick={() => ui.setConversation("")}
+            title="Back to inbox"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal-100 text-brand">
             <User size={16} />
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <strong className="text-xs font-bold text-secondary leading-tight">
+              <strong className="truncate text-xs font-bold text-secondary leading-tight">
                 {activeConversation?.contactName ?? "Customer"}
               </strong>
               {activeConversation?.contactPhone && (
-                <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+                <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
                   {activeConversation.contactPhone}
                 </span>
               )}
               {activeConversation?.externalUserId && (
-                <span className="rounded bg-teal-50 px-1.5 py-0.5 font-mono text-[10px] text-teal-700">
+                <span className="hidden md:inline-block shrink-0 max-w-[120px] truncate rounded bg-teal-50 px-1.5 py-0.5 font-mono text-[10px] text-teal-700" title={activeConversation.externalUserId}>
                   ID: {activeConversation.externalUserId}
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-muted block mt-0.5">
-              {selectedProject ? `${selectedProject.name} • ` : ""}Active Chat
+            <span className="truncate text-[10px] text-muted block mt-0.5">
+              {selectedProject ? `${selectedProject.name} - ` : ""}{chatStateLabel}
             </span>
           </div>
         </div>
-        <Button
-          className="h-7 gap-1.5 rounded border-slate-200 bg-white px-3 text-xs font-semibold text-secondary shadow-sm hover:bg-slate-50"
-          onClick={() => activeId && api.createTicket(activeId, "Customer support follow-up")}
-        >
-          <Ticket size={14} />
-          Ticket
-        </Button>
+        <div className="flex shrink-0 items-center gap-2 ml-2">
+          {!isResolved && (
+            <Button
+              className="h-7 gap-1.5 rounded border border-teal-600 bg-teal-50 px-3 text-xs font-semibold text-teal-700 shadow-sm hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => activeId && updateStatus.mutate({ id: activeId, status: "RESOLVED" })}
+              disabled={!activeId || updateStatus.isPending}
+            >
+              {updateStatus.isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />}
+              {updateStatus.isPending ? "Resolving..." : "Resolve"}
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-[#f3f6f4] px-5 py-6">
+      <div className="flex-1 relative overflow-hidden bg-chat-pane">
+        <div 
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="h-full overflow-auto px-5 py-6"
+        >
         <AnimatePresence>
           {messages.data?.slice().reverse().map((m: any) => {
             const isAgent = m.senderType === "AGENT";
@@ -80,10 +152,10 @@ export function InboxChatView({
                 <div
                   className={
                     isAgent
-                      ? "max-w-[320px] rounded-2xl rounded-br-xs bg-[#0a6f66] px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm whitespace-pre-wrap"
+                      ? "max-w-chat-bubble rounded-2xl rounded-br-xs bg-chat-bubble-bg px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm whitespace-pre-wrap"
                       : isBot
-                      ? "max-w-[320px] rounded-2xl rounded-bl-xs bg-slate-100 px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm border border-slate-200 whitespace-pre-wrap"
-                      : "max-w-[320px] rounded-2xl rounded-bl-xs bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-700 shadow-sm border border-slate-100 whitespace-pre-wrap"
+                      ? "max-w-chat-bubble rounded-2xl rounded-bl-xs bg-slate-100 px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm border border-slate-200 whitespace-pre-wrap"
+                      : "max-w-chat-bubble rounded-2xl rounded-bl-xs bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-700 shadow-sm border border-slate-100 whitespace-pre-wrap"
                   }
                 >
                   {isBot && (
@@ -102,7 +174,7 @@ export function InboxChatView({
                 </div>
                 <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isAgent ? "pr-1" : "pl-1"}`}>
                   <span>{time}</span>
-                  {isAgent ? <CheckCheck size={12} className="text-[#0a6f66]" /> : null}
+                  {isAgent ? <CheckCheck size={12} className="text-chat-bubble-bg" /> : null}
                 </div>
               </motion.div>
             );
@@ -113,12 +185,37 @@ export function InboxChatView({
             No messages in this conversation yet. Send a greeting below!
           </div>
         )}
+        </div>
+        <AnimatePresence>
+          {!isAtBottom && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="absolute bottom-4 right-6 z-10"
+            >
+              <Button
+                type="button"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-700 shadow-md border border-slate-200 hover:bg-slate-50 p-0"
+                onClick={() => scrollToBottom()}
+              >
+                <ChevronDown size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a6f66] text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <form
         className="border-t border-slate-100 bg-white px-4 py-3 sm:px-8 lg:px-12"
         onSubmit={(e) => {
           e.preventDefault();
+          currentUserIsSender.current = true;
           onSend();
         }}
       >
@@ -133,6 +230,7 @@ export function InboxChatView({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
+                currentUserIsSender.current = true;
                 onSend();
               }
             }}

@@ -10,10 +10,12 @@
 
   // Extract the base URL from the script src (e.g. http://localhost:3001)
   let baseUrl = 'http://localhost:3000'; // fallback
+  let defaultApiUrl = 'http://localhost:4000'; // fallback
   if (currentScript && currentScript.src) {
     try {
       const scriptUrl = new URL(currentScript.src);
       baseUrl = scriptUrl.origin;
+      defaultApiUrl = `${scriptUrl.protocol}//${scriptUrl.hostname}:4000`;
     } catch {
       console.warn('SupportHub: Could not parse script URL, using fallback.');
     }
@@ -24,7 +26,7 @@
   const name = currentScript?.getAttribute('data-name') || '';
   const email = currentScript?.getAttribute('data-email') || '';
   const number = currentScript?.getAttribute('data-number') || '';
-  const apiUrl = currentScript?.getAttribute('data-api-url') || 'http://localhost:4000';
+  const apiUrl = currentScript?.getAttribute('data-api-url') || defaultApiUrl;
 
   if (!channelId) {
     console.error('SupportHub Widget: data-channel-id is required.');

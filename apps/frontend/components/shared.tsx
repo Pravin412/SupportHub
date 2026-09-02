@@ -6,17 +6,20 @@ export function NavLink({
   active,
   icon,
   children,
-  href
+  href,
+  onClick
 }: {
   active: boolean;
   icon: React.ReactNode;
   children: React.ReactNode;
   href: string;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
-      className={`flex h-9 w-full items-center gap-3 rounded-r-full px-4 text-left text-sm font-semibold transition-colors ${
+      onClick={onClick}
+      className={`flex h-[38px] w-full items-center gap-3 rounded-r-full px-4 text-left text-sm font-semibold transition-colors ${
         active 
           ? "border-l-4 border-brand bg-teal-50 text-brand" 
           : "border-l-4 border-transparent text-secondary hover:bg-hover"
@@ -41,7 +44,7 @@ export function NavButton({
 }) {
   return (
     <button
-      className={`flex h-9 w-full items-center gap-3 rounded-r-full px-4 text-left text-sm font-semibold transition-colors ${
+      className={`flex h-[38px] w-full items-center gap-3 rounded-r-full px-4 text-left text-sm font-semibold transition-colors ${
         active 
           ? "border-l-4 border-brand bg-teal-50 text-brand" 
           : "border-l-4 border-transparent text-secondary hover:bg-hover"

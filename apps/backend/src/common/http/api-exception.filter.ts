@@ -35,6 +35,12 @@ export class ApiExceptionFilter implements ExceptionFilter {
 
   private getStatusCode(exception: unknown) {
     if (exception instanceof HttpException) return exception.getStatus();
+    
+    // Handle JWT errors as 401 Unauthorized
+    if (exception instanceof Error && (exception.name === "TokenExpiredError" || exception.name === "JsonWebTokenError")) {
+      return HttpStatus.UNAUTHORIZED;
+    }
+
     if (exception && typeof exception === "object" && "statusCode" in exception) {
       const statusCode = Number((exception as { statusCode?: number }).statusCode);
       if (statusCode >= 400 && statusCode < 600) return statusCode;

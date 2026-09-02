@@ -1,7 +1,8 @@
 "use client";
-import { Folder, ArrowLeft, Search, User } from "lucide-react";
+import { Folder, Search, User } from "lucide-react";
 import { Badge, Button, Input } from "@support-hub/ui";
 import { displayMessageContent } from "../lib/messages";
+import { BackButton } from "./back-button";
 
 export function InboxProjectsList({
   projects,
@@ -89,14 +90,7 @@ export function InboxConversationsList({
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="border-b border-border bg-slate-50 p-3">
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            title="Back to Projects"
-            className="h-8 w-8 shrink-0 rounded-md border border-slate-200 bg-white p-0 text-secondary hover:bg-slate-100 hover:text-primary"
-            onClick={onBack}
-          >
-            <ArrowLeft size={16} />
-          </Button>
+          <BackButton title="Back to projects" className="h-8 w-8" onClick={onBack} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-bold text-primary">
               {projectName ?? "Project"}

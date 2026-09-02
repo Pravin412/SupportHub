@@ -24,10 +24,10 @@ export class QueueService {
     return job;
   }
 
-  queueEmail(projectId: string, to: string, subject: string) {
+  queueEmail(projectId: string, to: string, subject: string, text?: string) {
     return this.email.add(
       "email.send",
-      { projectId, to, subject },
+      { projectId, to, subject, text },
       { attempts: 3, backoff: { type: "exponential", delay: 1000 } }
     );
   }

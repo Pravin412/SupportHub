@@ -1,6 +1,9 @@
 import { Body, Controller, Headers, Param, Post, UnauthorizedException } from "@nestjs/common";
+import { ConversationStatus } from "@prisma/client";
 import { ApiTags } from "@nestjs/swagger";
-import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
+import { CoreService } from "../support/support.service";
+
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
 import { SupportEvent } from "../../common/events/support-events";
@@ -14,31 +17,37 @@ class CustomerMessageDto {
   @IsString() @IsOptional() name?: string;
   @IsEmail() @IsOptional() email?: string;
   @IsString() @IsOptional() number?: string;
+  @IsEnum(ConversationStatus) @IsOptional() status?: ConversationStatus;
+  @IsString() @IsOptional() assignedTo?: "human";
+}
+
+class ConversationStatusDto {
+  @IsEnum(ConversationStatus) status!: ConversationStatus;
+  @IsString() @IsOptional() assignedTo?: "human";
 }
 
 @ApiTags("integrations")
 @Controller("integrations/:projectKey")
 export class IntegrationController {
-  constructor(
+    constructor(
     private db: PrismaService,
     private crypto: CryptoService,
     private queues: QueueService,
-    private realtime: RealtimeGateway
+    private realtime: RealtimeGateway,
+    private core: CoreService
   ) {}
 
   @Post("messages")
   async message(
     @Param("projectKey") key: string,
     @Headers("x-integration-secret") secret: string,
-    @Body() dto: CustomerMessageDto
+    @Body() dto: any
   ) {
-    const project = await this.db.project.findUnique({ where: { key } });
-    if (
-      !project ||
-      project.integrationRevokedAt ||
-      !(await this.crypto.compareSecret(secret ?? "", project.integrationSecretHash))
-    )
-      throw new UnauthorizedException();
+    console.log("=== INCOMING POST /messages ===");
+    console.log("Project Key:", key);
+    console.log("Payload:", JSON.stringify(dto, null, 2));
+    
+    const project = await this.authorizeProject(key, secret);
     const contact = await this.db.contact.upsert({
       where: { projectId_externalUserId: { projectId: project.id, externalUserId: dto.externalUserId } },
       create: {
@@ -65,14 +74,43 @@ export class IntegrationController {
         externalMessageId: dto.externalMessageId
       }
     });
-    await this.db.conversation.update({
+    const updated = await this.db.conversation.update({
       where: { id: conversation.id },
       data: {
         lastMessageAt: new Date(),
-        unreadCount: { increment: 1 }
+        unreadCount: { increment: 1 },
+        ...(dto.status ? { status: dto.status } : {}),
+        ...(dto.assignedTo === "human" ? { automationMode: "HUMAN" } : {})
       }
     });
+
     await this.queues.queueWebhook(SupportEvent.MessageCreated, project.id, msg);
+
+    if (dto.assignedTo === "human" || dto.status) {
+      this.realtime.emitProject(project.id, SupportEvent.ConversationAssigned, updated);
+      if (dto.status === "OPEN") {
+        const existingOpenTicket = await this.db.ticket.findFirst({
+          where: {
+            conversationId: conversation.id,
+            status: { notIn: ["RESOLVED", "CLOSED"] }
+          }
+        });
+        if (!existingOpenTicket) {
+          const ticket = await this.db.ticket.create({
+            data: {
+              projectId: project.id,
+              conversationId: conversation.id,
+              contactId: updated.contactId,
+              title: "Escalated by External Bot",
+              priority: "MEDIUM"
+            }
+          });
+          this.realtime.emitProject(project.id, SupportEvent.TicketCreated, ticket);
+          await this.core.queueTicketEmail(project.id, "created", ticket);
+        }
+      }
+    }
+
     return { conversationId: conversation.id, messageId: msg.id };
   }
 
@@ -81,15 +119,16 @@ export class IntegrationController {
     @Param("projectKey") key: string,
     @Param("conversationId") conversationId: string,
     @Headers("x-integration-secret") secret: string,
-    @Body() dto: { content: string; messageType?: string; senderType?: string; options?: Array<{ title: string; value: string }> }
+    @Body() dto: any
   ) {
-    const project = await this.db.project.findFirst({
-      where: {
-        OR: [{ key }, { id: key }]
-      }
-    });
+    console.log("=== INCOMING POST botReply ===");
+    console.log("Project Key:", key);
+    console.log("Conversation ID:", conversationId);
+    console.log("Payload:", JSON.stringify(dto, null, 2));
 
-    const conversation = await this.db.conversation.findUnique({ where: { id: conversationId } });
+    const project = await this.authorizeProject(key, secret);
+
+    const conversation = await this.db.conversation.findFirst({ where: { id: conversationId, projectId: project.id } });
     if (!conversation) throw new UnauthorizedException("Conversation not found");
 
     // Format content with options metadata if provided
@@ -111,14 +150,43 @@ export class IntegrationController {
       }
     });
 
-    await this.db.conversation.update({
+    const updated = await this.db.conversation.update({
       where: { id: conversationId },
-      data: { lastMessageAt: new Date() }
+      data: { 
+        lastMessageAt: new Date(),
+        ...(dto.status ? { status: dto.status } : {}),
+        ...(dto.assignedTo === "human" ? { automationMode: "HUMAN" } : {})
+      },
+      select: { id: true, projectId: true, status: true, automationMode: true, updatedAt: true, contactId: true }
     });
 
-    // Realtime notification to inbox & widget
     this.realtime.emitProject(conversation.projectId, SupportEvent.MessageCreated, msg);
     this.realtime.emitConversation(conversationId, SupportEvent.MessageCreated, msg);
+
+    if (dto.assignedTo === "human" || dto.status) {
+      this.realtime.emitProject(project.id, SupportEvent.ConversationAssigned, updated);
+      if (dto.status === "OPEN") {
+        const existingOpenTicket = await this.db.ticket.findFirst({
+          where: {
+            conversationId: conversation.id,
+            status: { notIn: ["RESOLVED", "CLOSED"] }
+          }
+        });
+        if (!existingOpenTicket) {
+          const ticket = await this.db.ticket.create({
+            data: {
+              projectId: project.id,
+              conversationId: conversation.id,
+              contactId: updated.contactId,
+              title: "Escalated by External Bot",
+              priority: "MEDIUM"
+            }
+          });
+          this.realtime.emitProject(project.id, SupportEvent.TicketCreated, ticket);
+          await this.core.queueTicketEmail(project.id, "created", ticket);
+        }
+      }
+    }
 
     return {
       id: msg.id,
@@ -129,8 +197,34 @@ export class IntegrationController {
     };
   }
 
+
+
   @Post("events")
   event() {
     return { accepted: true };
   }
+
+  private async authorizeProject(key: string, secret: string) {
+    const project = await this.db.project.findFirst({
+      where: {
+        OR: [{ key }, { integrationKey: key }, { id: key }]
+      }
+    });
+    const integrationSecret = (project as { integrationSecret?: string | null } | null)?.integrationSecret;
+    if (
+      !project ||
+      project.integrationRevokedAt ||
+      !(await this.matchesIntegrationSecret(secret ?? "", integrationSecret, project.integrationSecretHash))
+    ) {
+      throw new UnauthorizedException();
+    }
+    return project;
+  }
+
+  private async matchesIntegrationSecret(secret: string, storedSecret?: string | null, storedHash?: string | null) {
+    if (storedSecret && this.crypto.safeEqual(secret, storedSecret)) return true;
+    if (storedHash && (await this.crypto.compareSecret(secret, storedHash))) return true;
+    return false;
+  }
 }
+

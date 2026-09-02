@@ -1,6 +1,5 @@
 export type Role = "ADMIN" | "SUPPORT_AGENT";
-export type ConversationStatus =
-  "OPEN" | "WAITING_FOR_HUMAN" | "ASSIGNED" | "WAITING_FOR_CUSTOMER" | "RESOLVED" | "CLOSED";
+export type ConversationStatus = "OPEN" | "PENDING" | "SNOOZED" | "RESOLVED";
 export type AutomationMode = "AUTOMATED" | "HUMAN" | "AI";
 export type SenderType = "CUSTOMER" | "AGENT" | "BOT" | "SYSTEM";
 export type MessageStatus = "PENDING" | "SENT" | "FAILED";

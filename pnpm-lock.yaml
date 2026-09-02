@@ -92,6 +92,9 @@ importers:
       ioredis:
         specifier: ^5.7.0
         version: 5.11.1
+      nodemailer:
+        specifier: ^7.0.13
+        version: 7.0.13
       rxjs:
         specifier: ^7.8.1
         version: 7.8.1
@@ -111,6 +114,9 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.13.3
+      '@types/nodemailer':
+        specifier: ^7.0.12
+        version: 7.0.12
       eslint:
         specifier: ^9.33.0
         version: 9.39.5(jiti@2.7.0)
@@ -135,18 +141,18 @@ importers:
 
   apps/frontend:
     dependencies:
-      '@support-hub/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
-      '@support-hub/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@hookform/resolvers':
         specifier: ^5.2.1
         version: 5.8.0(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(class-transformer@0.5.1)(class-validator@0.14.4)(effect@3.21.0)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)
       '@sentry/nextjs':
         specifier: ^10.5.0
         version: 10.70.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@16.3.1(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(webpack@5.106.2(postcss@8.5.26))
+      '@support-hub/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@support-hub/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.85.3
         version: 5.101.4(react@19.2.8)
@@ -2068,6 +2074,9 @@ packages:
 
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
+
+  '@types/nodemailer@7.0.12':
+    resolution: {integrity: sha512-80vKwiIsVSyFA1rRovH59jNPLBOuc6dRZIHEu40gXTkBkZnQv8vog1xSGEb9j5q/tdMAs5ivvDR2pLTU0hGHXA==}
 
   '@types/react-dom@19.2.4':
     resolution: {integrity: sha512-Bsc+QHgp+P/F02XDzNCY9jnZNCUuLki36KT7VKrTXXLdHf+vHMNZnW1rVu5DNW/rCK+fya3DATySbLM4yhtKUw==}
@@ -4371,6 +4380,10 @@ packages:
   node-releases@2.0.53:
     resolution: {integrity: sha512-D9UOmYG3UH1V+ENW56t5QXBwJw1YEY18ruVeus89Rw+SyIgjPkCO84bRzO3uNIYosJbNwiabWVn48o3uJLjxFQ==}
     engines: {node: '>=18'}
+
+  nodemailer@7.0.13:
+    resolution: {integrity: sha512-PNDFSJdP+KFgdsG3ZzMXCgquO7I6McjY2vlqILjtJd0hy8wEvtugS9xKRF2NWlPNGxvLCXlTNIae4serI7dinw==}
+    engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -7412,6 +7425,10 @@ snapshots:
     dependencies:
       undici-types: 7.18.2
 
+  '@types/nodemailer@7.0.12':
+    dependencies:
+      '@types/node': 24.13.3
+
   '@types/react-dom@19.2.4(@types/react@19.2.18)':
     dependencies:
       '@types/react': 19.2.18
@@ -10286,6 +10303,8 @@ snapshots:
   node-int64@0.4.0: {}
 
   node-releases@2.0.53: {}
+
+  nodemailer@7.0.13: {}
 
   normalize-path@3.0.0: {}
 

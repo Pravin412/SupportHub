@@ -30,3 +30,10 @@ export function initials(name: string) {
 export function displayAtLeast(value: number, minimum: number) {
   return Math.max(value, minimum);
 }
+
+export function parseEmailList(value: string) {
+  return value
+    .split(/[\s,;]+/)
+    .map((email) => email.trim())
+    .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+}

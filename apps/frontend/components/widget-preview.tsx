@@ -25,7 +25,7 @@ export function WidgetPreview({
     widgetChannel?.welcomeMessage ??
     bot.data?.fallbackMessage ??
     "Hi, welcome in. Send us a message and our team will reply as soon as possible.";
-  const snippet = buildWidgetSnippet(widgetChannel?.publicId);
+  const snippet = buildWidgetSnippet(widgetChannel?.channelId);
 
   return (
     <Card className="overflow-hidden border-slate-200 xl:col-span-2">
@@ -39,7 +39,7 @@ export function WidgetPreview({
             <p className="text-xs text-muted">Customer chat preview with your custom logo and styling.</p>
           </div>
         </div>
-        <Badge className="border-teal-100 bg-teal-50 text-brand">{widgetChannel?.publicId ?? projectKey ?? "Draft"}</Badge>
+        <Badge className="border-teal-100 bg-teal-50 text-brand">{widgetChannel?.channelId ?? projectKey ?? "Draft"}</Badge>
       </div>
 
       <div className="grid gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -64,7 +64,7 @@ export function WidgetPreview({
             <div className="mb-2 flex items-center justify-between text-slate-300">
               <div className="flex items-center gap-2">
                 <Code2 size={14} />
-                Install snippet
+                Widget install snippet
               </div>
               <Button
                 className="h-7 gap-1 border-0 bg-transparent px-2 text-slate-300 shadow-none hover:text-white"

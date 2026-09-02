@@ -10,7 +10,10 @@ import { io, Socket } from "socket.io-client";
 import { WidgetMessagesList } from "./widget-messages-list";
 import { WidgetVisitorForm, WidgetLoadingSkeleton } from "./widget-form-and-loading";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+let API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
+  API_URL = `${window.location.protocol}//${window.location.hostname}:4000`;
+}
 
 function guestProfileStorageKey(channelId: string) {
   return `supporthub:guest-profile:${channelId}`;
@@ -55,7 +58,7 @@ export function WidgetContainer() {
     if (!channelId || activeUser.profileId) return;
     const storageKey = guestProfileStorageKey(channelId);
     const storedProfileId = window.localStorage.getItem(storageKey);
-    const profileId = storedProfileId || `guest-${crypto.randomUUID()}`;
+    const profileId = storedProfileId || `guest-${typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2)}`;
     if (!storedProfileId) {
       window.localStorage.setItem(storageKey, profileId);
     }

@@ -90,7 +90,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
 
       <div className="space-y-3 p-4">
         {channels.data?.map((channel) => {
-          const snippet = buildWidgetSnippet(channel.publicId);
+          const snippet = buildWidgetSnippet(channel.channelId);
           const currentLogo = logoUrl[channel.id] !== undefined ? logoUrl[channel.id] : (channel.logoUrl ?? "");
           const currentBotName = botName[channel.id] ?? botConfig.data?.botName ?? "Support Bot";
           const currentVisitorSettings = visitorSettings[channel.id] ?? {
@@ -117,8 +117,8 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                   )}
                   <div>
                     <div className="font-semibold">{channel.name}</div>
-                    <div className="mt-0.5 text-xs text-muted">Website widget · Project key {channel.projectKey}</div>
-                    <div className="mt-1 font-mono text-xs text-slate-600">Channel ID: {channel.publicId}</div>
+                    <div className="mt-0.5 text-xs text-muted">Website widget install code</div>
+                    <div className="mt-1 font-mono text-xs text-slate-600">Widget channel ID: {channel.channelId}</div>
                   </div>
                 </div>
                 <Badge className="border-teal-100 bg-teal-50 text-brand">{channel.enabled ? "Active" : "Disabled"}</Badge>
@@ -170,7 +170,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
               </div>
 
               <div className="mt-6 rounded-md bg-slate-950 p-3 text-xs text-slate-100">
-                <div className="mb-2 flex items-center gap-2 text-slate-300"><Code2 size={14} /> Install this channel</div>
+                <div className="mb-2 flex items-center gap-2 text-slate-300"><Code2 size={14} /> Install this widget channel</div>
                 <code className="block break-all leading-relaxed">{snippet}</code>
               </div>
               <Button className="mt-3 h-9 gap-2 border-slate-200 bg-white text-xs text-slate-900" onClick={() => navigator.clipboard?.writeText(snippet)}>

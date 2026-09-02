@@ -1,14 +1,15 @@
 "use client";
+
 import { use } from "react";
-import { AdminPanels } from "../../../../../components/admin-panels";
 import { BackButton } from "../../../../../components/back-button";
 import { LoadingIndicator } from "../../../../../components/loading-indicator";
+import { TicketsView } from "../../../../../components/tickets-view";
 import { useProjects } from "../../../../../lib/queries";
 
-export default function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
+export default function ProjectTicketsPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
   const projects = useProjects(true);
-  const selectedProject = projects.data?.find((p) => p.id === projectId);
+  const selectedProject = projects.data?.find((project) => project.id === projectId);
 
   if (projects.isLoading) {
     return (
@@ -24,13 +25,11 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ proj
 
   return (
     <div>
-      <div className="px-4 py-3 border-b bg-white/50 flex items-center justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <BackButton fallbackHref="/projects" />
-          <h1 className="truncate text-lg font-semibold">{selectedProject.name} Settings</h1>
-        </div>
+      <div className="flex items-center gap-3 border-b bg-white/50 px-4 py-3">
+        <BackButton fallbackHref={`/projects/${projectId}/settings`} />
+        <h1 className="truncate text-lg font-semibold">{selectedProject.name} Tickets</h1>
       </div>
-      <AdminPanels project={selectedProject} />
+      <TicketsView projectId={projectId} projectName={selectedProject.name} />
     </div>
   );
 }
