@@ -41,8 +41,8 @@ export function Sidebar() {
               <div className="text-3xs font-medium text-muted-light">Customer Support</div>
             </div>
           </div>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="md:hidden grid h-8 w-8 place-items-center rounded bg-slate-100 text-slate-500 hover:bg-slate-200"
             onClick={() => ui.setSidebar(false)}
           >
@@ -50,25 +50,50 @@ export function Sidebar() {
           </button>
         </div>
         <nav className="space-y-1 py-3 pr-3">
-          <NavLink active={pathname === "/" || pathname === "/dashboard"} href="/dashboard" icon={<Gauge size={18} />} onClick={() => ui.setSidebar(false)}>
+          <NavLink
+            active={pathname === "/" || pathname === "/dashboard"}
+            href="/dashboard"
+            icon={<Gauge size={18} />}
+            onClick={() => ui.setSidebar(false)}
+          >
             Dashboard
           </NavLink>
-          <NavLink active={pathname === "/inbox"} href="/inbox" icon={<Inbox size={18} />} onClick={() => ui.setSidebar(false)}>
+          <NavLink
+            active={pathname === "/inbox"}
+            href="/inbox"
+            icon={<Inbox size={18} />}
+            onClick={() => ui.setSidebar(false)}
+          >
             Inbox
           </NavLink>
 
-          <NavLink active={pathname === "/projects"} href="/projects" icon={<Folder size={18} />} onClick={() => ui.setSidebar(false)}>
+          <NavLink
+            active={pathname === "/projects"}
+            href="/projects"
+            icon={<Folder size={18} />}
+            onClick={() => ui.setSidebar(false)}
+          >
             Projects
           </NavLink>
         </nav>
 
         <nav className="space-y-1 pr-3 pb-3">
-          <NavLink active={pathname === "/tickets" || pathname.includes("/tickets")} href="/tickets" icon={<TicketCheck size={18} />} onClick={() => ui.setSidebar(false)}>
+          <NavLink
+            active={pathname === "/tickets" || pathname.includes("/tickets")}
+            href="/tickets"
+            icon={<TicketCheck size={18} />}
+            onClick={() => ui.setSidebar(false)}
+          >
             Tickets
           </NavLink>
         </nav>
         <nav className="space-y-1 pr-3 pb-3">
-          <NavLink active={pathname === "/documentation"} href="/documentation" icon={<HelpCircle size={18} />} onClick={() => ui.setSidebar(false)}>
+          <NavLink
+            active={pathname === "/documentation"}
+            href="/documentation"
+            icon={<HelpCircle size={18} />}
+            onClick={() => ui.setSidebar(false)}
+          >
             Documentation
           </NavLink>
         </nav>
