@@ -35,6 +35,10 @@ export function TicketsView({ projectId, projectName }: { projectId: string; pro
   const setConversation = useUiStore((state) => state.setConversation);
   const showToast = useUiStore((state) => state.showToast);
 
+  useEffect(() => {
+    setActiveStatus("OPEN");
+  }, [projectId]);
+
   const openConversation = (conversationId: string) => {
     setProject(projectId);
     setConversation(conversationId);

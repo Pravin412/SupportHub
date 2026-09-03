@@ -4,12 +4,14 @@ import { CheckCheck } from "lucide-react";
 export function WidgetMessagesList({
   messages,
   themeColor,
+  botName,
   isSending,
   onSendOption,
   messagesEndRef
 }: {
   messages: any[];
   themeColor: string;
+  botName?: string;
   isSending: boolean;
   onSendOption: (text: string) => Promise<void>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
@@ -41,6 +43,11 @@ export function WidgetMessagesList({
                   isUser ? "" : "bg-white border border-slate-200 text-slate-800"
                 }`}
               >
+                {!isUser && msg.senderType === "BOT" && (
+                  <span className="mb-1 block text-[10px] font-bold uppercase text-teal-700">
+                    {botName?.trim() || "Support Bot"}
+                  </span>
+                )}
                 {displayText}
 
                 {optionsList.length > 0 && (

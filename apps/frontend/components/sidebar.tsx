@@ -62,7 +62,10 @@ export function Sidebar() {
             active={pathname === "/inbox"}
             href="/inbox"
             icon={<Inbox size={18} />}
-            onClick={() => ui.setSidebar(false)}
+            onClick={() => {
+              ui.resetInboxSelection();
+              ui.setSidebar(false);
+            }}
           >
             Inbox
           </NavLink>

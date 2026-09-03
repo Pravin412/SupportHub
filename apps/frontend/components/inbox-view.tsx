@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useUiStore } from "../lib/store";
-import { useConversations, useMessages, useProjects, useSendMessage, keys } from "../lib/queries";
+import { useBotConfig, useConversations, useMessages, useProjects, useSendMessage, keys } from "../lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
 import { ClientEvent } from "../lib/events";
@@ -34,6 +34,7 @@ export function InboxView() {
   const selectedProject = projects.data?.find((project) => project.id === selectedProjectId);
 
   const conversations = useConversations(selectedProjectId, debouncedSearch);
+  const botConfig = useBotConfig(selectedProjectId);
 
   const activeConversation =
     conversations.data?.find((conversation) => conversation.id === ui.selectedConversationId) ??
@@ -106,6 +107,7 @@ export function InboxView() {
           <InboxChatView
             activeConversation={activeConversation}
             selectedProject={selectedProject}
+            botName={botConfig.data?.botName}
             messages={messages}
             draft={draft}
             onDraftChange={setDraft}

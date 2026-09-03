@@ -279,6 +279,7 @@ export function WidgetContainer() {
               <WidgetMessagesList
                 messages={messages}
                 themeColor={themeColor}
+                botName={config?.botName}
                 isSending={isSending}
                 onSendOption={handleOptionSend}
                 messagesEndRef={messagesEndRef}

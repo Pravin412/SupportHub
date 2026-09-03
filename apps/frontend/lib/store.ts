@@ -13,6 +13,7 @@ type UiState = {
   toasts: Toast[];
   setProject: (id: string) => void;
   setConversation: (id?: string) => void;
+  resetInboxSelection: () => void;
   setSidebar: (open: boolean) => void;
   showToast: (message: string, type?: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
@@ -23,6 +24,7 @@ export const useUiStore = create<UiState>((set) => ({
   toasts: [],
   setProject: (selectedProjectId) => set({ selectedProjectId, selectedConversationId: undefined }),
   setConversation: (selectedConversationId) => set({ selectedConversationId }),
+  resetInboxSelection: () => set({ selectedProjectId: undefined, selectedConversationId: undefined }),
   setSidebar: (sidebarOpen) => set({ sidebarOpen }),
   showToast: (message, type = "success") => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -40,4 +42,3 @@ export const useUiStore = create<UiState>((set) => ({
       toasts: state.toasts.filter((toast) => toast.id !== id)
     }))
 }));
-

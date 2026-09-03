@@ -12,6 +12,7 @@ import { ConfirmationModal } from "./confirmation-modal";
 export function InboxChatView({
   activeConversation,
   selectedProject,
+  botName,
   messages,
   draft,
   onDraftChange,
@@ -20,6 +21,7 @@ export function InboxChatView({
 }: {
   activeConversation: any;
   selectedProject: any;
+  botName?: string;
   messages: any;
   draft: string;
   onDraftChange: (v: string) => void;
@@ -149,6 +151,7 @@ export function InboxChatView({
           {messages.data?.slice().reverse().map((m: any) => {
             const isAgent = m.senderType === "AGENT";
             const isBot = m.senderType === "BOT";
+            const isOutgoing = isAgent || isBot;
             const time = formatMessageTime(m.createdAt);
 
             const { text: contentText, options: optionsList } = parseMessageOptions(m.content);
@@ -158,19 +161,19 @@ export function InboxChatView({
                 key={m.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`mb-6 flex flex-col ${isAgent ? "items-end" : "items-start"}`}
+                className={`mb-6 flex flex-col ${isOutgoing ? "items-end" : "items-start"}`}
               >
                 <div
                   className={
-                    isAgent
+                    isOutgoing
                       ? "max-w-chat-bubble rounded-2xl rounded-br-xs bg-chat-bubble-bg px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm whitespace-pre-wrap"
-                      : isBot
-                      ? "max-w-chat-bubble rounded-2xl rounded-bl-xs bg-slate-100 px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm border border-slate-200 whitespace-pre-wrap"
                       : "max-w-chat-bubble rounded-2xl rounded-bl-xs bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-700 shadow-sm border border-slate-100 whitespace-pre-wrap"
                   }
                 >
                   {isBot && (
-                    <span className="block text-[10px] font-bold uppercase text-teal-700 mb-1">Bot</span>
+                    <span className="mb-1 block text-[10px] font-bold uppercase text-white/80">
+                      {botName?.trim() || "Support Bot"}
+                    </span>
                   )}
                   {contentText}
                   {optionsList.length > 0 && (
@@ -183,9 +186,9 @@ export function InboxChatView({
                     </div>
                   )}
                 </div>
-                <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isAgent ? "pr-1" : "pl-1"}`}>
+                <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isOutgoing ? "pr-1" : "pl-1"}`}>
                   <span>{time}</span>
-                  {isAgent ? <CheckCheck size={12} className="text-chat-bubble-bg" /> : null}
+                  {isOutgoing ? <CheckCheck size={12} className="text-chat-bubble-bg" /> : null}
                 </div>
               </motion.div>
             );
