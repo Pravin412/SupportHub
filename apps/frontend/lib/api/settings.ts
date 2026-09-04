@@ -46,6 +46,7 @@ export const settingsApi = {
       smtpPort: number;
       smtpSecure: boolean;
       smtpUser: string;
+      fromName?: string | null;
     } | null>(`/projects/${projectId}/email-settings`),
   updateEmailSettings: (
     projectId: string,
@@ -55,6 +56,7 @@ export const settingsApi = {
       smtpSecure: boolean;
       smtpUser: string;
       smtpPassword?: string;
+      fromName?: string;
     }
   ) =>
     request(`/projects/${projectId}/email-settings`, {

@@ -65,10 +65,12 @@ export class EmailProcessor extends WorkerHost {
 
     if (projectSmtp && projectSmtp.enabled) {
       const smtpPassword = this.crypto.decryptSecret(projectSmtp.smtpPassword);
+      const isPort465 = projectSmtp.smtpPort === 465;
+      const secure = isPort465 ? true : projectSmtp.smtpSecure;
       const transporter = nodemailer.createTransport({
         host: projectSmtp.smtpHost,
         port: projectSmtp.smtpPort,
-        secure: projectSmtp.smtpSecure,
+        secure,
         auth: { user: projectSmtp.smtpUser, pass: smtpPassword }
       });
 

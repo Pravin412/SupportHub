@@ -48,6 +48,7 @@ class EmailSettingsDto {
   @IsBoolean() smtpSecure!: boolean;
   @IsString() smtpUser!: string;
   @IsString() @IsOptional() smtpPassword?: string;
+  @IsString() @IsOptional() fromName?: string;
 }
 class WidgetSettingsDto {
   @IsString() @IsOptional() welcomeMessage?: string;

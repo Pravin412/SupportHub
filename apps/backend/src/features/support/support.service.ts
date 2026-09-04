@@ -1139,6 +1139,7 @@ export class CoreService {
       smtpSecure: boolean;
       smtpUser: string;
       smtpPassword?: string;
+      fromName?: string;
     }
   ) {
     const member = await this.assertMember(userId, projectId);
@@ -1161,14 +1162,16 @@ export class CoreService {
         smtpPort: data.smtpPort,
         smtpSecure: data.smtpSecure,
         smtpUser: data.smtpUser,
-        smtpPassword
+        smtpPassword,
+        fromName: data.fromName
       },
       update: {
         smtpHost: data.smtpHost,
         smtpPort: data.smtpPort,
         smtpSecure: data.smtpSecure,
         smtpUser: data.smtpUser,
-        smtpPassword
+        smtpPassword,
+        fromName: data.fromName
       }
     });
   }

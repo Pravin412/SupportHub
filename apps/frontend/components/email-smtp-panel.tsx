@@ -16,7 +16,8 @@ const smtpSchema = z.object({
   smtpPort: z.number().min(1, "SMTP Port is required"),
   smtpSecure: z.boolean(),
   smtpUser: z.string().min(1, "SMTP User is required"),
-  smtpPassword: z.string().optional()
+  smtpPassword: z.string().optional(),
+  fromName: z.string().optional()
 });
 
 export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
@@ -33,7 +34,8 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
       smtpPort: 587,
       smtpSecure: false,
       smtpUser: "",
-      smtpPassword: ""
+      smtpPassword: "",
+      fromName: ""
     }
   });
 
@@ -44,7 +46,8 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
         smtpPort: settings.data.smtpPort,
         smtpSecure: settings.data.smtpSecure,
         smtpUser: settings.data.smtpUser,
-        smtpPassword: "" // Don't show password
+        smtpPassword: "", // Don't show password
+        fromName: settings.data.fromName ?? ""
       });
     }
   }, [settings.data, form]);
@@ -100,7 +103,22 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
           
           <label className="block">
             <span className="text-sm font-medium">SMTP Port</span>
-            <Input className="mt-1" type="number" placeholder="587" {...form.register("smtpPort", { valueAsNumber: true })} />
+            <Input
+              className="mt-1"
+              type="number"
+              placeholder="587"
+              {...form.register("smtpPort", {
+                valueAsNumber: true,
+                onChange: (e) => {
+                  const port = Number(e.target.value);
+                  if (port === 465) {
+                    form.setValue("smtpSecure", true);
+                  } else if (port === 587 || port === 25) {
+                    form.setValue("smtpSecure", false);
+                  }
+                }
+              })}
+            />
             {form.formState.errors.smtpPort && (
               <p className="mt-1 text-xs font-medium text-red-700">{form.formState.errors.smtpPort.message}</p>
             )}
@@ -140,11 +158,22 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
           </label>
         </div>
 
-        <CheckboxField 
-          control={form.control} 
-          name="smtpSecure" 
-          label="Use secure connection (SSL/TLS)" 
-        />
+        <label className="block">
+          <span className="text-sm font-medium">Sender Name (Optional)</span>
+          <Input className="mt-1" placeholder="e.g. Support Team" {...form.register("fromName")} />
+          <span className="text-xs text-muted">Displayed as the sender name in recipient inboxes (e.g. "Support Team" &lt;noreply@example.com&gt;).</span>
+        </label>
+
+        <div className="space-y-1">
+          <CheckboxField 
+            control={form.control} 
+            name="smtpSecure" 
+            label="Use secure connection (SSL/TLS)" 
+          />
+          <p className="text-xs text-muted pl-6">
+            Enable for Port 465 (SSL). Disable for Port 587 (STARTTLS).
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={!projectId || form.formState.isSubmitting}>
