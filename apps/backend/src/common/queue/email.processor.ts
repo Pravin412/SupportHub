@@ -24,6 +24,11 @@ export class EmailProcessor extends WorkerHost {
   }
 
   async process(job: Job<EmailJob>) {
+    if (job.data.to?.toLowerCase() === "admin@gmail.com") {
+      this.logger.warn(`[email] Skipped sending email to dummy admin email: ${job.data.to}`);
+      return;
+    }
+
     const notification = await this.db.emailNotification.create({
       data: {
         projectId: job.data.projectId,

@@ -1086,7 +1086,9 @@ export class CoreService {
         ...projectMembers.map((member) => member.user.email),
         ...parseEmailList(settings?.notificationEmail)
       ])
-    ).filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+    )
+      .filter((email) => email.toLowerCase() !== "admin@gmail.com")
+      .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
     if (!recipients.length) return;
 
     const ticketDetails = await this.db.ticket.findUnique({
@@ -1186,13 +1188,17 @@ export class CoreService {
     const user = await this.db.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException("User not found");
 
+    const testRecipient = user.email.toLowerCase() === "admin@gmail.com"
+      ? (process.env.BCC_EMAIL || user.email)
+      : user.email;
+
     await this.queues.queueEmail(
       projectId,
-      user.email,
+      testRecipient,
       "Test Email from SupportHub",
       "If you are seeing this, your project's custom SMTP configuration is working correctly!"
     );
 
-    return { success: true, message: "Test email queued successfully" };
+    return { success: true, message: `Test email queued successfully to ${testRecipient}` };
   }
 }
