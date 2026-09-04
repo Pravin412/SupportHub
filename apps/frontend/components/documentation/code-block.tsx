@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { Button } from "@support-hub/ui";
 
 export function CodeBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -21,5 +22,21 @@ export function CodeBlock({ code }: { code: string }) {
       </button>
       <pre><code>{code}</code></pre>
     </div>
+  );
+}
+
+export function TabButton({ children, active, onClick, icon }: any) {
+  return (
+    <Button
+      onClick={onClick}
+      className={`h-auto rounded-none border-0 border-b-2 bg-transparent px-4 py-2 text-sm font-medium shadow-none transition-colors whitespace-nowrap ${
+        active 
+          ? "border-teal-600 text-teal-700" 
+          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+      }`}
+    >
+      {icon}
+      {children}
+    </Button>
   );
 }
