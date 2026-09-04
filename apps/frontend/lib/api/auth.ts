@@ -16,5 +16,12 @@ export const authApi = {
     clearAccessToken();
     return data;
   },
-  me: () => request<{ id: string; email: string; name: string }>("/auth/me")
+  me: () =>
+    request<{
+      id: string;
+      email: string;
+      name: string;
+      role: "ADMIN" | "PROJECT_ADMIN" | "PROJECT_AGENT";
+      memberships: Array<{ projectId: string; role: "ADMIN" | "PROJECT_ADMIN" | "PROJECT_AGENT" }>;
+    }>("/auth/me")
 };

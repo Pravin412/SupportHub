@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, TicketStatus, ConversationStatus } from "@prisma/client";
+import { Prisma, TicketStatus, ConversationStatus, Role, AutomationMode } from "@prisma/client";
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
 import { SupportEvent } from "../../common/events/support-events";
@@ -95,16 +95,34 @@ export class CoreService {
   ) {}
 
   async assertMember(userId: string, projectId: string) {
+    const user = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role === "ADMIN") return { id: "admin", projectId, userId, role: "ADMIN" as Role };
     const member = await this.db.projectMember.findUnique({ where: { projectId_userId: { projectId, userId } } });
     if (!member) throw new ForbiddenException("Project access denied");
     return member;
   }
 
-  projects(userId: string) {
-    return this.db.project.findMany({
-      where: { members: { some: { userId } } },
-      select: { id: true, name: true, key: true, widgetChannel: { select: { id: true, channelId: true, enabled: true } } }
+  async assertProjectAdmin(userId: string, projectId: string) {
+    const user = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role === "ADMIN") return;
+    const member = await this.db.projectMember.findUnique({
+      where: { projectId_userId: { projectId, userId } },
+      select: { role: true }
     });
+    if (member?.role !== "PROJECT_ADMIN") throw new ForbiddenException("Project admin access required");
+  }
+
+  async assertGlobalAdmin(userId: string) {
+    const user = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role !== "ADMIN") throw new ForbiddenException("Admin access required");
+  }
+
+  projects(userId: string) {
+    return this.db.user.findUnique({ where: { id: userId }, select: { role: true } }).then((user) =>
+      this.db.project.findMany({
+      where: user?.role === "ADMIN" ? {} : { members: { some: { userId } } },
+      select: { id: true, name: true, key: true, widgetChannel: { select: { id: true, channelId: true, enabled: true } } }
+    }));
   }
 
   async dashboardSummary(userId: string, range: DashboardRange = "all") {
@@ -158,6 +176,7 @@ export class CoreService {
   }
 
   async createProject(userId: string, data: { name: string; key?: string }) {
+    await this.assertGlobalAdmin(userId);
     const secret = this.crypto.randomToken();
     const cleanPrefix = data.name.toLowerCase().trim().replace(/[^a-z0-9]/g, "").slice(0, 8);
     const uniqueSuffix = this.crypto.randomToken(8).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16);
@@ -190,10 +209,7 @@ export class CoreService {
   }
 
   async deleteProject(userId: string, projectId: string) {
-    const member = await this.assertMember(userId, projectId);
-    if (member.role !== "ADMIN") {
-      throw new ForbiddenException("Only project admins can delete a project.");
-    }
+    await this.assertGlobalAdmin(userId);
     await this.db.project.delete({
       where: { id: projectId }
     });
@@ -252,7 +268,7 @@ export class CoreService {
   }
 
   async integrationCredentials(userId: string, projectId: string) {
-    await this.assertMember(userId, projectId);
+    await this.assertProjectAdmin(userId, projectId);
     const project = await this.db.project.findUnique({
       where: { id: projectId },
       select: { integrationKey: true, integrationSecret: true, integrationRevokedAt: true } as Prisma.ProjectSelect
@@ -262,10 +278,7 @@ export class CoreService {
   }
 
   async rotateIntegrationSecret(userId: string, projectId: string) {
-    const member = await this.assertMember(userId, projectId);
-    if (member.role !== "ADMIN") {
-      throw new ForbiddenException("Only project admins can rotate the integration secret.");
-    }
+    await this.assertProjectAdmin(userId, projectId);
 
     const secret = this.crypto.randomToken();
     const project = await this.db.project.update({
@@ -293,7 +306,7 @@ export class CoreService {
       visitorPhoneEnabled?: boolean;
     }
   ) {
-    await this.assertMember(userId, projectId);
+    await this.assertProjectAdmin(userId, projectId);
     const project = await this.db.project.findUnique({ where: { id: projectId }, select: { key: true, name: true } });
     if (!project) throw new NotFoundException("Project not found");
     const existingChannel = await this.db.widgetChannel.findUnique({
@@ -340,19 +353,77 @@ export class CoreService {
     });
   }
 
-  async createAgent(userId: string, projectId: string, data: { email: string; name: string }) {
-    await this.assertMember(userId, projectId);
-    const user = await this.db.user.upsert({
-      where: { email: data.email },
-      update: { name: data.name },
-      create: { email: data.email, name: data.name, passwordHash: await this.crypto.hashSecret("SupportHub123!") }
+  async lookupAgent(userId: string, projectId: string, email: string) {
+    await this.assertProjectAdmin(userId, projectId);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return { exists: false };
+    const user = await this.db.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, email: true, name: true }
     });
+    return user ? { exists: true, user } : { exists: false };
+  }
+
+  async createAgent(userId: string, projectId: string, data: { email: string; name: string; password?: string; role?: Role }) {
+    await this.assertProjectAdmin(userId, projectId);
+    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const requestedRole = data.role === "PROJECT_ADMIN" ? "PROJECT_ADMIN" : "PROJECT_AGENT";
+    if (currentUser?.role !== "ADMIN" && requestedRole === "PROJECT_ADMIN") {
+      throw new ForbiddenException("Only admin can add project admins");
+    }
+    const existingUser = await this.db.user.findUnique({ where: { email: normalizedEmail } });
+    if (!existingUser && !data.password) throw new BadRequestException("Password is required for a new user");
+
+    const user = existingUser
+      ? await this.db.user.update({
+          where: { id: existingUser.id },
+          data: { name: data.name || existingUser.name }
+        })
+      : await this.db.user.create({
+          data: {
+            email: normalizedEmail,
+            name: data.name,
+            role: "PROJECT_AGENT",
+            passwordHash: await this.crypto.hashSecret(data.password!)
+          }
+        });
     return this.db.projectMember.upsert({
       where: { projectId_userId: { projectId, userId: user.id } },
-      update: {},
-      create: { projectId, userId: user.id, role: "SUPPORT_AGENT" },
+      update: { role: requestedRole },
+      create: { projectId, userId: user.id, role: requestedRole },
       select: { id: true, role: true, user: { select: { id: true, name: true, email: true } } }
     });
+  }
+
+  async updateAgentPassword(userId: string, projectId: string, memberId: string, password: string) {
+    await this.assertProjectAdmin(userId, projectId);
+    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const member = await this.db.projectMember.findUnique({
+      where: { id: memberId },
+      select: { projectId: true, role: true, userId: true }
+    });
+    if (!member || member.projectId !== projectId) throw new NotFoundException("Project user not found");
+    if (currentUser?.role !== "ADMIN" && member.role === "PROJECT_ADMIN") {
+      throw new ForbiddenException("Only admin can reset project admin passwords");
+    }
+    await this.db.user.update({
+      where: { id: member.userId },
+      data: { passwordHash: await this.crypto.hashSecret(password) }
+    });
+    return { ok: true };
+  }
+
+  async removeAgent(userId: string, projectId: string, memberId: string) {
+    await this.assertProjectAdmin(userId, projectId);
+    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const member = await this.db.projectMember.findUnique({ where: { id: memberId }, select: { projectId: true, role: true } });
+    if (!member || member.projectId !== projectId) throw new NotFoundException("Project user not found");
+    if (currentUser?.role !== "ADMIN" && member.role === "PROJECT_ADMIN") {
+      throw new ForbiddenException("Only admin can remove project admins");
+    }
+    await this.db.projectMember.delete({ where: { id: memberId } });
+    return { ok: true };
   }
 
   async conversations(userId: string, projectId: string, cursor?: string, search?: string) {
@@ -400,7 +471,7 @@ export class CoreService {
       where: { id: conversationId },
       data: {
         status,
-        automationMode: status === "RESOLVED" ? "AUTOMATED" : status === "OPEN" ? "HUMAN" : undefined
+        automationMode: status === ConversationStatus.RESOLVED ? AutomationMode.AUTOMATED : status === ConversationStatus.OPEN ? AutomationMode.HUMAN : undefined
       }
     });
 
@@ -448,7 +519,7 @@ export class CoreService {
     });
     await this.db.conversation.update({
       where: { id: conversationId },
-      data: { lastMessageAt: new Date(), unreadCount: 0, status: "OPEN", automationMode: "HUMAN" }
+      data: { lastMessageAt: new Date(), unreadCount: 0, status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
     });
     this.realtime.emitProject(c.projectId, SupportEvent.MessageCreated, msg);
     this.realtime.emitConversation(conversationId, SupportEvent.MessageCreated, msg);
@@ -475,7 +546,7 @@ export class CoreService {
 
     await this.db.conversation.update({
       where: { id: conversationId },
-      data: { status: "OPEN", automationMode: "HUMAN", lastMessageAt: new Date() }
+      data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN, lastMessageAt: new Date() }
     });
 
     if (existingActiveTicket) {
@@ -511,7 +582,7 @@ export class CoreService {
         where: {
           conversationId: ticket.conversationId,
           id: { not: ticket.id },
-          status: { notIn: ["RESOLVED", "CLOSED"] }
+          status: { notIn: [TicketStatus.RESOLVED, TicketStatus.CLOSED] }
         },
         data: { status }
       });
@@ -519,20 +590,20 @@ export class CoreService {
       const activeTicketCount = await this.db.ticket.count({
         where: {
           conversationId: ticket.conversationId,
-          status: { notIn: ["RESOLVED", "CLOSED"] }
+          status: { notIn: [TicketStatus.RESOLVED, TicketStatus.CLOSED] }
         }
       });
 
       if (activeTicketCount === 0) {
         await this.db.conversation.update({
           where: { id: ticket.conversationId },
-          data: { status: "RESOLVED", automationMode: "AUTOMATED" }
+          data: { status: ConversationStatus.RESOLVED, automationMode: AutomationMode.AUTOMATED }
         });
       }
     } else {
       await this.db.conversation.update({
         where: { id: ticket.conversationId },
-        data: { status: "OPEN", automationMode: "HUMAN" }
+        data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
       });
     }
 
@@ -585,34 +656,73 @@ export class CoreService {
     );
   }
 
-  async webhook(userId: string, projectId: string) {
-    await this.assertMember(userId, projectId);
-    return this.db.webhook.findUnique({
+  async webhooks(userId: string, projectId: string) {
+    await this.assertProjectAdmin(userId, projectId);
+    return this.db.webhook.findMany({
       where: { projectId },
-      select: { id: true, url: true, enabled: true, events: true, timeoutMs: true, retryCount: true, secret: true }
+      select: { id: true, name: true, url: true, isActive: true, enabled: true, events: true, timeoutMs: true, retryCount: true, secret: true }
     });
   }
 
-  async updateWebhook(userId: string, projectId: string, data: { url: string }) {
-    await this.assertMember(userId, projectId);
+  async createWebhook(userId: string, projectId: string, data: { name: string, url: string, isActive?: boolean }) {
+    await this.assertProjectAdmin(userId, projectId);
+    
+    if (data.isActive) {
+      await this.db.webhook.updateMany({
+        where: { projectId },
+        data: { isActive: false }
+      });
+    }
+
     const signingSecret = this.crypto.randomToken();
-    const webhook = await this.db.webhook.upsert({
-      where: { projectId },
-      update: { url: data.url, secretHash: await this.crypto.hashSecret(signingSecret), secret: signingSecret, enabled: true },
-      create: {
+    const webhook = await this.db.webhook.create({
+      data: {
         projectId,
+        name: data.name || "New Bot",
         url: data.url,
+        isActive: data.isActive || false,
         secretHash: await this.crypto.hashSecret(signingSecret),
         secret: signingSecret,
+        enabled: true,
         events: [SupportEvent.MessageCreated, SupportEvent.TicketCreated, SupportEvent.ConversationAssigned]
       },
-      select: { id: true, url: true, enabled: true, events: true, secret: true }
+      select: { id: true, name: true, url: true, isActive: true, enabled: true, events: true, secret: true }
     });
     return { ...webhook, signingSecret };
   }
 
+  async updateWebhook(userId: string, projectId: string, webhookId: string, data: { name?: string, url?: string, isActive?: boolean }) {
+    await this.assertProjectAdmin(userId, projectId);
+    
+    if (data.isActive) {
+      await this.db.webhook.updateMany({
+        where: { projectId, id: { not: webhookId } },
+        data: { isActive: false }
+      });
+    }
+
+    const webhook = await this.db.webhook.update({
+      where: { id: webhookId, projectId },
+      data: { 
+        name: data.name,
+        url: data.url,
+        isActive: data.isActive
+      },
+      select: { id: true, name: true, url: true, isActive: true, enabled: true, events: true, secret: true }
+    });
+    return webhook;
+  }
+
+  async deleteWebhook(userId: string, projectId: string, webhookId: string) {
+    await this.assertProjectAdmin(userId, projectId);
+    await this.db.webhook.delete({
+      where: { id: webhookId, projectId }
+    });
+    return { success: true };
+  }
+
   async notificationSettings(userId: string, projectId: string) {
-    await this.assertMember(userId, projectId);
+    await this.assertProjectAdmin(userId, projectId);
     const settings = await this.db.projectNotificationSettings.findUnique({
       where: { projectId },
       select: {
@@ -638,7 +748,7 @@ export class CoreService {
       messageReceivedEnabled?: boolean;
     }
   ) {
-    await this.assertMember(userId, projectId);
+    await this.assertProjectAdmin(userId, projectId);
     const emails = parseEmailList(data.notificationEmail);
     if (!emails.length) throw new BadRequestException("Add at least one valid notification email.");
 
@@ -669,7 +779,6 @@ export class CoreService {
     });
     return { ...settings, notificationEmails: emails };
   }
-
   async widgetConfig(channelId: string) {
     const channel = await this.db.widgetChannel.findUnique({
       where: { channelId },
@@ -790,7 +899,7 @@ export class CoreService {
 
     // If an external webhook is active, let the external bot handle handoff logic.
     // Otherwise, check for internal bot handoff keywords.
-    const webhook = await this.db.webhook.findUnique({ where: { projectId: channel.projectId } });
+    const webhook = await this.db.webhook.findFirst({ where: { projectId: channel.projectId, isActive: true } });
     const botConfig = await this.db.botConfiguration.findUnique({ where: { projectId: channel.projectId } });
     
     const containsKeyword = Boolean(
@@ -802,7 +911,7 @@ export class CoreService {
     if (containsKeyword) {
       await this.db.conversation.update({
         where: { id: conversation.id },
-        data: { status: "OPEN", automationMode: "HUMAN" }
+        data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
       });
       const existingOpenTicket = await this.db.ticket.findFirst({
         where: {
@@ -957,7 +1066,27 @@ export class CoreService {
       event === "created" ? settings?.ticketCreatedEnabled !== false : settings?.ticketAssignedEnabled !== false;
     if (!enabled) return;
 
-    const recipients = parseEmailList(settings?.notificationEmail);
+    const [globalAdmins, projectMembers] = await Promise.all([
+      this.db.user.findMany({
+        where: { role: "ADMIN" },
+        select: { email: true }
+      }),
+      this.db.projectMember.findMany({
+        where: {
+          projectId,
+          role: { in: ["PROJECT_ADMIN", "PROJECT_AGENT"] }
+        },
+        select: { user: { select: { email: true } } }
+      })
+    ]);
+
+    const recipients = Array.from(
+      new Set([
+        ...globalAdmins.map((admin) => admin.email),
+        ...projectMembers.map((member) => member.user.email),
+        ...parseEmailList(settings?.notificationEmail)
+      ])
+    ).filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
     if (!recipients.length) return;
 
     const ticketDetails = await this.db.ticket.findUnique({
@@ -990,5 +1119,77 @@ export class CoreService {
 
     await Promise.all(recipients.map((to) => this.queues.queueEmail(projectId, to, subject, text)));
   }
-}
 
+  async emailSettings(userId: string, projectId: string) {
+    await this.assertMember(userId, projectId);
+    const settings = await this.db.projectEmailSettings.findUnique({
+      where: { projectId }
+    });
+    if (!settings) return null;
+    const { smtpPassword, ...rest } = settings;
+    return rest;
+  }
+
+  async updateEmailSettings(
+    userId: string,
+    projectId: string,
+    data: {
+      smtpHost: string;
+      smtpPort: number;
+      smtpSecure: boolean;
+      smtpUser: string;
+      smtpPassword?: string;
+    }
+  ) {
+    const member = await this.assertMember(userId, projectId);
+    if (member.role === "PROJECT_AGENT") throw new ForbiddenException("Agents cannot update email settings");
+
+    const existing = await this.db.projectEmailSettings.findUnique({ where: { projectId } });
+    
+    // If no password provided, use existing. If provided, update it.
+    const smtpPassword = data.smtpPassword ? this.crypto.encryptSecret(data.smtpPassword) : existing?.smtpPassword;
+    
+    if (!smtpPassword) {
+      throw new BadRequestException("SMTP password is required");
+    }
+
+    return this.db.projectEmailSettings.upsert({
+      where: { projectId },
+      create: {
+        projectId,
+        smtpHost: data.smtpHost,
+        smtpPort: data.smtpPort,
+        smtpSecure: data.smtpSecure,
+        smtpUser: data.smtpUser,
+        smtpPassword
+      },
+      update: {
+        smtpHost: data.smtpHost,
+        smtpPort: data.smtpPort,
+        smtpSecure: data.smtpSecure,
+        smtpUser: data.smtpUser,
+        smtpPassword
+      }
+    });
+  }
+
+  async testEmailSettings(userId: string, projectId: string) {
+    const member = await this.assertMember(userId, projectId);
+    if (member.role === "PROJECT_AGENT") throw new ForbiddenException("Agents cannot test email settings");
+
+    const settings = await this.db.projectEmailSettings.findUnique({ where: { projectId } });
+    if (!settings) throw new BadRequestException("No email settings configured for this project");
+
+    const user = await this.db.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException("User not found");
+
+    await this.queues.queueEmail(
+      projectId,
+      user.email,
+      "Test Email from SupportHub",
+      "If you are seeing this, your project's custom SMTP configuration is working correctly!"
+    );
+
+    return { success: true, message: "Test email queued successfully" };
+  }
+}

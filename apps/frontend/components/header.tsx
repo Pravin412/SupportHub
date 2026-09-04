@@ -50,7 +50,7 @@ export function Header() {
   const hasResults = results && (results.projects?.length > 0 || results.tickets?.length > 0 || results.contacts?.length > 0 || results.conversations?.length > 0);
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-6 border-b border-border bg-white px-4">
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-6 border-b border-border bg-white px-4">
       <Button className="h-9 w-9 px-0 md:hidden" onClick={() => ui.setSidebar(true)}>
         <Menu size={18} />
       </Button>
@@ -59,6 +59,7 @@ export function Header() {
         <Input 
           className="h-9 border-slate-200 bg-slate-50 pl-9 text-xs shadow-none focus-visible:ring-1 focus-visible:ring-brand focus-visible:border-brand" 
           placeholder="Search..." 
+          autoComplete="off"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => { if (query.length > 1) setIsOpen(true) }}

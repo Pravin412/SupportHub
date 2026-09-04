@@ -57,7 +57,13 @@ export class AuthService {
   async me(userId: string) {
     return this.db.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, role: true }
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        memberships: { select: { projectId: true, role: true } }
+      }
     });
   }
 

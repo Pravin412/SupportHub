@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
+import { AutomationMode } from "@prisma/client";
 import { PrismaService } from "../../common/database/prisma.service";
 import { CoreService } from "../support/support.service";
 
 type BotConfigInput = {
-  responseMode: "AUTOMATED" | "HUMAN" | "AI";
+  responseMode: AutomationMode;
   botName: string;
   fallbackMessage: string;
   botAvatar?: string;
@@ -37,7 +38,7 @@ export class BotService {
   }
 
   async updateConfig(userId: string, projectId: string, data: BotConfigInput) {
-    await this.core.assertMember(userId, projectId);
+    await this.core.assertProjectAdmin(userId, projectId);
     return this.db.botConfiguration.upsert({
       where: { projectId },
       update: data,

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Bot, Code2, MessageCircle, Send, X, Copy, Check } from "lucide-react";
 import { Badge, Button, Card } from "@support-hub/ui";
-import { buildWidgetSnippet } from "../lib/helpers";
+import { buildWidgetSnippet } from "@support-hub/utils";
 import { useBotConfig, useChannels } from "../lib/queries";
 
 export function WidgetPreview({

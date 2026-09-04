@@ -1,10 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
-import { TicketPriority, TicketStatus, ConversationStatus } from "@prisma/client";
-import { SupportEvent } from "../../common/events/support-events";
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength, IsNumber } from "class-validator";
+import { TicketPriority, TicketStatus, ConversationStatus, Role } from "@prisma/client";
 import { BotService } from "../bot/bot.service";
 import { CoreService } from "./support.service";
 
@@ -25,9 +24,16 @@ class ProjectDto {
 class AgentDto {
   @IsEmail() email!: string;
   @IsString() @MinLength(2) name!: string;
+  @IsString() @MinLength(8) @IsOptional() password?: string;
+  @IsEnum(Role) @IsOptional() role?: Role;
+}
+class AgentPasswordDto {
+  @IsString() @MinLength(8) password!: string;
 }
 class WebhookDto {
+  @IsString() name!: string;
   @IsString() url!: string;
+  @IsBoolean() @IsOptional() isActive?: boolean;
 }
 class NotificationSettingsDto {
   @IsString() notificationEmail!: string;
@@ -35,6 +41,13 @@ class NotificationSettingsDto {
   @IsBoolean() @IsOptional() ticketAssignedEnabled?: boolean;
   @IsBoolean() @IsOptional() conversationAssignedEnabled?: boolean;
   @IsBoolean() @IsOptional() messageReceivedEnabled?: boolean;
+}
+class EmailSettingsDto {
+  @IsString() smtpHost!: string;
+  @IsNumber() smtpPort!: number;
+  @IsBoolean() smtpSecure!: boolean;
+  @IsString() smtpUser!: string;
+  @IsString() @IsOptional() smtpPassword?: string;
 }
 class WidgetSettingsDto {
   @IsString() @IsOptional() welcomeMessage?: string;
@@ -68,83 +81,103 @@ export class CoreController {
   ) {}
 
   @Get("projects")
-  projects(@Req() req: FastifyRequest) {
-    return this.core.projects(this.userId(req));
+  async projects(@Req() req: FastifyRequest) {
+    return this.core.projects(await this.userId(req));
   }
 
   @Get("search")
-  search(@Req() req: FastifyRequest, @Query("query") query?: string) {
-    return this.core.globalSearch(this.userId(req), query ?? "");
+  async search(@Req() req: FastifyRequest, @Query("query") query?: string) {
+    return this.core.globalSearch(await this.userId(req), query ?? "");
   }
 
   @Get("dashboard/summary")
-  dashboardSummary(@Req() req: FastifyRequest, @Query("range") range?: "today" | "week" | "month" | "all") {
-    return this.core.dashboardSummary(this.userId(req), range);
+  async dashboardSummary(@Req() req: FastifyRequest, @Query("range") range?: "today" | "week" | "month" | "all") {
+    return this.core.dashboardSummary(await this.userId(req), range);
   }
 
   @Post("projects")
-  createProject(@Req() req: FastifyRequest, @Body() dto: ProjectDto) {
-    return this.core.createProject(this.userId(req), dto);
+  async createProject(@Req() req: FastifyRequest, @Body() dto: ProjectDto) {
+    return this.core.createProject(await this.userId(req), dto);
   }
 
   @Delete("projects/:id")
-  deleteProject(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.deleteProject(this.userId(req), id);
+  async deleteProject(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.deleteProject(await this.userId(req), id);
   }
 
   @Delete("projects/:id/contacts/:contactId")
-  deleteContact(@Req() req: FastifyRequest, @Param("id") id: string, @Param("contactId") contactId: string) {
-    return this.core.deleteContact(this.userId(req), id, contactId);
+  async deleteContact(@Req() req: FastifyRequest, @Param("id") id: string, @Param("contactId") contactId: string) {
+    return this.core.deleteContact(await this.userId(req), id, contactId);
   }
 
   @Get("projects/:id/channels")
-  channels(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.channels(this.userId(req), id);
+  async channels(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.channels(await this.userId(req), id);
   }
 
   @Get("projects/:id/integration")
-  integrationCredentials(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.integrationCredentials(this.userId(req), id);
+  async integrationCredentials(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.integrationCredentials(await this.userId(req), id);
   }
 
   @Post("projects/:id/integration/rotate-secret")
-  rotateIntegrationSecret(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.rotateIntegrationSecret(this.userId(req), id);
+  async rotateIntegrationSecret(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.rotateIntegrationSecret(await this.userId(req), id);
   }
 
   @Put("projects/:id/widget")
-  updateWidget(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: WidgetSettingsDto) {
-    return this.core.updateWidget(this.userId(req), id, dto);
+  async updateWidget(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: WidgetSettingsDto) {
+    return this.core.updateWidget(await this.userId(req), id, dto);
   }
 
   @Get("projects/:id/agents")
-  agents(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.agents(this.userId(req), id);
+  async agents(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.agents(await this.userId(req), id);
+  }
+
+  @Get("projects/:id/agents/lookup")
+  async lookupAgent(@Req() req: FastifyRequest, @Param("id") id: string, @Query("email") email?: string) {
+    return this.core.lookupAgent(await this.userId(req), id, email ?? "");
   }
 
   @Post("projects/:id/agents")
-  createAgent(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: AgentDto) {
-    return this.core.createAgent(this.userId(req), id, dto);
+  async createAgent(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: AgentDto) {
+    return this.core.createAgent(await this.userId(req), id, dto);
+  }
+
+  @Put("projects/:id/agents/:memberId/password")
+  async updateAgentPassword(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Param("memberId") memberId: string,
+    @Body() dto: AgentPasswordDto
+  ) {
+    return this.core.updateAgentPassword(await this.userId(req), id, memberId, dto.password);
+  }
+
+  @Delete("projects/:id/agents/:memberId")
+  async removeAgent(@Req() req: FastifyRequest, @Param("id") id: string, @Param("memberId") memberId: string) {
+    return this.core.removeAgent(await this.userId(req), id, memberId);
   }
 
   @Get("projects/:id/conversations")
-  conversations(
+  async conversations(
     @Req() req: FastifyRequest,
     @Param("id") id: string,
     @Query("cursor") cursor?: string,
     @Query("search") search?: string
   ) {
-    return this.core.conversations(this.userId(req), id, cursor, search);
+    return this.core.conversations(await this.userId(req), id, cursor, search);
   }
 
   @Put("conversations/:id/status")
-  updateConversationStatus(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: ConversationStatusDto) {
-    return this.core.updateConversationStatus(this.userId(req), id, dto.status);
+  async updateConversationStatus(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: ConversationStatusDto) {
+    return this.core.updateConversationStatus(await this.userId(req), id, dto.status);
   }
 
   @Get("conversations/:id/messages")
-  messages(@Req() req: FastifyRequest, @Param("id") id: string, @Query("cursor") cursor?: string) {
-    return this.core.messages(this.userId(req), id, cursor);
+  async messages(@Req() req: FastifyRequest, @Param("id") id: string, @Query("cursor") cursor?: string) {
+    return this.core.messages(await this.userId(req), id, cursor);
   }
 
   @Post("conversations/:id/messages")
@@ -153,86 +186,77 @@ export class CoreController {
     @Param("id") id: string,
     @Body() dto: { content: string; messageType?: string; senderType?: string; options?: Array<{ title: string; value: string }> }
   ) {
-    // If sent from external bot or integration (senderType is BOT)
-    if (dto.senderType === "BOT") {
-      let contentToStore = dto.content;
-      if (dto.options && Array.isArray(dto.options) && dto.options.length > 0) {
-        contentToStore = JSON.stringify({
-          text: dto.content,
-          options: dto.options,
-          isOptions: true
-        });
-      }
-
-      const conversation = await this.core["db"]?.conversation.findUnique({ where: { id } });
-      if (!conversation) throw new Error("Conversation not found");
-
-      const msg = await this.core["db"]?.message.create({
-        data: {
-          conversationId: id,
-          senderType: "BOT",
-          content: contentToStore,
-          status: "SENT"
-        }
-      });
-
-      await this.core["db"]?.conversation.update({
-        where: { id },
-        data: { lastMessageAt: new Date() }
-      });
-
-      this.core["realtime"]?.emitProject(conversation.projectId, SupportEvent.MessageCreated, msg);
-      this.core["realtime"]?.emitConversation(id, SupportEvent.MessageCreated, msg);
-
-      return msg;
-    }
-
-    return this.core.agentMessage(this.userId(req), id, dto.content);
+    return this.core.agentMessage(await this.userId(req), id, dto.content);
   }
 
   @Post("conversations/:id/ticket")
-  ticket(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: TicketDto) {
-    return this.core.createTicket(this.userId(req), id, dto);
+  async ticket(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: TicketDto) {
+    return this.core.createTicket(await this.userId(req), id, dto);
   }
 
   @Get("tickets")
-  tickets(@Req() req: FastifyRequest, @Query("projectId") projectId?: string) {
-    return this.core.tickets(this.userId(req), projectId);
+  async tickets(@Req() req: FastifyRequest, @Query("projectId") projectId?: string) {
+    return this.core.tickets(await this.userId(req), projectId);
   }
 
   @Put("tickets/:id/status")
-  updateTicketStatus(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: TicketStatusDto) {
-    return this.core.updateTicketStatus(this.userId(req), id, dto.status);
+  async updateTicketStatus(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: TicketStatusDto) {
+    return this.core.updateTicketStatus(await this.userId(req), id, dto.status);
   }
 
-  @Get("projects/:id/webhook")
-  webhook(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.webhook(this.userId(req), id);
+  @Get("projects/:id/webhooks")
+  async webhooks(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.webhooks(await this.userId(req), id);
   }
 
-  @Put("projects/:id/webhook")
-  updateWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: WebhookDto) {
-    return this.core.updateWebhook(this.userId(req), id, dto);
+  @Post("projects/:id/webhooks")
+  async createWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: WebhookDto) {
+    return this.core.createWebhook(await this.userId(req), id, dto);
+  }
+
+  @Put("projects/:id/webhooks/:webhookId")
+  async updateWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Param("webhookId") webhookId: string, @Body() dto: WebhookDto) {
+    return this.core.updateWebhook(await this.userId(req), id, webhookId, dto);
+  }
+
+  @Delete("projects/:id/webhooks/:webhookId")
+  async deleteWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Param("webhookId") webhookId: string) {
+    return this.core.deleteWebhook(await this.userId(req), id, webhookId);
   }
 
   @Get("projects/:id/notifications")
-  notificationSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.core.notificationSettings(this.userId(req), id);
+  async notificationSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.notificationSettings(await this.userId(req), id);
   }
 
   @Put("projects/:id/notifications")
-  updateNotificationSettings(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: NotificationSettingsDto) {
-    return this.core.updateNotificationSettings(this.userId(req), id, dto);
+  async updateNotificationSettings(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: NotificationSettingsDto) {
+    return this.core.updateNotificationSettings(await this.userId(req), id, dto);
+  }
+
+  @Get("projects/:id/email-settings")
+  async emailSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.emailSettings(await this.userId(req), id);
+  }
+
+  @Put("projects/:id/email-settings")
+  async updateEmailSettings(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: EmailSettingsDto) {
+    return this.core.updateEmailSettings(await this.userId(req), id, dto);
+  }
+
+  @Post("projects/:id/email-settings/test")
+  async testEmailSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.testEmailSettings(await this.userId(req), id);
   }
 
   @Get("projects/:id/bot")
-  botConfig(@Req() req: FastifyRequest, @Param("id") id: string) {
-    return this.bot.getConfig(this.userId(req), id);
+  async botConfig(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.bot.getConfig(await this.userId(req), id);
   }
 
   @Put("projects/:id/bot")
-  updateBotConfig(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: BotConfigDto) {
-    return this.bot.updateConfig(this.userId(req), id, dto);
+  async updateBotConfig(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: BotConfigDto) {
+    return this.bot.updateConfig(await this.userId(req), id, dto);
   }
 
   @Get("health")
@@ -240,8 +264,9 @@ export class CoreController {
     return { ok: true, api: "up" };
   }
 
-  private userId(req: FastifyRequest) {
+  private async userId(req: FastifyRequest) {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    return this.jwt.decode<{ sub: string }>(token ?? "")?.sub ?? "";
+    if (!token) throw new UnauthorizedException();
+    return (await this.jwt.verifyAsync<{ sub: string }>(token, { secret: process.env.JWT_ACCESS_SECRET })).sub;
   }
 }

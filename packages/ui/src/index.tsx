@@ -5,3 +5,4 @@ export { Input } from "./components/input";
 export { Select } from "./components/select";
 export { Textarea } from "./components/textarea";
 export { cn } from "./lib/utils";
+export { Checkbox } from "./components/checkbox";

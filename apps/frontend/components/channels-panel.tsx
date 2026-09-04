@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Code2, Copy, Globe, MessageCircle, Save } from "lucide-react";
 import { Badge, Button, Card, Input } from "@support-hub/ui";
-import { buildWidgetSnippet } from "../lib/helpers";
+import { buildWidgetSnippet } from "@support-hub/utils";
 import { api } from "../lib/api";
 import { keys, useBotConfig, useChannels, useUpdateWidget } from "../lib/queries";
 import { useUiStore } from "../lib/store";

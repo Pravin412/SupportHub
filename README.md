@@ -292,11 +292,11 @@ SMTP email sending uses Nodemailer directly:
 
 ```ini
 EMAIL_PROVIDER="smtp"
-SMTP_FROM_ADDRESS="no-reply@example.com"
 SMTP_HOST="smtp.example.com"
-SMTP_PORT="465"
-SMTP_LOGIN_USER="smtp-user@example.com"
-SMTP_LOGIN_PASSWORD="<gmail-app-password>"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="smtp-user@example.com"
+SMTP_PASSWORD="<gmail-app-password>"
 BCC_EMAIL="notifications@example.com"
 ```
 

@@ -1,0 +1,21 @@
+UPDATE "User" SET "role" = 'PROJECT_AGENT' WHERE "role" = 'SUPPORT_AGENT';
+UPDATE "ProjectMember" SET "role" = 'PROJECT_AGENT' WHERE "role" = 'SUPPORT_AGENT';
+
+ALTER TYPE "Role" RENAME TO "Role_old";
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'PROJECT_ADMIN', 'PROJECT_AGENT');
+
+ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "ProjectMember" ALTER COLUMN "role" DROP DEFAULT;
+
+ALTER TABLE "User"
+ALTER COLUMN "role" TYPE "Role"
+USING "role"::text::"Role";
+
+ALTER TABLE "ProjectMember"
+ALTER COLUMN "role" TYPE "Role"
+USING "role"::text::"Role";
+
+ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'PROJECT_AGENT';
+ALTER TABLE "ProjectMember" ALTER COLUMN "role" SET DEFAULT 'PROJECT_AGENT';
+
+DROP TYPE "Role_old";

@@ -6,7 +6,7 @@ import { Badge, Button, Card, Input } from "@support-hub/ui";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useProjects, useCreateProject, useDeleteProject, useDashboardSummary } from "../lib/queries";
+import { useProjects, useCreateProject, useDeleteProject, useDashboardSummary, useMe } from "../lib/queries";
 import { useUiStore } from "../lib/store";
 import { useState } from "react";
 import { ConfirmationModal } from "./confirmation-modal";
@@ -25,6 +25,7 @@ export function ProjectsView() {
   const summary = useDashboardSummary("all", true);
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
+  const me = useMe();
   const { setProject, selectedProjectId, showToast } = useUiStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -57,6 +58,9 @@ export function ProjectsView() {
   const totalProjects = summary.data?.projectsCount ?? projects.data?.length ?? 0;
   const openTickets = summary.data?.openTicketsCount ?? 0;
   const teamMembers = summary.data?.agentsCount ?? 0;
+  const isGlobalAdmin = me.data?.role === "ADMIN";
+  const canManageProject = (projectId: string) =>
+    isGlobalAdmin || me.data?.memberships.some((membership) => membership.projectId === projectId && membership.role === "PROJECT_ADMIN");
 
   return (
     <div className="mx-auto w-full max-w-5xl p-4 md:p-6 lg:p-8">
@@ -124,7 +128,7 @@ export function ProjectsView() {
       {/* Projects List Container */}
       <div className={viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-4"}>
         {/* Create Project Card Block */}
-        <Card className="p-5 border-slate-200 shadow-sm">
+        {isGlobalAdmin && <Card className="p-5 border-slate-200 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-teal-50 text-brand">
               <Plus size={20} />
@@ -163,7 +167,7 @@ export function ProjectsView() {
               </p>
             )}
           </form>
-        </Card>
+        </Card>}
 
         {/* Existing Projects List */}
         {projects.data?.map((project) => (
@@ -185,24 +189,36 @@ export function ProjectsView() {
             </div>
 
             <div className="flex items-center gap-2 border-t border-slate-100 pt-4 mt-auto">
-              <Button
-                asChild
-                className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none"
-              >
-                <Link href={`/projects/${project.id}/settings`}>
-                  <Settings size={16} className="mr-2" />
-                  Settings
+              <Button asChild className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none">
+                <Link href={`/tickets/${project.id}`}>
+                  <Ticket size={16} className="mr-2" />
+                  Tickets
                 </Link>
               </Button>
-              <Button
-                type="button"
-                title="Delete project"
-                disabled={deletingId === project.id}
-                onClick={() => setProjectToDelete({ id: project.id, name: project.name })}
-                className="shrink-0 border-slate-200 bg-white text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border shadow-none px-3"
-              >
-                <Trash2 size={16} />
-              </Button>
+              {canManageProject(project.id) && (
+                <>
+                  <Button
+                    asChild
+                    className="flex-1 justify-center border-slate-200 bg-white text-slate-700 hover:bg-slate-50 border shadow-none"
+                  >
+                    <Link href={`/projects/${project.id}/settings`}>
+                      <Settings size={16} className="mr-2" />
+                      Settings
+                    </Link>
+                  </Button>
+                  {isGlobalAdmin && (
+                    <Button
+                      type="button"
+                      title="Delete project"
+                      disabled={deletingId === project.id}
+                      onClick={() => setProjectToDelete({ id: project.id, name: project.name })}
+                      className="shrink-0 border-slate-200 bg-white text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border shadow-none px-3"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
           </Card>
         ))}

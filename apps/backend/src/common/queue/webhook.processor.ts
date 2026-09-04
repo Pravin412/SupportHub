@@ -23,7 +23,9 @@ export class WebhookProcessor extends WorkerHost {
   }
 
   async process(job: Job<WebhookJob>) {
-    const webhook = await this.db.webhook.findUnique({ where: { projectId: job.data.projectId } });
+    const webhook = await this.db.webhook.findFirst({
+      where: { projectId: job.data.projectId, isActive: true }
+    });
     const eventId = String(job.id);
     const eventName = job.name;
     const messageId = readPayloadId(job.data.payload);

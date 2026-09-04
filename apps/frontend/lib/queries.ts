@@ -3,6 +3,7 @@ import { api } from "./api";
 import type { DashboardRange } from "./types";
 
 export const keys = {
+  me: ["me"] as const,
   dashboardSummary: (range: DashboardRange = "all") => ["dashboard-summary", range] as const,
   projects: ["projects"] as const,
   agents: (projectId?: string) => ["agents", projectId] as const,
@@ -13,9 +14,14 @@ export const keys = {
   integrationCredentials: (projectId?: string) => ["integration-credentials", projectId] as const,
   webhook: (projectId?: string) => ["webhook", projectId] as const,
   notificationSettings: (projectId?: string) => ["notification-settings", projectId] as const,
+  emailSettings: (projectId?: string) => ["email-settings", projectId] as const,
   botConfig: (projectId?: string) => ["bot-config", projectId] as const,
   globalSearch: (query: string) => ["global-search", query] as const
 };
+
+export function useMe(enabled = true) {
+  return useQuery({ queryKey: keys.me, queryFn: api.me, enabled });
+}
 
 export function useProjects(enabled = true) {
   return useQuery({ queryKey: keys.projects, queryFn: api.projects, enabled });
@@ -69,10 +75,10 @@ export function useIntegrationCredentials(projectId?: string) {
   });
 }
 
-export function useWebhook(projectId?: string) {
+export function useWebhooks(projectId?: string) {
   return useQuery({
     queryKey: keys.webhook(projectId),
-    queryFn: () => api.webhook(projectId!),
+    queryFn: () => api.webhooks(projectId!),
     enabled: Boolean(projectId)
   });
 }
@@ -81,6 +87,14 @@ export function useNotificationSettings(projectId?: string) {
   return useQuery({
     queryKey: keys.notificationSettings(projectId),
     queryFn: () => api.notificationSettings(projectId!),
+    enabled: Boolean(projectId)
+  });
+}
+
+export function useEmailSettings(projectId?: string) {
+  return useQuery({
+    queryKey: keys.emailSettings(projectId),
+    queryFn: () => api.emailSettings(projectId!),
     enabled: Boolean(projectId)
   });
 }
@@ -147,7 +161,8 @@ export function useDeleteContact() {
 export function useCreateAgent(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { name: string; email: string }) => api.createAgent(projectId!, v.name, v.email),
+    mutationFn: (v: { name: string; email: string; password?: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT" }) =>
+      api.createAgent(projectId!, v.name, v.email, v.password, v.role),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.agents(projectId) })
   });
 }

@@ -1,4 +1,4 @@
-export type Role = "ADMIN" | "SUPPORT_AGENT";
+export type Role = "ADMIN" | "PROJECT_ADMIN" | "PROJECT_AGENT";
 export type ConversationStatus = "OPEN" | "PENDING" | "SNOOZED" | "RESOLVED";
 export type AutomationMode = "AUTOMATED" | "HUMAN" | "AI";
 export type SenderType = "CUSTOMER" | "AGENT" | "BOT" | "SYSTEM";

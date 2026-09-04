@@ -3,12 +3,15 @@ import { use } from "react";
 import { AdminPanels } from "../../../../../components/admin-panels";
 import { BackButton } from "../../../../../components/back-button";
 import { LoadingIndicator } from "../../../../../components/loading-indicator";
-import { useProjects } from "../../../../../lib/queries";
+import { useMe, useProjects } from "../../../../../lib/queries";
 
 export default function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
   const projects = useProjects(true);
+  const me = useMe();
   const selectedProject = projects.data?.find((project) => project.id === projectId);
+  const projectRole = me.data?.memberships.find((membership) => membership.projectId === projectId)?.role;
+  const canManageSettings = me.data?.role === "ADMIN" || projectRole === "PROJECT_ADMIN";
 
   if (projects.isLoading) {
     return (
@@ -20,6 +23,10 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ proj
 
   if (!selectedProject) {
     return <div className="p-8 text-sm text-muted">No project selected.</div>;
+  }
+
+  if (!canManageSettings) {
+    return <div className="p-8 text-sm text-muted">You can view this project's inbox and tickets, but settings are available only to project admins.</div>;
   }
 
   return (

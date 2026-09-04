@@ -9,7 +9,8 @@ datasource db {
 
 enum Role {
   ADMIN
-  SUPPORT_AGENT
+  PROJECT_ADMIN
+  PROJECT_AGENT
 }
 
 enum ConversationStatus {
@@ -72,7 +73,7 @@ model User {
   email        String           @unique
   passwordHash String
   name         String
-  role         Role             @default(SUPPORT_AGENT)
+  role         Role             @default(PROJECT_AGENT)
   memberships  ProjectMember[]
   sessions     RefreshSession[]
 }
@@ -99,10 +100,11 @@ model Project {
   members               ProjectMember[]
   contacts              Contact[]
   conversations         Conversation[]
-  webhook               Webhook?
+  webhooks              Webhook[]
   widgetChannel         WidgetChannel?
   botConfiguration      BotConfiguration?
   notificationSettings  ProjectNotificationSettings?
+  emailSettings         ProjectEmailSettings?
 }
 
 model WidgetChannel {
@@ -142,7 +144,7 @@ model ProjectMember {
   id        String  @id @default(cuid())
   projectId String
   userId    String
-  role      Role    @default(SUPPORT_AGENT)
+  role      Role    @default(PROJECT_AGENT)
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -228,7 +230,9 @@ model Ticket {
 
 model Webhook {
   id             String   @id @default(cuid())
-  projectId      String   @unique
+  projectId      String
+  name           String   @default("Webhook")
+  isActive       Boolean  @default(false)
   url            String
   secretHash     String
   secret         String?
@@ -238,6 +242,8 @@ model Webhook {
   retryCount     Int      @default(3)
   retryBackoffMs Int      @default(1000)
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isActive])
 }
 
 model WebhookDelivery {
@@ -269,4 +275,18 @@ model ProjectNotificationSettings {
   conversationAssignedEnabled Boolean @default(true)
   messageReceivedEnabled      Boolean @default(false)
   project                     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectEmailSettings {
+  id           String  @id @default(cuid())
+  projectId    String  @unique
+  smtpHost     String
+  smtpPort     Int
+  smtpSecure   Boolean @default(false)
+  smtpUser     String
+  smtpPassword String
+  fromName     String?
+  enabled      Boolean @default(true)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

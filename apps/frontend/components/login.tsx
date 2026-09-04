@@ -1,8 +1,9 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, Input } from "@support-hub/ui";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
@@ -13,7 +14,7 @@ type FormData = z.infer<typeof schema>;
 export function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/";
+  const redirectTo = "/";
 
   useEffect(() => {
     api
@@ -25,9 +26,10 @@ export function LoginPage() {
 }
 
 export function Login({ onDone }: { onDone: () => void }) {
+  const [showPassword, setShowPassword] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "admin@example.com", password: "SupportHub123!" }
+    defaultValues: { email: "admin@gmail.com", password: "Password@123" }
   });
   return (
     <main className="grid min-h-screen place-items-center p-4">
@@ -47,7 +49,22 @@ export function Login({ onDone }: { onDone: () => void }) {
           })}
         >
           <Input className="h-10" placeholder="Email" {...form.register("email")} />
-          <Input className="h-10" type="password" placeholder="Password" {...form.register("password")} />
+          <div className="relative">
+            <Input
+              className="h-10 pr-10"
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              {...form.register("password")}
+            />
+            <button
+              type="button"
+              title={showPassword ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-500 hover:text-slate-800"
+              onClick={() => setShowPassword((current) => !current)}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
           <Button className="w-full bg-brand text-white" disabled={form.formState.isSubmitting}>
             Sign in
           </Button>
