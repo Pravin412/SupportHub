@@ -349,7 +349,7 @@ export class CoreService {
     await this.assertMember(userId, projectId);
     return this.db.projectMember.findMany({
       where: { projectId },
-      select: { id: true, role: true, user: { select: { id: true, name: true, email: true } } }
+      select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
     });
   }
 
@@ -364,7 +364,7 @@ export class CoreService {
     return user ? { exists: true, user } : { exists: false };
   }
 
-  async createAgent(userId: string, projectId: string, data: { email: string; name: string; password?: string; role?: Role }) {
+  async createAgent(userId: string, projectId: string, data: { email: string; name: string; password?: string; role?: Role; emailNotificationsEnabled?: boolean }) {
     await this.assertProjectAdmin(userId, projectId);
     const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
     const normalizedEmail = data.email.trim().toLowerCase();
@@ -390,9 +390,9 @@ export class CoreService {
         });
     return this.db.projectMember.upsert({
       where: { projectId_userId: { projectId, userId: user.id } },
-      update: { role: requestedRole },
-      create: { projectId, userId: user.id, role: requestedRole },
-      select: { id: true, role: true, user: { select: { id: true, name: true, email: true } } }
+      update: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false },
+      create: { projectId, userId: user.id, role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false },
+      select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
     });
   }
 
@@ -412,6 +412,42 @@ export class CoreService {
       data: { passwordHash: await this.crypto.hashSecret(password) }
     });
     return { ok: true };
+  }
+
+  async updateAgent(userId: string, projectId: string, memberId: string, data: { email: string; name: string; role: Role; emailNotificationsEnabled: boolean }) {
+    await this.assertProjectAdmin(userId, projectId);
+    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const member = await this.db.projectMember.findUnique({
+      where: { id: memberId },
+      select: { projectId: true, role: true, userId: true }
+    });
+    if (!member || member.projectId !== projectId) throw new NotFoundException("Project user not found");
+    if (member.role === "ADMIN") throw new ForbiddenException("Admin access cannot be edited here");
+    if (currentUser?.role !== "ADMIN" && member.role === "PROJECT_ADMIN") {
+      throw new ForbiddenException("Only admin can edit project admins");
+    }
+
+    const requestedRole = data.role === "PROJECT_ADMIN" ? "PROJECT_ADMIN" : "PROJECT_AGENT";
+    if (currentUser?.role !== "ADMIN" && requestedRole === "PROJECT_ADMIN") {
+      throw new ForbiddenException("Only admin can make project admins");
+    }
+
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const existingUser = await this.db.user.findUnique({ where: { email: normalizedEmail }, select: { id: true } });
+    if (existingUser && existingUser.id !== member.userId) {
+      throw new BadRequestException("Email is already used by another user");
+    }
+
+    await this.db.user.update({
+      where: { id: member.userId },
+      data: { name: data.name.trim(), email: normalizedEmail }
+    });
+
+    return this.db.projectMember.update({
+      where: { id: memberId },
+      data: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled },
+      select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
+    });
   }
 
   async removeAgent(userId: string, projectId: string, memberId: string) {
@@ -1076,18 +1112,24 @@ export class CoreService {
           projectId,
           role: { in: ["PROJECT_ADMIN", "PROJECT_AGENT"] }
         },
-        select: { user: { select: { email: true } } }
+        select: { emailNotificationsEnabled: true, user: { select: { email: true } } }
       })
     ]);
+    const disabledProjectMemberEmails = new Set(
+      projectMembers
+        .filter((member) => !member.emailNotificationsEnabled)
+        .map((member) => member.user.email.toLowerCase())
+    );
 
     const recipients = Array.from(
       new Set([
         ...globalAdmins.map((admin) => admin.email),
-        ...projectMembers.map((member) => member.user.email),
+        ...projectMembers.filter((member) => member.emailNotificationsEnabled).map((member) => member.user.email),
         ...parseEmailList(settings?.notificationEmail)
       ])
     )
       .filter((email) => email.toLowerCase() !== "admin@gmail.com")
+      .filter((email) => !disabledProjectMemberEmails.has(email.toLowerCase()))
       .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
     if (!recipients.length) return;
 

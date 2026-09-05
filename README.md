@@ -302,7 +302,7 @@ BCC_EMAIL="notifications@example.com"
 
 Use `EMAIL_PROVIDER="log"` to print email jobs in the backend logs without sending real email.
 
-Ticket notification recipients are configured per project in Project Settings > Ticket Emails.
+Ticket notification recipients are configured per project. Project admins and project agents receive ticket emails only when `Receive ticket email notifications` is enabled for their Project Access row. Project Settings > Ticket Emails is for extra recipients that are not managed as project access users; if the same email exists in both places, the Project Access toggle takes priority.
 
 ## Security Notes
 

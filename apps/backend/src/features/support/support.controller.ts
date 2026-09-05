@@ -26,9 +26,16 @@ class AgentDto {
   @IsString() @MinLength(2) name!: string;
   @IsString() @MinLength(8) @IsOptional() password?: string;
   @IsEnum(Role) @IsOptional() role?: Role;
+  @IsBoolean() @IsOptional() emailNotificationsEnabled?: boolean;
 }
 class AgentPasswordDto {
   @IsString() @MinLength(8) password!: string;
+}
+class AgentUpdateDto {
+  @IsEmail() email!: string;
+  @IsString() @MinLength(2) name!: string;
+  @IsEnum(Role) role!: Role;
+  @IsBoolean() emailNotificationsEnabled!: boolean;
 }
 class WebhookDto {
   @IsString() name!: string;
@@ -154,6 +161,16 @@ export class CoreController {
     @Body() dto: AgentPasswordDto
   ) {
     return this.core.updateAgentPassword(await this.userId(req), id, memberId, dto.password);
+  }
+
+  @Put("projects/:id/agents/:memberId")
+  async updateAgent(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Param("memberId") memberId: string,
+    @Body() dto: AgentUpdateDto
+  ) {
+    return this.core.updateAgent(await this.userId(req), id, memberId, dto);
   }
 
   @Delete("projects/:id/agents/:memberId")

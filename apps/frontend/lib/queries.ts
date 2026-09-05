@@ -161,8 +161,17 @@ export function useDeleteContact() {
 export function useCreateAgent(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { name: string; email: string; password?: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT" }) =>
-      api.createAgent(projectId!, v.name, v.email, v.password, v.role),
+    mutationFn: (v: { name: string; email: string; password?: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean }) =>
+      api.createAgent(projectId!, v.name, v.email, v.password, v.role, v.emailNotificationsEnabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.agents(projectId) })
+  });
+}
+
+export function useUpdateAgent(projectId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { memberId: string; name: string; email: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean }) =>
+      api.updateAgent(projectId!, v.memberId, { name: v.name, email: v.email, role: v.role, emailNotificationsEnabled: v.emailNotificationsEnabled }),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.agents(projectId) })
   });
 }

@@ -79,8 +79,11 @@ export function ProjectSetupDocs() {
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700 space-y-2">
         <h4 className="font-semibold text-slate-900">6. Configure ticket email notifications</h4>
         <ol className="list-decimal space-y-1 pl-4">
+          <li>Open <b>Project Settings &gt; Project Access</b>.</li>
+          <li>When adding or editing a project admin or project agent, enable <b>Receive ticket email notifications</b> only for staff who should get ticket emails.</li>
           <li>Open <b>Project Settings &gt; Ticket Emails</b>.</li>
-          <li>Add one or more notification recipient emails.</li>
+          <li>Add only extra recipient emails that are not managed as project admins or project agents.</li>
+          <li>If a project access user's email is also in the extra recipient list, their Project Access notification toggle still controls whether they receive ticket emails.</li>
           <li>Enable ticket created, ticket assigned, conversation assigned, or message received notifications as needed.</li>
           <li>For local testing, use <code>EMAIL_PROVIDER="log"</code> so emails print in backend logs.</li>
           <li>For production SMTP, configure the SMTP values in the backend environment.</li>
