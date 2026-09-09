@@ -1,6 +1,6 @@
 "use client";
 import { Folder, Search, User } from "lucide-react";
-import { Badge, Button, Input } from "@support-hub/ui";
+import { Badge, Input } from "@support-hub/ui";
 import { displayMessageContent } from "../lib/messages";
 import { BackButton } from "./back-button";
 

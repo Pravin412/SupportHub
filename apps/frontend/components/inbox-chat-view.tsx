@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, CheckCheck, CirclePlus, Loader2, MessageSquare, Send, Smile, User, ChevronDown, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCheck, CirclePlus, Loader2, Send, Smile, User, ChevronDown, Trash2 } from "lucide-react";
 import { Button, Input } from "@support-hub/ui";
 import { useUiStore } from "../lib/store";
-import { api } from "../lib/api";
 import { useUpdateConversationStatus, useDeleteContact } from "../lib/queries";
-import { parseMessageOptions } from "../lib/messages";
 import { ConfirmationModal } from "./confirmation-modal";
+import { InboxMessageItem } from "./inbox-message-item";
 
 export function InboxChatView({
   activeConversation,
@@ -148,51 +147,7 @@ export function InboxChatView({
           className="h-full overflow-auto px-5 py-6"
         >
         <AnimatePresence>
-          {messages.data?.slice().reverse().map((m: any) => {
-            const isAgent = m.senderType === "AGENT";
-            const isBot = m.senderType === "BOT";
-            const isOutgoing = isAgent || isBot;
-            const time = formatMessageTime(m.createdAt);
-
-            const { text: contentText, options: optionsList } = parseMessageOptions(m.content);
-
-            return (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`mb-6 flex flex-col ${isOutgoing ? "items-end" : "items-start"}`}
-              >
-                <div
-                  className={
-                    isOutgoing
-                      ? "max-w-chat-bubble rounded-2xl rounded-br-xs bg-chat-bubble-bg px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm whitespace-pre-wrap"
-                      : "max-w-chat-bubble rounded-2xl rounded-bl-xs bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-700 shadow-sm border border-slate-100 whitespace-pre-wrap"
-                  }
-                >
-                  {isBot && (
-                    <span className="mb-1 block text-[10px] font-bold uppercase text-white/80">
-                      {botName?.trim() || "Support Bot"}
-                    </span>
-                  )}
-                  {contentText}
-                  {optionsList.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5 pt-1 border-t border-slate-200/60">
-                      {optionsList.map((opt, i) => (
-                        <span key={i} className="rounded bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200">
-                          {opt.title}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isOutgoing ? "pr-1" : "pl-1"}`}>
-                  <span>{time}</span>
-                  {isOutgoing ? <CheckCheck size={12} className="text-chat-bubble-bg" /> : null}
-                </div>
-              </motion.div>
-            );
-          })}
+          {messages.data?.slice().reverse().map((m: any) => <InboxMessageItem key={m.id} message={m} botName={botName} />)}
         </AnimatePresence>
         {!messages.isLoading && !messages.data?.length && (
           <div className="grid h-full place-items-center text-center text-xs text-muted">
@@ -285,32 +240,4 @@ export function InboxChatView({
       />
     </div>
   );
-}
-
-export function InboxEmptyState({ selectedProjectId }: { selectedProjectId?: string }) {
-  return (
-    <div className="grid h-full place-items-center bg-[#f8fafc] p-6 text-center">
-      <div className="max-w-xs space-y-2">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-teal-50 text-brand">
-          <MessageSquare size={24} />
-        </div>
-        <h3 className="text-sm font-semibold text-primary">
-          {!selectedProjectId ? "Select a Project" : "Select a Conversation"}
-        </h3>
-        <p className="text-xs text-muted">
-          {!selectedProjectId
-            ? "Click on any project on the left to browse contacts and conversation threads."
-            : "Choose a contact from the list on the left to start viewing and replying to their messages."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function formatMessageTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-  }).format(new Date(value));
 }

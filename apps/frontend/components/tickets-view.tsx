@@ -1,34 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Check, CheckCircle2, ChevronDown, Clock3, Loader2, TicketCheck, User } from "lucide-react";
+import { CheckCircle2, Clock3, Loader2, TicketCheck, User } from "lucide-react";
 import { Badge, Button, Card } from "@support-hub/ui";
 import { api } from "../lib/api";
 import { keys, useTickets } from "../lib/queries";
 import { useUiStore } from "../lib/store";
+import { formatShortDate } from "../lib/format";
+import { TicketStatus, TicketStatusFilter, ticketTabs, type TicketStatusFilterValue } from "../lib/ticket-status";
+import { StatusDropdown } from "./ticket-status-dropdown";
 
-type TicketStatus = "OPEN" | "IN_PROGRESS" | "ASSIGNED" | "WAITING" | "RESOLVED" | "CLOSED";
-type TicketStatusFilter = "ALL" | TicketStatus;
-
-const statusOptions: Array<{ value: TicketStatus; label: string }> = [
-  { value: "OPEN", label: "Open" },
-  { value: "IN_PROGRESS", label: "In progress" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "WAITING", label: "Waiting" },
-  { value: "RESOLVED", label: "Resolved" },
-  { value: "CLOSED", label: "Closed" }
-];
-
-const ticketTabs: Array<{ value: TicketStatusFilter; label: string }> = [
-  { value: "ALL", label: "All" },
-  ...statusOptions
-];
-
-export function TicketsView({ projectId, projectName }: { projectId: string; projectName: string }) {
+export const TicketsView = ({ projectId, projectName }: { projectId: string; projectName: string }) => {
   const tickets = useTickets(projectId);
-  const [activeStatus, setActiveStatus] = useState<TicketStatusFilter>("OPEN");
+  const [activeStatus, setActiveStatus] = useState<TicketStatusFilterValue>(TicketStatus.Open);
   const queryClient = useQueryClient();
   const router = useRouter();
   const setProject = useUiStore((state) => state.setProject);
@@ -36,7 +22,7 @@ export function TicketsView({ projectId, projectName }: { projectId: string; pro
   const showToast = useUiStore((state) => state.showToast);
 
   useEffect(() => {
-    setActiveStatus("OPEN");
+    setActiveStatus(TicketStatus.Open);
   }, [projectId]);
 
   const openConversation = (conversationId: string) => {
@@ -64,10 +50,10 @@ export function TicketsView({ projectId, projectName }: { projectId: string; pro
 
   const ticketList = tickets.data ?? [];
   const filteredTickets =
-    activeStatus === "ALL" ? ticketList : ticketList.filter((ticket) => ticket.status === activeStatus);
+    activeStatus === TicketStatusFilter.All ? ticketList : ticketList.filter((ticket) => ticket.status === activeStatus);
   const activeStatusLabel = ticketTabs.find((tab) => tab.value === activeStatus)?.label ?? "Tickets";
-  const countByStatus = (status: TicketStatusFilter) =>
-    status === "ALL" ? ticketList.length : ticketList.filter((ticket) => ticket.status === status).length;
+  const countByStatus = (status: TicketStatusFilterValue) =>
+    status === TicketStatusFilter.All ? ticketList.length : ticketList.filter((ticket) => ticket.status === status).length;
 
   return (
     <div className="flex h-main flex-col bg-slate-50">
@@ -185,68 +171,4 @@ export function TicketsView({ projectId, projectName }: { projectId: string; pro
       </div>
     </div>
   );
-}
-
-function StatusDropdown({ value, onChange }: { value: TicketStatus; onChange: (status: TicketStatus) => void }) {
-  const [open, setOpen] = useState(false);
-  const selected = statusOptions.find((status) => status.value === value);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <Button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="h-9 w-full justify-between gap-2 border-slate-200 bg-white px-2 text-xs text-slate-800 shadow-sm hover:bg-slate-50"
-        onClick={() => setOpen((current) => !current)}
-      >
-        <span className="truncate">{selected?.label ?? value}</span>
-        <ChevronDown size={14} className={open ? "rotate-180 transition-transform" : "transition-transform"} />
-      </Button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute left-0 top-10 z-50 w-40 overflow-hidden rounded-md border border-slate-200 bg-white p-1 shadow-lg"
-        >
-          {statusOptions.map((status) => (
-            <button
-              key={status.value}
-              type="button"
-              role="menuitem"
-              className="flex h-8 w-full items-center justify-between rounded px-2 text-left text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-800"
-              onClick={() => {
-                setOpen(false);
-                if (status.value !== value) onChange(status.value);
-              }}
-            >
-              {status.label}
-              {status.value === value ? <Check size={13} /> : null}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function formatShortDate(value?: string) {
-  if (!value) return "No date";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
-  }).format(new Date(value));
-}
+};

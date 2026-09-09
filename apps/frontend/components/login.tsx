@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, Input } from "@support-hub/ui";
 import { Eye, EyeOff } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,7 +13,6 @@ type FormData = z.infer<typeof schema>;
 
 export function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const redirectTo = "/";
 
   useEffect(() => {

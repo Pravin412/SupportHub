@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
 import { ClientEvent } from "../lib/events";
 import { InboxProjectsList, InboxConversationsList } from "./inbox-lists";
-import { InboxChatView, InboxEmptyState } from "./inbox-chat-view";
+import { InboxChatView } from "./inbox-chat-view";
+import { InboxEmptyState } from "./inbox-empty-state";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 

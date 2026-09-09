@@ -1,14 +1,13 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Save, Send, Eye, EyeOff } from "lucide-react";
-import { Button, Card, Input, Checkbox } from "@support-hub/ui";
+import { Button, Card, Input } from "@support-hub/ui";
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
 import { useEmailSettings, useMe } from "../lib/queries";
 import { useUiStore } from "../lib/store";
-import { PanelHeader } from "./admin-panels";
 import { CheckboxField } from "./checkbox-field";
 
 const smtpSchema = z.object({

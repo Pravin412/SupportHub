@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Save, KeyRound, Check, Copy } from "lucide-react";
+import { Plus, Trash2, Edit2, KeyRound, Check, Copy } from "lucide-react";
 import { useWebhooks } from "../lib/queries";
 import { api } from "../lib/api";
 import { Button, Card, Input } from "@support-hub/ui";

@@ -1,24 +1,11 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Bot, ChevronRight, Send, X } from "lucide-react";
-import { Button, Input } from "@support-hub/ui";
 import { widgetApi } from "../lib/api";
 import { ClientEvent } from "../lib/events";
+import { WIDGET_API_URL, guestProfileStorageKey } from "../lib/widget-config";
 import { io, Socket } from "socket.io-client";
-import { WidgetMessagesList } from "./widget-messages-list";
-import { WidgetVisitorForm, WidgetLoadingSkeleton } from "./widget-form-and-loading";
-
-let API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_API_URL) {
-  API_URL = `${window.location.protocol}//${window.location.hostname}:4000`;
-}
-
-function guestProfileStorageKey(channelId: string) {
-  return `supporthub:guest-profile:${channelId}`;
-}
-
+import { WidgetFrame } from "./widget-frame";
 export function WidgetContainer() {
   const searchParams = useSearchParams();
   const channelId = searchParams.get("channelId") || undefined;
@@ -41,7 +28,6 @@ export function WidgetContainer() {
   const [config, setConfig] = useState<any>(null);
   const [isSending, setIsSending] = useState(false);
   const isSendingRef = useRef(false);
-  
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -116,7 +102,7 @@ export function WidgetContainer() {
   }, [channelId, activeUser.profileId, hasHostUser]);
 
   useEffect(() => {
-    const socket = io(API_URL, { transports: ["websocket", "polling"], reconnection: true });
+    const socket = io(WIDGET_API_URL, { transports: ["websocket", "polling"], reconnection: true });
     socketRef.current = socket;
 
     socket.on(ClientEvent.MessageCreated, (newMsg) => {
@@ -207,7 +193,6 @@ export function WidgetContainer() {
   };
 
   const themeColor = config?.colorTheme || "#0f4c42";
-  const botLogo = config?.logoUrl || config?.botAvatar || null;
   const shouldShowVisitorForm = Boolean(shouldCollectVisitorInfo && visitorFormRequested);
   const shouldShowNewConversationScreen = Boolean(config && !conversationStarted && !hasExistingConversation);
 
@@ -241,133 +226,24 @@ export function WidgetContainer() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-white text-slate-900 overflow-hidden shadow-xl border border-slate-200" style={{ borderRadius: '12px' }}>
-      <div className={`flex flex-col h-full w-full ${!config ? 'filter blur-xs select-none pointer-events-none' : ''}`}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: themeColor }}>
-          <div className="flex items-center gap-3">
-            {botLogo ? (
-              <img src={botLogo} alt={config?.botName || "Bot"} className="h-10 w-10 rounded-full object-cover border border-white/30 shadow-xs" />
-            ) : (
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-white/20"><Bot size={20} /></span>
-            )}
-            <div>
-              <div className="text-sm font-semibold">{config?.botName || "Support Bot"}</div>
-              <div className="text-xs text-white/80">Typically replies in a few minutes</div>
-            </div>
-          </div>
-          <Button onClick={() => window.parent.postMessage('supporthub-close-widget', '*')} className="h-8 w-8 rounded-full border-0 bg-transparent p-0 text-white hover:bg-white/20">
-            <X size={18} />
-          </Button>
-        </div>
-
-        {/* Chat / Message List */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {shouldShowNewConversationScreen ? (
-            <NewConversationScreen
-              botName={config?.botName || "Support Bot"}
-              botLogo={botLogo}
-              themeColor={themeColor}
-              showForm={shouldShowVisitorForm}
-              config={config}
-              visitorForm={visitorForm}
-              onFormSubmit={saveVisitorForm}
-              onStart={startConversation}
-            />
-          ) : (
-            <>
-              <WidgetMessagesList
-                messages={messages}
-                themeColor={themeColor}
-                botName={config?.botName}
-                isSending={isSending}
-                onSendOption={handleOptionSend}
-                messagesEndRef={messagesEndRef}
-              />
-            </>
-          )}
-        </div>
-
-        {/* Input Area */}
-        {!shouldShowNewConversationScreen && (
-          <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-200 flex gap-2">
-            <Input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Write a message..."
-              disabled={isSending || !conversationStarted || !config}
-              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition-all disabled:opacity-75"
-            />
-            <Button
-              type="submit"
-              disabled={!message.trim() || !channelId || !activeUser.profileId || isSending || !conversationStarted || !config}
-              style={{ backgroundColor: themeColor }}
-              className="h-10 w-10 rounded-lg border-0 px-0 text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Send size={16} />
-            </Button>
-          </form>
-        )}
-      </div>
-
-      {!config && <WidgetLoadingSkeleton themeColor={themeColor} />}
-    </div>
-  );
-}
-
-function NewConversationScreen({
-  botName,
-  botLogo,
-  themeColor,
-  showForm,
-  config,
-  visitorForm,
-  onFormSubmit,
-  onStart
-}: {
-  botName: string;
-  botLogo?: string | null;
-  themeColor: string;
-  showForm: boolean;
-  config: any;
-  visitorForm: { name: string; email: string; number: string };
-  onFormSubmit: (values: { name: string; email: string; number: string }) => void;
-  onStart: () => void;
-}) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col bg-slate-50">
-      <div className="flex-1 px-5 py-8">
-        {botLogo ? (
-          <img src={botLogo} alt={botName} className="h-14 w-14 rounded-full border border-slate-200 bg-white object-cover shadow-sm" />
-        ) : (
-          <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-slate-500 shadow-sm">
-            <Bot size={24} />
-          </span>
-        )}
-        <h1 className="mt-7 text-2xl font-bold leading-snug text-slate-950">
-          Hello! Welcome to {botName}. How can I assist you today?
-        </h1>
-      </div>
-      <div className="rounded-t-2xl border-t border-slate-200 bg-white p-4 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
-        {showForm ? (
-          <WidgetVisitorForm config={config} visitorForm={visitorForm} onSubmit={onFormSubmit} themeColor={themeColor} />
-        ) : (
-          <div>
-            <div className="text-sm font-bold text-slate-950">We are away at the moment</div>
-            <div className="mt-2 text-sm text-slate-500">Typically replies in a few minutes</div>
-            <button
-              type="button"
-              onClick={onStart}
-              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold"
-              style={{ color: themeColor }}
-            >
-              Start conversation
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <WidgetFrame
+      activeUser={activeUser}
+      channelId={channelId}
+      config={config}
+      conversationStarted={conversationStarted}
+      handleOptionSend={handleOptionSend}
+      handleSend={handleSend}
+      isSending={isSending}
+      message={message}
+      messages={messages}
+      messagesEndRef={messagesEndRef}
+      saveVisitorForm={saveVisitorForm}
+      setMessage={setMessage}
+      shouldShowNewConversationScreen={shouldShowNewConversationScreen}
+      shouldShowVisitorForm={shouldShowVisitorForm}
+      startConversation={startConversation}
+      themeColor={themeColor}
+      visitorForm={visitorForm}
+    />
   );
 }
