@@ -80,7 +80,7 @@ export function MetricCard({
       </div>
       <div className="mt-4">
         <div className="text-3xl font-bold text-primary">{value}</div>
-        <div className={`mt-2 flex items-center gap-1 text-xs font-semibold ${neutral ? "text-tertiary" : negative ? "text-red-600" : "text-brand"}`}>
+        <div className={`mt-2 flex items-center gap-1 text-xs font-semibold ${neutral ? "text-tertiary" : negative ? "text-error" : "text-brand"}`}>
           {neutral ? null : negative ? <TrendingUp size={14} /> : <TrendingUp size={14} className="rotate-45" />}
           {delta}
         </div>

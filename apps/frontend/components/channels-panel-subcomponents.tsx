@@ -52,7 +52,7 @@ export function ChannelLogoUpload({
           {currentLogo && (
             <button
               type="button"
-              className="h-8 px-2 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+              className="h-8 px-2 text-xs font-medium text-error hover:text-error-muted hover:bg-error-surface rounded-md transition-colors"
               onClick={() => onLogoUrlChange("")}
             >
               Remove

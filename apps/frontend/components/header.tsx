@@ -72,7 +72,7 @@ export function Header() {
                 <Loader2 size={16} className="mr-2 animate-spin" /> Searching...
               </div>
             ) : search.isError ? (
-              <div className="p-4 text-center text-sm text-red-500">
+              <div className="p-4 text-center text-sm text-error">
                 Failed to load results.
               </div>
             ) : !hasResults ? (

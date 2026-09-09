@@ -33,7 +33,7 @@ export function ConfirmationModal({
     <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/40 px-4">
       <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
         <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-red-50 text-red-600">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-error-surface text-error">
             {icon ?? <AlertTriangle size={18} />}
           </span>
           <div>
@@ -50,7 +50,7 @@ export function ConfirmationModal({
             {cancelLabel}
           </Button>
           <Button
-            className="h-9 bg-red-600 px-4 text-sm text-white hover:bg-red-700"
+            className="h-9 bg-error px-4 text-sm text-white hover:bg-error-muted"
             disabled={isLoading}
             onClick={onConfirm}
           >

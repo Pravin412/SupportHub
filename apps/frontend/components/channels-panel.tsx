@@ -180,7 +180,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
           );
         })}
         {channels.isLoading && <div className="rounded-md border border-dashed border-slate-300 p-4 text-sm text-muted">Loading widget channel settings...</div>}
-        {channels.isError && <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">Could not load widget channel settings. Restart the backend and refresh this page.</div>}
+        {channels.isError && <div className="rounded-md border border-error-border bg-error-surface p-4 text-sm text-error-muted">Could not load widget channel settings. Restart the backend and refresh this page.</div>}
         {!channels.isLoading && !channels.isError && !channels.data?.length && <div className="rounded-md border border-dashed border-slate-300 p-4 text-sm text-muted">No widget channel exists for this project yet.</div>}
       </div>
     </Card>

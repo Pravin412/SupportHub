@@ -138,7 +138,7 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
               {avatarPreview && (
                 <button
                   type="button"
-                  className="h-8 px-2 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                  className="h-8 px-2 text-xs font-medium text-error hover:text-error-muted hover:bg-error-surface rounded-md transition-colors"
                   onClick={() => {
                     setAvatarPreview("");
                     form.setValue("botAvatar", "");
@@ -178,5 +178,5 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
 }
 
 function FieldError({ message }: { message?: string }) {
-  return message ? <p className="mt-1 text-xs font-medium text-red-700">{message}</p> : null;
+  return message ? <p className="mt-1 text-xs font-medium text-error-muted">{message}</p> : null;
 }

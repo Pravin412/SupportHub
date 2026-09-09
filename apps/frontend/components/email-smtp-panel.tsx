@@ -97,7 +97,7 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
             <span className="text-sm font-medium">SMTP Host</span>
             <Input className="mt-1" placeholder="smtp.gmail.com" {...form.register("smtpHost")} />
             {form.formState.errors.smtpHost && (
-              <p className="mt-1 text-xs font-medium text-red-700">{form.formState.errors.smtpHost.message}</p>
+              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpHost.message}</p>
             )}
           </label>
           
@@ -120,7 +120,7 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
               })}
             />
             {form.formState.errors.smtpPort && (
-              <p className="mt-1 text-xs font-medium text-red-700">{form.formState.errors.smtpPort.message}</p>
+              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpPort.message}</p>
             )}
           </label>
         </div>
@@ -130,7 +130,7 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
             <span className="text-sm font-medium">SMTP User</span>
             <Input className="mt-1" placeholder="project@example.com" autoComplete="off" {...form.register("smtpUser")} />
             {form.formState.errors.smtpUser && (
-              <p className="mt-1 text-xs font-medium text-red-700">{form.formState.errors.smtpUser.message}</p>
+              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpUser.message}</p>
             )}
           </label>
           
@@ -153,7 +153,7 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
               </button>
             </div>
             {form.formState.errors.smtpPassword && (
-              <p className="mt-1 text-xs font-medium text-red-700">{form.formState.errors.smtpPassword.message}</p>
+              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpPassword.message}</p>
             )}
           </label>
         </div>

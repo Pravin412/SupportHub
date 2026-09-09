@@ -20,7 +20,13 @@ const config: Config = {
         tertiary: "#536174",
         "tertiary-light": "#66758a",
         "chat-pane": "#f3f6f4",
-        "chat-bubble-bg": "#0a6f66"
+        "chat-bubble-bg": "#0a6f66",
+        error: "#dc2626",
+        "error-muted": "#b91c1c",
+        "error-strong": "#991b1b",
+        "error-surface": "#fef2f2",
+        "error-surface-overlay": "rgb(254 242 242 / 0.95)",
+        "error-border": "#fecaca"
       },
       fontSize: {
         "2xs": "11px",

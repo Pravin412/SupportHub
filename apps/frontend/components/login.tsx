@@ -68,8 +68,8 @@ export function Login({ onDone }: { onDone: () => void }) {
           <Button className="w-full bg-brand text-white" disabled={form.formState.isSubmitting}>
             Sign in
           </Button>
-          {form.formState.errors.email && <p className="text-sm text-red-700">Enter a valid email.</p>}
-          {form.formState.errors.root && <p className="text-sm text-red-700">{form.formState.errors.root.message}</p>}
+          {form.formState.errors.email && <p className="text-sm text-error-muted">Enter a valid email.</p>}
+          {form.formState.errors.root && <p className="text-sm text-error-muted">{form.formState.errors.root.message}</p>}
         </form>
       </Card>
     </main>

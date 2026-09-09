@@ -17,7 +17,7 @@ const projectSchema = z.object({
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1 text-xs font-medium text-red-700">{message}</p>;
+  return <p className="mt-1 text-xs font-medium text-error-muted">{message}</p>;
 }
 
 export function ProjectsView() {
@@ -162,7 +162,7 @@ export function ProjectsView() {
               <Plus size={16} /> {createProject.isPending ? "Creating..." : "Create Project"}
             </Button>
             {createProject.error && (
-              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p className="rounded-md border border-error-border bg-error-surface p-3 text-sm text-error-muted">
                 {createProject.error.message}
               </p>
             )}
@@ -212,7 +212,7 @@ export function ProjectsView() {
                       title="Delete project"
                       disabled={deletingId === project.id}
                       onClick={() => setProjectToDelete({ id: project.id, name: project.name })}
-                      className="shrink-0 border-slate-200 bg-white text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 border shadow-none px-3"
+                      className="shrink-0 border-slate-200 bg-white text-error hover:bg-error-surface hover:text-error-muted hover:border-error-border border shadow-none px-3"
                     >
                       <Trash2 size={16} />
                     </Button>

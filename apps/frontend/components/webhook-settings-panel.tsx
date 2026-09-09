@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { Button, Card, Input } from "@support-hub/ui";
 import { useUiStore } from "../lib/store";
 function Callout({ children, tone, className }: { children: React.ReactNode; tone: "error" | "success"; className?: string }) {
-  const color = tone === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-800";
+  const color = tone === "error" ? "border-error-border bg-error-surface text-error-muted" : "border-emerald-200 bg-emerald-50 text-emerald-800";
   return <div className={`rounded-md border p-3 text-sm ${color} ${className || ''}`}>{children}</div>;
 }
 
@@ -140,7 +140,7 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
                         }}>
                           <Edit2 size={14} />
                         </Button>
-                        <Button className="h-8 w-8 p-0 text-red-500 hover:text-red-600 bg-transparent hover:bg-red-50 border-0 shadow-none" onClick={async () => {
+                        <Button className="h-8 w-8 p-0 text-error hover:text-error bg-transparent hover:bg-error-surface border-0 shadow-none" onClick={async () => {
                           if (window.confirm("Are you sure you want to delete this webhook?")) {
                             await handleDelete(w.id);
                           }

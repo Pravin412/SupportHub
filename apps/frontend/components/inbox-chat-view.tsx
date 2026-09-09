@@ -131,7 +131,7 @@ export function InboxChatView({
             </Button>
           )}
           <Button
-            className="h-7 w-7 p-0 text-muted hover:text-red-600 hover:bg-red-50 bg-transparent border-none shadow-none"
+            className="h-7 w-7 p-0 text-muted hover:text-error hover:bg-error-surface bg-transparent border-none shadow-none"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={deleteContact.isPending}
             title="Delete contact"

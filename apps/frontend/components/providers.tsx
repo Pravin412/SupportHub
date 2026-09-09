@@ -43,7 +43,7 @@ function ToastContainer() {
             transition={{ duration: 0.2 }}
             className={`pointer-events-auto flex min-w-[280px] max-w-md items-center justify-between gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-xs ${
               toast.type === "error"
-                ? "border-red-200 bg-red-50/95 text-red-800"
+                ? "border-error-border bg-error-surface-overlay text-error-strong"
                 : toast.type === "info"
                 ? "border-blue-200 bg-blue-50/95 text-blue-800"
                 : "border-emerald-200 bg-emerald-50/95 text-emerald-900"
@@ -51,7 +51,7 @@ function ToastContainer() {
           >
             <div className="flex items-center gap-2.5">
               {toast.type === "error" ? (
-                <AlertCircle size={18} className="text-red-600 shrink-0" />
+                <AlertCircle size={18} className="text-error shrink-0" />
               ) : toast.type === "info" ? (
                 <Info size={18} className="text-blue-600 shrink-0" />
               ) : (
@@ -71,4 +71,3 @@ function ToastContainer() {
     </div>
   );
 }
-
