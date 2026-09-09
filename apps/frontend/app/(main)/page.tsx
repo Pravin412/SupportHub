@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
-import { Overview } from "../../components/overview";
-import { useDashboardSummary } from "../../lib/queries";
+import { Overview } from "@/components/overview";
+import { useDashboardSummary } from "@/lib/queries";
 import { useRouter } from "next/navigation";
-import type { DashboardRange } from "../../lib/types";
+import type { DashboardRange } from "@/lib/types";
 
 export default function DashboardPage() {
   const [range, setRange] = useState<DashboardRange>("today");

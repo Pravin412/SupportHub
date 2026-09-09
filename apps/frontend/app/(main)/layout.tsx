@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { api } from "../../lib/api";
-import { Sidebar } from "../../components/sidebar";
-import { Header } from "../../components/header";
-import { LoadingIndicator } from "../../components/loading-indicator";
+import { api } from "@/lib/api";
+import { Sidebar } from "@/components/sidebar";
+import { Header } from "@/components/header";
+import { LoadingIndicator } from "@/components/loading-indicator";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
