@@ -16,14 +16,14 @@ export class WebhookProcessor extends WorkerHost {
   private readonly logger = new Logger(WebhookProcessor.name);
 
   constructor(
-    private db: PrismaService,
+    private prisma: PrismaService,
     private crypto: CryptoService
   ) {
     super();
   }
 
   async process(job: Job<WebhookJob>) {
-    const webhook = await this.db.webhook.findFirst({
+    const webhook = await this.prisma.webhook.findFirst({
       where: { projectId: job.data.projectId, isActive: true }
     });
     const eventId = String(job.id);
@@ -35,7 +35,7 @@ export class WebhookProcessor extends WorkerHost {
       return;
     }
 
-    await this.db.webhookDelivery.upsert({
+    await this.prisma.webhookDelivery.upsert({
       where: { eventId },
       update: { attempts: job.attemptsMade + 1, status: "QUEUED" },
       create: { eventId, eventName, projectId: job.data.projectId, attempts: job.attemptsMade + 1 }
@@ -48,7 +48,7 @@ export class WebhookProcessor extends WorkerHost {
     let body: Record<string, any>;
 
     if (eventName === SupportEvent.MessageCreated || eventName === ExternalWebhookEvent.MessageCreated) {
-      const message = await this.db.message.findUnique({
+      const message = await this.prisma.message.findUnique({
         where: { id: messageId },
         select: {
           id: true,
@@ -136,13 +136,13 @@ export class WebhookProcessor extends WorkerHost {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const delivery = await this.db.webhookDelivery.update({ where: { eventId }, data: { status: "SENT" } });
+      const delivery = await this.prisma.webhookDelivery.update({ where: { eventId }, data: { status: "SENT" } });
       this.logger.log(
         `[webhook] sent event=${eventName} job=${eventId} delivery=${delivery.id} project=${job.data.projectId} message=${messageId} status=${response.status} url=${webhook.url}`
       );
     } catch (error) {
       const failedLastAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
-      await this.db.webhookDelivery.update({
+      await this.prisma.webhookDelivery.update({
         where: { eventId },
         data: { status: failedLastAttempt ? "FAILED" : "QUEUED" }
       });

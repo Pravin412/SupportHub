@@ -23,13 +23,13 @@ const botSelect = {
 @Injectable()
 export class BotService {
   constructor(
-    private db: PrismaService,
+    private prisma: PrismaService,
     private core: CoreService
   ) {}
 
   async getConfig(userId: string, projectId: string) {
     await this.core.assertMember(userId, projectId);
-    return this.db.botConfiguration.upsert({
+    return this.prisma.botConfiguration.upsert({
       where: { projectId },
       update: {},
       create: { projectId },
@@ -39,7 +39,7 @@ export class BotService {
 
   async updateConfig(userId: string, projectId: string, data: BotConfigInput) {
     await this.core.assertProjectAdmin(userId, projectId);
-    return this.db.botConfiguration.upsert({
+    return this.prisma.botConfiguration.upsert({
       where: { projectId },
       update: data,
       create: { projectId, ...data },

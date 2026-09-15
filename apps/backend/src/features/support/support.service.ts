@@ -88,24 +88,24 @@ function dashboardDateFilter(range: DashboardRange = "all") {
 @Injectable()
 export class CoreService {
   constructor(
-    private db: PrismaService,
+    private prisma: PrismaService,
     private queues: QueueService,
     private realtime: RealtimeGateway,
     private crypto: CryptoService
   ) {}
 
   async assertMember(userId: string, projectId: string) {
-    const user = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     if (user?.role === "ADMIN") return { id: "admin", projectId, userId, role: "ADMIN" as Role };
-    const member = await this.db.projectMember.findUnique({ where: { projectId_userId: { projectId, userId } } });
+    const member = await this.prisma.projectMember.findUnique({ where: { projectId_userId: { projectId, userId } } });
     if (!member) throw new ForbiddenException("Project access denied");
     return member;
   }
 
   async assertProjectAdmin(userId: string, projectId: string) {
-    const user = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     if (user?.role === "ADMIN") return;
-    const member = await this.db.projectMember.findUnique({
+    const member = await this.prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId, userId } },
       select: { role: true }
     });
@@ -113,13 +113,13 @@ export class CoreService {
   }
 
   async assertGlobalAdmin(userId: string) {
-    const user = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     if (user?.role !== "ADMIN") throw new ForbiddenException("Admin access required");
   }
 
   projects(userId: string) {
-    return this.db.user.findUnique({ where: { id: userId }, select: { role: true } }).then((user) =>
-      this.db.project.findMany({
+    return this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } }).then((user) =>
+      this.prisma.project.findMany({
       where: user?.role === "ADMIN" ? {} : { members: { some: { userId } } },
       select: { id: true, name: true, key: true, widgetChannel: { select: { id: true, channelId: true, enabled: true } } }
     }));
@@ -154,13 +154,13 @@ export class CoreService {
       agentsCount,
       activeChannelsCount
     ] = await Promise.all([
-      this.db.conversation.count({ where: conversationWhere }),
-      this.db.conversation.count({ where: { ...conversationWhere, status: { not: "RESOLVED" } } }),
-      this.db.conversation.count({ where: { ...conversationWhere, unreadCount: { gt: 0 } } }),
-      this.db.ticket.count({ where: ticketWhere }),
-      this.db.ticket.count({ where: { ...ticketWhere, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
-      this.db.projectMember.count({ where: { projectId: { in: projectIds } } }),
-      this.db.widgetChannel.count({ where: { projectId: { in: projectIds }, enabled: true } })
+      this.prisma.conversation.count({ where: conversationWhere }),
+      this.prisma.conversation.count({ where: { ...conversationWhere, status: { not: "RESOLVED" } } }),
+      this.prisma.conversation.count({ where: { ...conversationWhere, unreadCount: { gt: 0 } } }),
+      this.prisma.ticket.count({ where: ticketWhere }),
+      this.prisma.ticket.count({ where: { ...ticketWhere, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
+      this.prisma.projectMember.count({ where: { projectId: { in: projectIds } } }),
+      this.prisma.widgetChannel.count({ where: { projectId: { in: projectIds }, enabled: true } })
     ]);
 
     return {
@@ -182,7 +182,7 @@ export class CoreService {
     const uniqueSuffix = this.crypto.randomToken(8).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16);
     const key = data.key?.trim() ? data.key.toLowerCase().trim().replace(/[^a-z0-9-]/g, "-") : `${cleanPrefix ? cleanPrefix + "-" : ""}${uniqueSuffix}`;
 
-    const project = await this.db.project.create({
+    const project = await this.prisma.project.create({
       data: {
         name: data.name,
         key,
@@ -210,7 +210,7 @@ export class CoreService {
 
   async deleteProject(userId: string, projectId: string) {
     await this.assertGlobalAdmin(userId);
-    await this.db.project.delete({
+    await this.prisma.project.delete({
       where: { id: projectId }
     });
     return { ok: true, deletedId: projectId };
@@ -218,7 +218,7 @@ export class CoreService {
 
   async deleteContact(userId: string, projectId: string, contactId: string) {
     await this.assertMember(userId, projectId);
-    await this.db.contact.delete({
+    await this.prisma.contact.delete({
       where: { id: contactId, projectId }
     });
     return { ok: true, deletedId: contactId };
@@ -226,7 +226,7 @@ export class CoreService {
 
   async channels(userId: string, projectId: string) {
     await this.assertMember(userId, projectId);
-    const project = await this.db.project.findUnique({
+    const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: {
         id: true,
@@ -254,11 +254,11 @@ export class CoreService {
     } satisfies Prisma.WidgetChannelSelect;
 
     const widgetChannel =
-      (await this.db.widgetChannel.findUnique({
+      (await this.prisma.widgetChannel.findUnique({
         where: { projectId },
         select: channelSelect
       })) ??
-      (await this.db.widgetChannel.create({
+      (await this.prisma.widgetChannel.create({
         data: { projectId, channelId: makeChannelId(project.key), name: `${project.name} Website` },
         select: channelSelect
       }));
@@ -269,7 +269,7 @@ export class CoreService {
 
   async integrationCredentials(userId: string, projectId: string) {
     await this.assertProjectAdmin(userId, projectId);
-    const project = await this.db.project.findUnique({
+    const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: { integrationKey: true, integrationSecret: true, integrationRevokedAt: true } as Prisma.ProjectSelect
     });
@@ -281,7 +281,7 @@ export class CoreService {
     await this.assertProjectAdmin(userId, projectId);
 
     const secret = this.crypto.randomToken();
-    const project = await this.db.project.update({
+    const project = await this.prisma.project.update({
       where: { id: projectId },
       data: {
         integrationSecret: secret,
@@ -307,14 +307,14 @@ export class CoreService {
     }
   ) {
     await this.assertProjectAdmin(userId, projectId);
-    const project = await this.db.project.findUnique({ where: { id: projectId }, select: { key: true, name: true } });
+    const project = await this.prisma.project.findUnique({ where: { id: projectId }, select: { key: true, name: true } });
     if (!project) throw new NotFoundException("Project not found");
-    const existingChannel = await this.db.widgetChannel.findUnique({
+    const existingChannel = await this.prisma.widgetChannel.findUnique({
       where: { projectId },
       select: { id: true }
     });
     const updatedChannel = existingChannel
-      ? await this.db.widgetChannel.update({
+      ? await this.prisma.widgetChannel.update({
           where: { id: existingChannel.id },
           data: {
             welcomeMessage: data.welcomeMessage,
@@ -327,7 +327,7 @@ export class CoreService {
           },
           select: widgetChannelPublicSelect
         })
-      : await this.db.widgetChannel.create({
+      : await this.prisma.widgetChannel.create({
           data: {
             projectId,
             channelId: makeChannelId(project.key),
@@ -347,7 +347,7 @@ export class CoreService {
 
   async agents(userId: string, projectId: string) {
     await this.assertMember(userId, projectId);
-    return this.db.projectMember.findMany({
+    return this.prisma.projectMember.findMany({
       where: { projectId },
       select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
     });
@@ -357,7 +357,7 @@ export class CoreService {
     await this.assertProjectAdmin(userId, projectId);
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return { exists: false };
-    const user = await this.db.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: { id: true, email: true, name: true }
     });
@@ -366,21 +366,21 @@ export class CoreService {
 
   async createAgent(userId: string, projectId: string, data: { email: string; name: string; password?: string; role?: Role; emailNotificationsEnabled?: boolean }) {
     await this.assertProjectAdmin(userId, projectId);
-    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const currentUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     const normalizedEmail = data.email.trim().toLowerCase();
     const requestedRole = data.role === "PROJECT_ADMIN" ? "PROJECT_ADMIN" : "PROJECT_AGENT";
     if (currentUser?.role !== "ADMIN" && requestedRole === "PROJECT_ADMIN") {
       throw new ForbiddenException("Only admin can add project admins");
     }
-    const existingUser = await this.db.user.findUnique({ where: { email: normalizedEmail } });
+    const existingUser = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!existingUser && !data.password) throw new BadRequestException("Password is required for a new user");
 
     const user = existingUser
-      ? await this.db.user.update({
+      ? await this.prisma.user.update({
           where: { id: existingUser.id },
           data: { name: data.name || existingUser.name }
         })
-      : await this.db.user.create({
+      : await this.prisma.user.create({
           data: {
             email: normalizedEmail,
             name: data.name,
@@ -388,7 +388,7 @@ export class CoreService {
             passwordHash: await this.crypto.hashSecret(data.password!)
           }
         });
-    return this.db.projectMember.upsert({
+    return this.prisma.projectMember.upsert({
       where: { projectId_userId: { projectId, userId: user.id } },
       update: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false },
       create: { projectId, userId: user.id, role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false },
@@ -398,8 +398,8 @@ export class CoreService {
 
   async updateAgentPassword(userId: string, projectId: string, memberId: string, password: string) {
     await this.assertProjectAdmin(userId, projectId);
-    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
-    const member = await this.db.projectMember.findUnique({
+    const currentUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const member = await this.prisma.projectMember.findUnique({
       where: { id: memberId },
       select: { projectId: true, role: true, userId: true }
     });
@@ -407,7 +407,7 @@ export class CoreService {
     if (currentUser?.role !== "ADMIN" && member.role === "PROJECT_ADMIN") {
       throw new ForbiddenException("Only admin can reset project admin passwords");
     }
-    await this.db.user.update({
+    await this.prisma.user.update({
       where: { id: member.userId },
       data: { passwordHash: await this.crypto.hashSecret(password) }
     });
@@ -416,8 +416,8 @@ export class CoreService {
 
   async updateAgent(userId: string, projectId: string, memberId: string, data: { email: string; name: string; role: Role; emailNotificationsEnabled: boolean }) {
     await this.assertProjectAdmin(userId, projectId);
-    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
-    const member = await this.db.projectMember.findUnique({
+    const currentUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const member = await this.prisma.projectMember.findUnique({
       where: { id: memberId },
       select: { projectId: true, role: true, userId: true }
     });
@@ -433,17 +433,17 @@ export class CoreService {
     }
 
     const normalizedEmail = data.email.trim().toLowerCase();
-    const existingUser = await this.db.user.findUnique({ where: { email: normalizedEmail }, select: { id: true } });
+    const existingUser = await this.prisma.user.findUnique({ where: { email: normalizedEmail }, select: { id: true } });
     if (existingUser && existingUser.id !== member.userId) {
       throw new BadRequestException("Email is already used by another user");
     }
 
-    await this.db.user.update({
+    await this.prisma.user.update({
       where: { id: member.userId },
       data: { name: data.name.trim(), email: normalizedEmail }
     });
 
-    return this.db.projectMember.update({
+    return this.prisma.projectMember.update({
       where: { id: memberId },
       data: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled },
       select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
@@ -452,19 +452,19 @@ export class CoreService {
 
   async removeAgent(userId: string, projectId: string, memberId: string) {
     await this.assertProjectAdmin(userId, projectId);
-    const currentUser = await this.db.user.findUnique({ where: { id: userId }, select: { role: true } });
-    const member = await this.db.projectMember.findUnique({ where: { id: memberId }, select: { projectId: true, role: true } });
+    const currentUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const member = await this.prisma.projectMember.findUnique({ where: { id: memberId }, select: { projectId: true, role: true } });
     if (!member || member.projectId !== projectId) throw new NotFoundException("Project user not found");
     if (currentUser?.role !== "ADMIN" && member.role === "PROJECT_ADMIN") {
       throw new ForbiddenException("Only admin can remove project admins");
     }
-    await this.db.projectMember.delete({ where: { id: memberId } });
+    await this.prisma.projectMember.delete({ where: { id: memberId } });
     return { ok: true };
   }
 
   async conversations(userId: string, projectId: string, cursor?: string, search?: string) {
     await this.assertMember(userId, projectId);
-    return this.db.conversation.findMany({
+    return this.prisma.conversation.findMany({
       where: { projectId, contact: search ? { name: { contains: search, mode: "insensitive" } } : undefined },
       take: 31,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -499,11 +499,11 @@ export class CoreService {
   }
 
   async updateConversationStatus(userId: string, conversationId: string, status: ConversationStatus) {
-    const c = await this.db.conversation.findUnique({ where: { id: conversationId } });
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
 
-    const updated = await this.db.conversation.update({
+    const updated = await this.prisma.conversation.update({
       where: { id: conversationId },
       data: {
         status,
@@ -512,7 +512,7 @@ export class CoreService {
     });
 
     if (status === "RESOLVED") {
-      await this.db.ticket.updateMany({
+      await this.prisma.ticket.updateMany({
         where: {
           conversationId,
           status: { notIn: ["RESOLVED", "CLOSED"] }
@@ -528,17 +528,17 @@ export class CoreService {
   }
 
   async messages(userId: string, conversationId: string, cursor?: string) {
-    const c = await this.db.conversation.findUnique({ where: { id: conversationId }, select: { projectId: true } });
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { projectId: true } });
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
     
     // Mark conversation messages as read when viewed by an agent
-    await this.db.conversation.update({
+    await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { unreadCount: 0 }
     }).catch(() => undefined);
 
-    return this.db.message.findMany({
+    return this.prisma.message.findMany({
       where: { conversationId },
       take: 51,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -547,13 +547,13 @@ export class CoreService {
   }
 
   async agentMessage(userId: string, conversationId: string, content: string) {
-    const c = await this.db.conversation.findUnique({ where: { id: conversationId } });
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
-    const msg = await this.db.message.create({
+    const msg = await this.prisma.message.create({
       data: { conversationId, senderType: "AGENT", senderId: userId, content, status: "PENDING" }
     });
-    await this.db.conversation.update({
+    await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { lastMessageAt: new Date(), unreadCount: 0, status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
     });
@@ -568,11 +568,11 @@ export class CoreService {
     conversationId: string,
     data: Pick<Prisma.TicketCreateInput, "title" | "priority">
   ) {
-    const c = await this.db.conversation.findUnique({ where: { id: conversationId } });
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
 
-    const existingActiveTicket = await this.db.ticket.findFirst({
+    const existingActiveTicket = await this.prisma.ticket.findFirst({
       where: {
         conversationId,
         status: { notIn: ["RESOLVED", "CLOSED"] }
@@ -580,7 +580,7 @@ export class CoreService {
       orderBy: { createdAt: "desc" }
     });
 
-    await this.db.conversation.update({
+    await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN, lastMessageAt: new Date() }
     });
@@ -589,7 +589,7 @@ export class CoreService {
       return existingActiveTicket;
     }
 
-    const ticket = await this.db.ticket.create({
+    const ticket = await this.prisma.ticket.create({
       data: {
         projectId: c.projectId,
         conversationId,
@@ -604,17 +604,17 @@ export class CoreService {
   }
 
   async updateTicketStatus(userId: string, ticketId: string, status: TicketStatus) {
-    const current = await this.db.ticket.findUnique({ where: { id: ticketId } });
+    const current = await this.prisma.ticket.findUnique({ where: { id: ticketId } });
     if (!current) throw new NotFoundException("Ticket not found");
     await this.assertMember(userId, current.projectId);
 
-    const ticket = await this.db.ticket.update({
+    const ticket = await this.prisma.ticket.update({
       where: { id: ticketId },
       data: { status }
     });
 
     if (status === "RESOLVED" || status === "CLOSED") {
-      await this.db.ticket.updateMany({
+      await this.prisma.ticket.updateMany({
         where: {
           conversationId: ticket.conversationId,
           id: { not: ticket.id },
@@ -623,7 +623,7 @@ export class CoreService {
         data: { status }
       });
 
-      const activeTicketCount = await this.db.ticket.count({
+      const activeTicketCount = await this.prisma.ticket.count({
         where: {
           conversationId: ticket.conversationId,
           status: { notIn: [TicketStatus.RESOLVED, TicketStatus.CLOSED] }
@@ -631,13 +631,13 @@ export class CoreService {
       });
 
       if (activeTicketCount === 0) {
-        await this.db.conversation.update({
+        await this.prisma.conversation.update({
           where: { id: ticket.conversationId },
           data: { status: ConversationStatus.RESOLVED, automationMode: AutomationMode.AUTOMATED }
         });
       }
     } else {
-      await this.db.conversation.update({
+      await this.prisma.conversation.update({
         where: { id: ticket.conversationId },
         data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
       });
@@ -654,7 +654,7 @@ export class CoreService {
     const scopedProject = projectId ?? (await this.projects(userId))[0]?.id;
     if (!scopedProject) return [];
     await this.assertMember(userId, scopedProject);
-    return this.db.ticket.findMany({
+    return this.prisma.ticket.findMany({
       where: { projectId: scopedProject },
       take: 50,
       orderBy: { createdAt: "desc" },
@@ -694,7 +694,7 @@ export class CoreService {
 
   async webhooks(userId: string, projectId: string) {
     await this.assertProjectAdmin(userId, projectId);
-    return this.db.webhook.findMany({
+    return this.prisma.webhook.findMany({
       where: { projectId },
       select: { id: true, name: true, url: true, isActive: true, enabled: true, events: true, timeoutMs: true, retryCount: true, secret: true }
     });
@@ -704,14 +704,14 @@ export class CoreService {
     await this.assertProjectAdmin(userId, projectId);
     
     if (data.isActive) {
-      await this.db.webhook.updateMany({
+      await this.prisma.webhook.updateMany({
         where: { projectId },
         data: { isActive: false }
       });
     }
 
     const signingSecret = this.crypto.randomToken();
-    const webhook = await this.db.webhook.create({
+    const webhook = await this.prisma.webhook.create({
       data: {
         projectId,
         name: data.name || "New Bot",
@@ -731,13 +731,13 @@ export class CoreService {
     await this.assertProjectAdmin(userId, projectId);
     
     if (data.isActive) {
-      await this.db.webhook.updateMany({
+      await this.prisma.webhook.updateMany({
         where: { projectId, id: { not: webhookId } },
         data: { isActive: false }
       });
     }
 
-    const webhook = await this.db.webhook.update({
+    const webhook = await this.prisma.webhook.update({
       where: { id: webhookId, projectId },
       data: { 
         name: data.name,
@@ -751,7 +751,7 @@ export class CoreService {
 
   async deleteWebhook(userId: string, projectId: string, webhookId: string) {
     await this.assertProjectAdmin(userId, projectId);
-    await this.db.webhook.delete({
+    await this.prisma.webhook.delete({
       where: { id: webhookId, projectId }
     });
     return { success: true };
@@ -759,7 +759,7 @@ export class CoreService {
 
   async notificationSettings(userId: string, projectId: string) {
     await this.assertProjectAdmin(userId, projectId);
-    const settings = await this.db.projectNotificationSettings.findUnique({
+    const settings = await this.prisma.projectNotificationSettings.findUnique({
       where: { projectId },
       select: {
         notificationEmail: true,
@@ -788,7 +788,7 @@ export class CoreService {
     const emails = parseEmailList(data.notificationEmail);
     if (!emails.length) throw new BadRequestException("Add at least one valid notification email.");
 
-    const settings = await this.db.projectNotificationSettings.upsert({
+    const settings = await this.prisma.projectNotificationSettings.upsert({
       where: { projectId },
       update: {
         notificationEmail: emails.join(","),
@@ -816,7 +816,7 @@ export class CoreService {
     return { ...settings, notificationEmails: emails };
   }
   async widgetConfig(channelId: string) {
-    const channel = await this.db.widgetChannel.findUnique({
+    const channel = await this.prisma.widgetChannel.findUnique({
       where: { channelId },
       select: {
         ...widgetChannelPublicSelect,
@@ -858,24 +858,24 @@ export class CoreService {
 
   async widgetMessages(channelId: string, profileId: string) {
     if (!profileId) return [];
-    const channel = await this.db.widgetChannel.findUnique({
+    const channel = await this.prisma.widgetChannel.findUnique({
       where: { channelId },
       select: { id: true, projectId: true }
     });
     if (!channel) throw new NotFoundException();
     
-    const contact = await this.db.contact.findUnique({
+    const contact = await this.prisma.contact.findUnique({
       where: { projectId_externalUserId: { projectId: channel.projectId, externalUserId: profileId } }
     });
     if (!contact) return [];
     
-    const conversation = await this.db.conversation.findFirst({
+    const conversation = await this.prisma.conversation.findFirst({
       where: { projectId: channel.projectId, contactId: contact.id },
       orderBy: { createdAt: 'desc' }
     });
     if (!conversation) return [];
 
-    return this.db.message.findMany({
+    return this.prisma.message.findMany({
       where: { conversationId: conversation.id },
       orderBy: { createdAt: 'desc' },
       take: 50
@@ -883,7 +883,7 @@ export class CoreService {
   }
 
   async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, email?: string, number?: string) {
-    const channel = await this.db.widgetChannel.findUnique({
+    const channel = await this.prisma.widgetChannel.findUnique({
       where: { channelId },
       select: { id: true, projectId: true, enabled: true, project: { select: { name: true } } }
     });
@@ -891,33 +891,33 @@ export class CoreService {
 
     const contactName = name?.trim() || randomVisitorName(profileId, channel.project.name);
 
-    const contact = await this.db.contact.upsert({
+    const contact = await this.prisma.contact.upsert({
       where: { projectId_externalUserId: { projectId: channel.projectId, externalUserId: profileId } },
       create: { projectId: channel.projectId, externalUserId: profileId, name: contactName, email: email?.trim() || undefined, phone: number?.trim() || undefined },
       update: { name: name?.trim() || undefined, email: email?.trim() || undefined, phone: number?.trim() || undefined }
     });
 
-    let conversation = await this.db.conversation.findFirst({
+    let conversation = await this.prisma.conversation.findFirst({
       where: { projectId: channel.projectId, contactId: contact.id },
       orderBy: { createdAt: 'desc' }
     });
 
     if (!conversation) {
-      conversation = await this.db.conversation.create({
+      conversation = await this.prisma.conversation.create({
         data: { projectId: channel.projectId, contactId: contact.id, status: "PENDING" }
       });
     } else if (conversation.status === "RESOLVED") {
-      conversation = await this.db.conversation.update({
+      conversation = await this.prisma.conversation.update({
         where: { id: conversation.id },
         data: { status: "PENDING", automationMode: "AUTOMATED" }
       });
     }
 
-    const msg = await this.db.message.create({
+    const msg = await this.prisma.message.create({
       data: { conversationId: conversation.id, senderType: "CUSTOMER", content }
     });
     
-    await this.db.conversation.update({
+    await this.prisma.conversation.update({
       where: { id: conversation.id },
       data: {
         lastMessageAt: new Date(),
@@ -935,8 +935,8 @@ export class CoreService {
 
     // If an external webhook is active, let the external bot handle handoff logic.
     // Otherwise, check for internal bot handoff keywords.
-    const webhook = await this.db.webhook.findFirst({ where: { projectId: channel.projectId, isActive: true } });
-    const botConfig = await this.db.botConfiguration.findUnique({ where: { projectId: channel.projectId } });
+    const webhook = await this.prisma.webhook.findFirst({ where: { projectId: channel.projectId, isActive: true } });
+    const botConfig = await this.prisma.botConfiguration.findUnique({ where: { projectId: channel.projectId } });
     
     const containsKeyword = Boolean(
       (!webhook || !webhook.enabled) &&
@@ -945,18 +945,18 @@ export class CoreService {
     );
 
     if (containsKeyword) {
-      await this.db.conversation.update({
+      await this.prisma.conversation.update({
         where: { id: conversation.id },
         data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
       });
-      const existingOpenTicket = await this.db.ticket.findFirst({
+      const existingOpenTicket = await this.prisma.ticket.findFirst({
         where: {
           conversationId: conversation.id,
           status: { notIn: ["RESOLVED", "CLOSED"] }
         }
       });
       if (!existingOpenTicket) {
-        const ticket = await this.db.ticket.create({
+        const ticket = await this.prisma.ticket.create({
           data: {
             projectId: channel.projectId,
             conversationId: conversation.id,
@@ -980,7 +980,7 @@ export class CoreService {
         if (!webhook || !webhook.enabled) {
           setTimeout(async () => {
             try {
-              const botMsg = await this.db.message.create({
+              const botMsg = await this.prisma.message.create({
                 data: {
                   conversationId: conversation.id,
                   senderType: "BOT",
@@ -988,7 +988,7 @@ export class CoreService {
                   status: "SENT"
                 }
               });
-              await this.db.conversation.update({
+              await this.prisma.conversation.update({
                 where: { id: conversation.id },
                 data: { lastMessageAt: new Date() }
               });
@@ -1019,7 +1019,7 @@ export class CoreService {
     }
 
     const [projects, tickets, contacts, conversations] = await Promise.all([
-      this.db.project.findMany({
+      this.prisma.project.findMany({
         where: {
           id: { in: projectIds },
           OR: [
@@ -1031,7 +1031,7 @@ export class CoreService {
         select: { id: true, name: true, key: true }
       }),
 
-      this.db.ticket.findMany({
+      this.prisma.ticket.findMany({
         where: {
           projectId: { in: projectIds },
           OR: [
@@ -1043,7 +1043,7 @@ export class CoreService {
         select: { id: true, title: true, status: true, projectId: true }
       }),
 
-      this.db.contact.findMany({
+      this.prisma.contact.findMany({
         where: {
           projectId: { in: projectIds },
           OR: [
@@ -1056,7 +1056,7 @@ export class CoreService {
         select: { id: true, name: true, email: true, phone: true, projectId: true }
       }),
 
-      this.db.conversation.findMany({
+      this.prisma.conversation.findMany({
         where: {
           projectId: { in: projectIds },
           messages: {
@@ -1097,17 +1097,17 @@ export class CoreService {
     ticket: { id: string; title: string; status: TicketStatus },
     oldStatus?: TicketStatus
   ) {
-    const settings = await this.db.projectNotificationSettings.findUnique({ where: { projectId } });
+    const settings = await this.prisma.projectNotificationSettings.findUnique({ where: { projectId } });
     const enabled =
       event === "created" ? settings?.ticketCreatedEnabled !== false : settings?.ticketAssignedEnabled !== false;
     if (!enabled) return;
 
     const [globalAdmins, projectMembers] = await Promise.all([
-      this.db.user.findMany({
+      this.prisma.user.findMany({
         where: { role: "ADMIN" },
         select: { email: true }
       }),
-      this.db.projectMember.findMany({
+      this.prisma.projectMember.findMany({
         where: {
           projectId,
           role: { in: ["PROJECT_ADMIN", "PROJECT_AGENT"] }
@@ -1133,7 +1133,7 @@ export class CoreService {
       .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
     if (!recipients.length) return;
 
-    const ticketDetails = await this.db.ticket.findUnique({
+    const ticketDetails = await this.prisma.ticket.findUnique({
       where: { id: ticket.id },
       select: {
         title: true,
@@ -1166,7 +1166,7 @@ export class CoreService {
 
   async emailSettings(userId: string, projectId: string) {
     await this.assertMember(userId, projectId);
-    const settings = await this.db.projectEmailSettings.findUnique({
+    const settings = await this.prisma.projectEmailSettings.findUnique({
       where: { projectId }
     });
     if (!settings) return null;
@@ -1189,7 +1189,7 @@ export class CoreService {
     const member = await this.assertMember(userId, projectId);
     if (member.role === "PROJECT_AGENT") throw new ForbiddenException("Agents cannot update email settings");
 
-    const existing = await this.db.projectEmailSettings.findUnique({ where: { projectId } });
+    const existing = await this.prisma.projectEmailSettings.findUnique({ where: { projectId } });
     
     // If no password provided, use existing. If provided, update it.
     const smtpPassword = data.smtpPassword ? this.crypto.encryptSecret(data.smtpPassword) : existing?.smtpPassword;
@@ -1198,7 +1198,7 @@ export class CoreService {
       throw new BadRequestException("SMTP password is required");
     }
 
-    return this.db.projectEmailSettings.upsert({
+    return this.prisma.projectEmailSettings.upsert({
       where: { projectId },
       create: {
         projectId,
@@ -1224,10 +1224,10 @@ export class CoreService {
     const member = await this.assertMember(userId, projectId);
     if (member.role === "PROJECT_AGENT") throw new ForbiddenException("Agents cannot test email settings");
 
-    const settings = await this.db.projectEmailSettings.findUnique({ where: { projectId } });
+    const settings = await this.prisma.projectEmailSettings.findUnique({ where: { projectId } });
     if (!settings) throw new BadRequestException("No email settings configured for this project");
 
-    const user = await this.db.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException("User not found");
 
     const testRecipient = user.email.toLowerCase() === "admin@gmail.com"

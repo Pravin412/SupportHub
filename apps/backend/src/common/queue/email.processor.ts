@@ -17,7 +17,7 @@ export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
 
   constructor(
-    private db: PrismaService,
+    private prisma: PrismaService,
     private crypto: CryptoService
   ) {
     super();
@@ -29,7 +29,7 @@ export class EmailProcessor extends WorkerHost {
       return;
     }
 
-    const notification = await this.db.emailNotification.create({
+    const notification = await this.prisma.emailNotification.create({
       data: {
         projectId: job.data.projectId,
         to: job.data.to,
@@ -40,10 +40,10 @@ export class EmailProcessor extends WorkerHost {
 
     try {
       await this.send(job.data);
-      await this.db.emailNotification.update({ where: { id: notification.id }, data: { status: "SENT" } });
+      await this.prisma.emailNotification.update({ where: { id: notification.id }, data: { status: "SENT" } });
       this.logger.log(`[email] sent job=${job.id} project=${job.data.projectId} to=${job.data.to}`);
     } catch (error) {
-      await this.db.emailNotification.update({ where: { id: notification.id }, data: { status: "FAILED" } });
+      await this.prisma.emailNotification.update({ where: { id: notification.id }, data: { status: "FAILED" } });
       this.logger.error(
         `[email] failed job=${job.id} project=${job.data.projectId} to=${job.data.to}: ${
           error instanceof Error ? error.message : String(error)
@@ -64,7 +64,7 @@ export class EmailProcessor extends WorkerHost {
     const bcc = process.env.BCC_EMAIL;
     
     // First try project-specific SMTP settings
-    const projectSmtp = await this.db.projectEmailSettings.findUnique({
+    const projectSmtp = await this.prisma.projectEmailSettings.findUnique({
       where: { projectId: data.projectId }
     });
 

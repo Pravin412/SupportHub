@@ -30,7 +30,7 @@ class ConversationStatusDto {
 @Controller("integrations/:projectKey")
 export class IntegrationController {
     constructor(
-    private db: PrismaService,
+    private prisma: PrismaService,
     private crypto: CryptoService,
     private queues: QueueService,
     private realtime: RealtimeGateway,
@@ -48,7 +48,7 @@ export class IntegrationController {
     console.log("Payload:", JSON.stringify(dto, null, 2));
     
     const project = await this.authorizeProject(key, secret);
-    const contact = await this.db.contact.upsert({
+    const contact = await this.prisma.contact.upsert({
       where: { projectId_externalUserId: { projectId: project.id, externalUserId: dto.externalUserId } },
       create: {
         projectId: project.id,
@@ -59,14 +59,14 @@ export class IntegrationController {
       },
       update: { name: dto.name, email: dto.email, phone: dto.number }
     });
-    const conversation = await this.db.conversation
+    const conversation = await this.prisma.conversation
       .upsert({
         where: { id: dto.externalMessageId ?? "never-match" },
         create: { projectId: project.id, contactId: contact.id },
         update: {}
       })
-      .catch(() => this.db.conversation.create({ data: { projectId: project.id, contactId: contact.id } }));
-    const msg = await this.db.message.create({
+      .catch(() => this.prisma.conversation.create({ data: { projectId: project.id, contactId: contact.id } }));
+    const msg = await this.prisma.message.create({
       data: {
         conversationId: conversation.id,
         senderType: "CUSTOMER",
@@ -74,7 +74,7 @@ export class IntegrationController {
         externalMessageId: dto.externalMessageId
       }
     });
-    const updated = await this.db.conversation.update({
+    const updated = await this.prisma.conversation.update({
       where: { id: conversation.id },
       data: {
         lastMessageAt: new Date(),
@@ -89,14 +89,14 @@ export class IntegrationController {
     if (dto.assignedTo === "human" || dto.status) {
       this.realtime.emitProject(project.id, SupportEvent.ConversationAssigned, updated);
       if (dto.status === "OPEN") {
-        const existingOpenTicket = await this.db.ticket.findFirst({
+        const existingOpenTicket = await this.prisma.ticket.findFirst({
           where: {
             conversationId: conversation.id,
             status: { notIn: ["RESOLVED", "CLOSED"] }
           }
         });
         if (!existingOpenTicket) {
-          const ticket = await this.db.ticket.create({
+          const ticket = await this.prisma.ticket.create({
             data: {
               projectId: project.id,
               conversationId: conversation.id,
@@ -128,7 +128,7 @@ export class IntegrationController {
 
     const project = await this.authorizeProject(key, secret);
 
-    const conversation = await this.db.conversation.findFirst({ where: { id: conversationId, projectId: project.id } });
+    const conversation = await this.prisma.conversation.findFirst({ where: { id: conversationId, projectId: project.id } });
     if (!conversation) throw new UnauthorizedException("Conversation not found");
 
     // Format content with options metadata if provided
@@ -141,7 +141,7 @@ export class IntegrationController {
       });
     }
 
-    const msg = await this.db.message.create({
+    const msg = await this.prisma.message.create({
       data: {
         conversationId,
         senderType: "BOT",
@@ -150,7 +150,7 @@ export class IntegrationController {
       }
     });
 
-    const updated = await this.db.conversation.update({
+    const updated = await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { 
         lastMessageAt: new Date(),
@@ -166,14 +166,14 @@ export class IntegrationController {
     if (dto.assignedTo === "human" || dto.status) {
       this.realtime.emitProject(project.id, SupportEvent.ConversationAssigned, updated);
       if (dto.status === "OPEN") {
-        const existingOpenTicket = await this.db.ticket.findFirst({
+        const existingOpenTicket = await this.prisma.ticket.findFirst({
           where: {
             conversationId: conversation.id,
             status: { notIn: ["RESOLVED", "CLOSED"] }
           }
         });
         if (!existingOpenTicket) {
-          const ticket = await this.db.ticket.create({
+          const ticket = await this.prisma.ticket.create({
             data: {
               projectId: project.id,
               conversationId: conversation.id,
@@ -205,7 +205,7 @@ export class IntegrationController {
   }
 
   private async authorizeProject(key: string, secret: string) {
-    const project = await this.db.project.findFirst({
+    const project = await this.prisma.project.findFirst({
       where: {
         OR: [{ key }, { integrationKey: key }, { id: key }]
       }
