@@ -19,7 +19,7 @@ async function bootstrap() {
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: false
   });
-  const allowedOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:3000,http://localhost:3001,http://localhost:3002")
+  const allowedOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://support.softmc.org")
     .split(",")
     .map((origin) => origin.trim());
   await app.register(cors as never, {

@@ -13,7 +13,7 @@ import type { Socket } from "socket.io";
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: (process.env.WEB_ORIGIN ?? "http://localhost:3000,http://localhost:3001,http://localhost:3002")
+    origin: (process.env.WEB_ORIGIN ?? "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://support.softmc.org")
       .split(",")
       .map((origin) => origin.trim()),
     credentials: true
