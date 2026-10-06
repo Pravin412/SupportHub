@@ -5,7 +5,7 @@ import { KeyRound, Eye, EyeOff, Check, Copy } from "lucide-react";
 import { Card, Input, Button } from "@support-hub/ui";
 import { api } from "../../lib/api";
 import { useIntegrationCredentials } from "../../lib/queries";
-import { useUiStore } from "../../lib/store";
+import { displayToast } from "../../lib/display-toast";
 import { PanelHeader } from "../admin-panels";
 
 export function IntegrationPanel({ projectId }: { projectId?: string }) {
@@ -15,8 +15,7 @@ export function IntegrationPanel({ projectId }: { projectId?: string }) {
   const [copiedIntegrationSecret, setCopiedIntegrationSecret] = useState(false);
   const [showIntegrationKey, setShowIntegrationKey] = useState(false);
   const [showIntegrationSecret, setShowIntegrationSecret] = useState(false);
-  
-  const showToast = useUiStore((state) => state.showToast);
+
 
   useEffect(() => {
     setIntegrationSecret(integrationCredentials.data?.integrationSecret ?? "");
@@ -100,9 +99,9 @@ export function IntegrationPanel({ projectId }: { projectId?: string }) {
             try {
               const credentials = await api.rotateIntegrationSecret(projectId);
               setIntegrationSecret(credentials.integrationSecret);
-              showToast("Integration secret rotated successfully.", "success");
+              displayToast("Integration secret rotated successfully.", "success");
             } catch (err) {
-              showToast(err instanceof Error ? err.message : "Failed to rotate integration secret", "error");
+              displayToast(err instanceof Error ? err.message : "Failed to rotate integration secret", "destructive");
             }
           }}
         >

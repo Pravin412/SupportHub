@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
 import { useEmailSettings, useMe } from "../lib/queries";
-import { useUiStore } from "../lib/store";
+import { displayToast } from "../lib/display-toast";
 import { CheckboxField } from "./checkbox-field";
 
 const smtpSchema = z.object({
@@ -22,7 +22,7 @@ const smtpSchema = z.object({
 export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
   const me = useMe();
   const settings = useEmailSettings(projectId);
-  const showToast = useUiStore((state) => state.showToast);
+
   const [testing, setTesting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -59,9 +59,9 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
     if (!projectId) return;
     try {
       await api.updateEmailSettings(projectId, v);
-      showToast("SMTP settings saved successfully!", "success");
+      displayToast("SMTP settings saved successfully!", "success");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to save SMTP settings", "error");
+      displayToast(err instanceof Error ? err.message : "Failed to save SMTP settings", "destructive");
     }
   };
 
@@ -70,9 +70,9 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
     setTesting(true);
     try {
       await api.testEmailSettings(projectId);
-      showToast("Test email queued. Check your inbox!", "success");
+      displayToast("Test email queued. Check your inbox!", "success");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Test email failed", "error");
+      displayToast(err instanceof Error ? err.message : "Test email failed", "destructive");
     } finally {
       setTesting(false);
     }

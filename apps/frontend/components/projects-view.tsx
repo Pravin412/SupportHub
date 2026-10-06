@@ -7,9 +7,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useProjects, useCreateProject, useDeleteProject, useDashboardSummary, useMe } from "../lib/queries";
-import { useUiStore } from "../lib/store";
+import { useInboxSelectionStore } from "../lib/inbox-selection-store";
+import { displayToast } from "../lib/display-toast";
 import { useState } from "react";
-import { useConfirmationStore } from "../lib/confirmation-store";
+import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 
 const projectSchema = z.object({
   name: z.string().min(2, "Project name must be at least 2 characters.")
@@ -26,8 +27,9 @@ export function ProjectsView() {
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
   const me = useMe();
-  const { setProject, selectedProjectId, showToast } = useUiStore();
-  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
+  const { setProject, selectedProjectId } = useInboxSelectionStore();
+
+  const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
@@ -38,7 +40,7 @@ export function ProjectsView() {
   const handleDelete = (projectId: string, projectName: string) => {
     async function confirmDelete() {
         await deleteProject.mutateAsync(projectId);
-        showToast(`Project "${projectName}" deleted.`, "success");
+        displayToast(`Project "${projectName}" deleted.`, "success");
         if (selectedProjectId === projectId) {
           setProject("");
         }
@@ -135,11 +137,11 @@ export function ProjectsView() {
               createProject.mutate(v, {
                 onSuccess: (createdProject) => {
                   setProject(createdProject.id);
-                  showToast(`Project "${createdProject.name}" created successfully!`, "success");
+                  displayToast(`Project "${createdProject.name}" created successfully!`, "success");
                   projectForm.reset();
                 },
                 onError: (err) => {
-                  showToast(err.message || "Failed to create project", "error");
+                  displayToast(err.message || "Failed to create project", "destructive");
                 }
               })
             )}
@@ -152,11 +154,6 @@ export function ProjectsView() {
             <Button className="w-full gap-2 bg-brand text-white hover:bg-brand/90" disabled={createProject.isPending}>
               <Plus size={16} /> {createProject.isPending ? "Creating..." : "Create Project"}
             </Button>
-            {createProject.error && (
-              <p className="rounded-md border border-error-border bg-error-surface p-3 text-sm text-error-muted">
-                {createProject.error.message}
-              </p>
-            )}
           </form>
         </Card>}
 

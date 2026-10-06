@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Menu, Search, Loader2, Folder, Ticket, User, MessageSquare } from "lucide-react";
 import { Button, Input } from "@support-hub/ui";
-import { useUiStore } from "../lib/store";
+import { useSidebarStore } from "../lib/sidebar-store";
 import { useGlobalSearch } from "../lib/queries";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,7 +19,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function Header() {
-  const ui = useUiStore();
+  const sidebar = useSidebarStore();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
@@ -51,7 +51,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-6 border-b border-border bg-white px-4">
-      <Button className="h-9 w-9 px-0 md:hidden" onClick={() => ui.setSidebar(true)}>
+      <Button className="h-9 w-9 px-0 md:hidden" onClick={() => sidebar.setSidebar(true)}>
         <Menu size={18} />
       </Button>
       <div className="relative ml-auto w-full max-w-sm" ref={wrapperRef}>

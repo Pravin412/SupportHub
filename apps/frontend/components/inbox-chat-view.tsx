@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCheck, CirclePlus, Loader2, Send, Smile, User, ChevronDown, Trash2 } from "lucide-react";
 import { Button, Input } from "@support-hub/ui";
-import { useUiStore } from "../lib/store";
+import { useInboxSelectionStore } from "../lib/inbox-selection-store";
+import { displayToast } from "../lib/display-toast";
 import { useUpdateConversationStatus, useDeleteContact } from "../lib/queries";
-import { useConfirmationStore } from "../lib/confirmation-store";
+import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 import { InboxMessageItem } from "./inbox-message-item";
 
 export function InboxChatView({
@@ -27,18 +28,19 @@ export function InboxChatView({
   onSend: () => void;
   isSending: boolean;
 }) {
-  const ui = useUiStore();
+  const inboxSelection = useInboxSelectionStore();
+
   const activeId = activeConversation?.id;
   const updateStatus = useUpdateConversationStatus();
   const deleteContact = useDeleteContact();
-  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
+  const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
   function requestDeleteContact() {
     const { contactId, projectId } = activeConversation ?? {};
     if (!contactId || !projectId) return;
     async function confirmDeleteContact() {
       await deleteContact.mutateAsync({ projectId, contactId });
-      ui.showToast("Contact deleted.", "success");
-      ui.setConversation(undefined);
+      displayToast("Contact deleted.", "success");
+      inboxSelection.setConversation(undefined);
     }
     openConfirmation({ title: "Delete contact", message: "Are you sure you want to permanently delete this contact and all their conversations? This cannot be undone.", confirmLabel: "Delete Contact", onConfirm: confirmDeleteContact });
   }
@@ -99,7 +101,7 @@ export function InboxChatView({
           <button 
             type="button"
             className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-600 hover:bg-slate-200" 
-            onClick={() => ui.setConversation("")}
+            onClick={() => inboxSelection.setConversation("")}
             title="Back to inbox"
           >
             <ArrowLeft size={16} />

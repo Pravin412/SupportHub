@@ -6,8 +6,8 @@ import { Plus, Trash2, Edit2, KeyRound, Check, Copy } from "lucide-react";
 import { useWebhooks } from "../lib/queries";
 import { api } from "../lib/api";
 import { Button, Card, Input } from "@support-hub/ui";
-import { useUiStore } from "../lib/store";
-import { useConfirmationStore } from "../lib/confirmation-store";
+import { displayToast } from "../lib/display-toast";
+import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 import { FieldError } from "./admin/project-access-shared";
 
 const webhookSchema = z.object({
@@ -32,7 +32,7 @@ function PanelHeader({ icon, title }: { icon: React.ReactNode; title: string }) 
 
 export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
   const { data: webhooks, refetch } = useWebhooks(projectId);
-  const showToast = useUiStore((s: any) => s.showToast);
+
   
   const [isAdding, setIsAdding] = useState(false);
   const createForm = useForm<WebhookForm>({ resolver: zodResolver(webhookSchema), defaultValues: { name: "", url: "" } });
@@ -40,7 +40,7 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
   const [newSecret, setNewSecret] = useState<string | null>(null);
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
+  const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
 
   const activeWebhook = webhooks?.find(w => w.isActive);
 
@@ -50,12 +50,12 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
     try {
       const res = await api.createWebhook(projectId, { ...data, isActive: webhooks?.length === 0 });
       setNewSecret(res.signingSecret);
-      showToast("Webhook added successfully", "success");
+      displayToast("Webhook added successfully", "success");
       createForm.reset();
       setIsAdding(false);
       refetch();
     } catch (e: any) {
-      showToast(e.message || "Failed to create webhook", "error");
+      displayToast(e.message || "Failed to create webhook", "destructive");
     }
   }
 
@@ -64,7 +64,7 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
     if (!targetProjectId) return;
     async function deleteWebhook() {
       await api.deleteWebhook(targetProjectId!, id);
-      showToast("Webhook deleted", "success");
+      displayToast("Webhook deleted", "success");
       await refetch();
     }
     openConfirmation({ title: "Delete webhook", message: `Delete "${name}"? This cannot be undone.`, confirmLabel: "Delete", icon: <Trash2 size={18} />, onConfirm: deleteWebhook });
@@ -74,10 +74,10 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
     if (!projectId) return;
     try {
       await api.updateWebhook(projectId, id, { isActive: true });
-      showToast("Active webhook updated", "success");
+      displayToast("Active webhook updated", "success");
       refetch();
     } catch (e: any) {
-      showToast(e.message || "Failed to update webhook", "error");
+      displayToast(e.message || "Failed to update webhook", "destructive");
     }
   }
 
@@ -86,11 +86,11 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
     editForm.clearErrors("root");
     try {
       await api.updateWebhook(projectId, id, data);
-      showToast("Webhook updated", "success");
+      displayToast("Webhook updated", "success");
       setEditingId(null);
       refetch();
     } catch (e: any) {
-      showToast(e.message || "Failed to update webhook", "error");
+      displayToast(e.message || "Failed to update webhook", "destructive");
     }
   }
 

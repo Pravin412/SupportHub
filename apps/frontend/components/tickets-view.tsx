@@ -7,7 +7,8 @@ import { CheckCircle2, Clock3, Loader2, TicketCheck, User } from "lucide-react";
 import { Badge, Button, Card } from "@support-hub/ui";
 import { api } from "../lib/api";
 import { keys, useTickets } from "../lib/queries";
-import { useUiStore } from "../lib/store";
+import { useInboxSelectionStore } from "../lib/inbox-selection-store";
+import { displayToast } from "../lib/display-toast";
 import { formatShortDate } from "../lib/format";
 import { TicketStatus, TicketStatusFilter, ticketTabs, type TicketStatusFilterValue } from "../lib/ticket-status";
 import { StatusDropdown } from "./ticket-status-dropdown";
@@ -17,9 +18,9 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
   const [activeStatus, setActiveStatus] = useState<TicketStatusFilterValue>(TicketStatus.Open);
   const queryClient = useQueryClient();
   const router = useRouter();
-  const setProject = useUiStore((state) => state.setProject);
-  const setConversation = useUiStore((state) => state.setConversation);
-  const showToast = useUiStore((state) => state.showToast);
+  const setProject = useInboxSelectionStore((state) => state.setProject);
+  const setConversation = useInboxSelectionStore((state) => state.setConversation);
+
 
   useEffect(() => {
     setActiveStatus(TicketStatus.Open);
@@ -41,10 +42,10 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
       await queryClient.invalidateQueries({ queryKey: keys.tickets(projectId) });
       await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "conversations" });
       await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "dashboard-summary" });
-      showToast("Ticket status updated successfully.", "success");
+      displayToast("Ticket status updated successfully.", "success");
     } catch (err) {
       await queryClient.invalidateQueries({ queryKey: keys.tickets(projectId) });
-      showToast(err instanceof Error ? err.message : "Failed to update ticket status", "error");
+      displayToast(err instanceof Error ? err.message : "Failed to update ticket status", "destructive");
     }
   };
 

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@support-hub/ui";
-import { useConfirmationStore } from "../lib/confirmation-store";
+import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 
 type ConfirmationModalProps = {
   open: boolean;
@@ -67,7 +67,7 @@ export function ConfirmationModal({
 }
 
 export function GlobalConfirmationModal() {
-  const { confirmation, isLoading, error, cancelConfirmation, confirm } = useConfirmationStore();
+  const { confirmation, isLoading, cancelConfirmation, confirm } = useConfirmationModalStore();
   if (!confirmation) return null;
-  return <ConfirmationModal {...confirmation} open isLoading={isLoading} error={error} onCancel={cancelConfirmation} onConfirm={confirm} />;
+  return <ConfirmationModal {...confirmation} open isLoading={isLoading} onCancel={cancelConfirmation} onConfirm={confirm} />;
 }

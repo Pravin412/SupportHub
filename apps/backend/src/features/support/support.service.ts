@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Prisma, TicketStatus, ConversationStatus, Role, AutomationMode } from "@prisma/client";
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
@@ -87,6 +87,7 @@ function dashboardDateFilter(range: DashboardRange = "all") {
 
 @Injectable()
 export class CoreService {
+  private readonly logger = new Logger(CoreService.name);
   constructor(
     private prisma: PrismaService,
     private queues: QueueService,
@@ -553,6 +554,7 @@ export class CoreService {
     const msg = await this.prisma.message.create({
       data: { conversationId, senderType: "AGENT", senderId: userId, content, status: "PENDING" }
     });
+    this.logger.log(`[agent] saved project=${c.projectId} conversation=${conversationId} message=${msg.id} characters=${content.length}`);
     await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { lastMessageAt: new Date(), unreadCount: 0, status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
@@ -560,6 +562,7 @@ export class CoreService {
     this.realtime.emitProject(c.projectId, SupportEvent.MessageCreated, msg);
     this.realtime.emitConversation(conversationId, SupportEvent.MessageCreated, msg);
     await this.queues.queueWebhook(SupportEvent.MessageCreated, c.projectId, msg);
+    this.logger.log(`[agent] webhook queued project=${c.projectId} conversation=${conversationId} message=${msg.id}`);
     return msg;
   }
 
@@ -883,6 +886,7 @@ export class CoreService {
   }
 
   async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, email?: string, number?: string) {
+    this.logger.log(`[widget] received channel=${channelId} characters=${content.length}`);
     const channel = await this.prisma.widgetChannel.findUnique({
       where: { channelId },
       select: { id: true, projectId: true, enabled: true, project: { select: { name: true } } }
@@ -916,6 +920,7 @@ export class CoreService {
     const msg = await this.prisma.message.create({
       data: { conversationId: conversation.id, senderType: "CUSTOMER", content }
     });
+    this.logger.log(`[widget] saved project=${channel.projectId} conversation=${conversation.id} message=${msg.id}`);
     
     await this.prisma.conversation.update({
       where: { id: conversation.id },
@@ -932,6 +937,7 @@ export class CoreService {
     this.realtime.emitConversation(conversation.id, SupportEvent.MessageCreated, msg);
 
     await this.queues.queueWebhook(SupportEvent.MessageCreated, channel.projectId, msg);
+    this.logger.log(`[widget] webhook queued project=${channel.projectId} conversation=${conversation.id} message=${msg.id}`);
 
     // If an external webhook is active, let the external bot handle handoff logic.
     // Otherwise, check for internal bot handoff keywords.
@@ -944,7 +950,11 @@ export class CoreService {
       botConfig?.handoffKeywords.some((kw: string) => content.toLowerCase().includes(kw.toLowerCase()))
     );
 
-    if (containsKeyword) {
+    const hasExternalBot = Boolean(webhook?.enabled);
+    const hasInternalBot = Boolean(botConfig?.enabled && botConfig.responseMode !== "HUMAN");
+    const needsHumanSupport = !hasExternalBot && !hasInternalBot;
+
+    if (containsKeyword || needsHumanSupport) {
       await this.prisma.conversation.update({
         where: { id: conversation.id },
         data: { status: ConversationStatus.OPEN, automationMode: AutomationMode.HUMAN }
@@ -955,13 +965,13 @@ export class CoreService {
           status: { notIn: ["RESOLVED", "CLOSED"] }
         }
       });
-      if (!existingOpenTicket) {
+      if (needsHumanSupport || !existingOpenTicket) {
         const ticket = await this.prisma.ticket.create({
           data: {
             projectId: channel.projectId,
             conversationId: conversation.id,
             contactId: contact.id,
-            title: `Handoff requested: ${content.slice(0, 80)}`,
+            title: `${needsHumanSupport ? "Support requested" : "Handoff requested"}: ${content.slice(0, 80)}`,
             priority: "MEDIUM"
           }
         });
@@ -970,7 +980,7 @@ export class CoreService {
       }
     }
 
-    if (botConfig && botConfig.enabled && botConfig.responseMode === "AUTOMATED" && botConfig.fallbackMessage && !containsKeyword) {
+    if (botConfig && botConfig.enabled && botConfig.responseMode === "AUTOMATED" && botConfig.fallbackMessage && !containsKeyword && !needsHumanSupport) {
       const canBotReply = conversation.status === "PENDING" || conversation.status === "RESOLVED";
       if (canBotReply) {
 

@@ -8,14 +8,14 @@ import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { Button, Input, Select } from "@support-hub/ui";
 import { api } from "@/lib/api";
 import { useCreateAgent, useMe } from "@/lib/queries";
-import { useUiStore } from "@/lib/store";
+import { displayToast } from "@/lib/display-toast";
 import { CheckboxField } from "../checkbox-field";
 import { agentSchema, FieldError } from "./project-access-shared";
 
 export function ProjectAccessForm({ projectId }: { projectId?: string }) {
   const createAgent = useCreateAgent(projectId);
   const me = useMe();
-  const showToast = useUiStore((state) => state.showToast);
+
   const [showAgentPassword, setShowAgentPassword] = useState(false);
   const [agentLookup, setAgentLookup] = useState<{ email: string; exists: boolean; name?: string } | null>(null);
   const [isLookingUpAgent, setIsLookingUpAgent] = useState(false);
@@ -73,11 +73,11 @@ export function ProjectAccessForm({ projectId }: { projectId?: string }) {
           { ...v, password: agentEmailExists ? undefined : v.password },
           {
             onSuccess: () => {
-              showToast("Project access added successfully!", "success");
+              displayToast("Project access added successfully!", "success");
               agentForm.reset({ name: "", email: "", password: "", role: "PROJECT_AGENT", emailNotificationsEnabled: false });
               setAgentLookup(null);
             },
-            onError: (err: any) => showToast(err.message || "Failed to add project access", "error")
+            onError: (err: any) => displayToast(err.message || "Failed to add project access", "destructive")
           }
         );
       })}

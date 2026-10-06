@@ -9,7 +9,7 @@ import { Badge, Button, Card, Input } from "@support-hub/ui";
 import { parseEmailList } from "@support-hub/utils";
 import { api } from "../../lib/api";
 import { useNotificationSettings } from "../../lib/queries";
-import { useUiStore } from "../../lib/store";
+import { displayToast } from "../../lib/display-toast";
 import { PanelHeader } from "../admin-panels";
 import { CheckboxField } from "../checkbox-field";
 
@@ -30,7 +30,7 @@ function FieldError({ message }: { message?: string }) {
 export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
   const notificationSettings = useNotificationSettings(projectId);
   const [emailInput, setEmailInput] = useState("");
-  const showToast = useUiStore((state) => state.showToast);
+
 
   const notificationForm = useForm<z.infer<typeof notificationSchema>>({
     resolver: zodResolver(notificationSchema),
@@ -56,7 +56,7 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
   const addNotificationRecipients = () => {
     const nextEmails = parseEmailList(emailInput);
     if (!nextEmails.length) {
-      showToast("Enter a valid email address.", "error");
+      displayToast("Enter a valid email address.", "destructive");
       return;
     }
     setNotificationRecipients(Array.from(new Set([...notificationRecipients, ...nextEmails])));
@@ -75,9 +75,9 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
           if (!projectId) return;
           try {
             await api.updateNotificationSettings(projectId, v);
-            showToast("Ticket email settings saved successfully!", "success");
+            displayToast("Ticket email settings saved successfully!", "success");
           } catch (err) {
-            showToast(err instanceof Error ? err.message : "Failed to save ticket email settings", "error");
+            displayToast(err instanceof Error ? err.message : "Failed to save ticket email settings", "destructive");
           }
         })}
       >

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { displayToast } from "@/lib/display-toast";
 import { dashboardKeys } from "@/features/dashboard/queries";
 import { ticketKeys } from "@/features/tickets/queries";
 
@@ -25,6 +26,7 @@ export function useSendMessage(id?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (content: string) => api.sendMessage(id!, content),
+    onError: handleInboxError,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inboxKeys.messages(id) });
       qc.invalidateQueries({ queryKey: inboxKeys.all });
@@ -37,6 +39,7 @@ export function useUpdateConversationStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: "OPEN" | "PENDING" | "SNOOZED" | "RESOLVED" }) =>
       api.updateConversationStatus(id, status),
+    onError: handleInboxError,
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: inboxKeys.all });
       queryClient.invalidateQueries({ queryKey: ticketKeys.all });
@@ -44,6 +47,10 @@ export function useUpdateConversationStatus() {
       queryClient.invalidateQueries({ queryKey: inboxKeys.messages(id) });
     }
   });
+}
+
+function handleInboxError(error: Error) {
+  displayToast(error.message || "Request failed", "destructive");
 }
 
 export function useDeleteContact() {

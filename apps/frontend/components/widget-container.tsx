@@ -4,7 +4,9 @@ import { useSearchParams } from "next/navigation";
 import { widgetApi } from "../lib/api";
 import { ClientEvent } from "../lib/events";
 import { WIDGET_API_URL, guestProfileStorageKey } from "../lib/widget-config";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
+import { connectRealtime } from "../lib/realtime-client";
+import { displayToast } from "../lib/display-toast";
 import { WidgetFrame } from "./widget-frame";
 export function WidgetContainer() {
   const searchParams = useSearchParams();
@@ -29,10 +31,12 @@ export function WidgetContainer() {
   const [isSending, setIsSending] = useState(false);
   const isSendingRef = useRef(false);
   const socketRef = useRef<Socket | null>(null);
+  const conversationIdRef = useRef<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const subscribeToConversation = (conversationId?: string) => {
     if (!conversationId) return;
+    conversationIdRef.current = conversationId;
     socketRef.current?.emit("conversation:subscribe", conversationId);
   };
 
@@ -56,6 +60,7 @@ export function WidgetContainer() {
 
   useEffect(() => {
     if (!channelId) return;
+    conversationIdRef.current = undefined;
     let isMounted = true;
 
     const loadData = async () => {
@@ -94,6 +99,7 @@ export function WidgetContainer() {
         }
       } catch (err) {
         console.error("Failed to load widget data", err);
+        displayToast(err instanceof Error ? err.message : "Failed to load widget data", "destructive");
       }
     };
 
@@ -102,8 +108,11 @@ export function WidgetContainer() {
   }, [channelId, activeUser.profileId, hasHostUser]);
 
   useEffect(() => {
-    const socket = io(WIDGET_API_URL, { transports: ["websocket", "polling"], reconnection: true });
+    const socket = connectRealtime(WIDGET_API_URL);
     socketRef.current = socket;
+    socket.on("connect", function subscribeAfterConnect() {
+      if (conversationIdRef.current) socket.emit("conversation:subscribe", conversationIdRef.current);
+    });
 
     socket.on(ClientEvent.MessageCreated, (newMsg) => {
       setMessages((prev) => {
@@ -170,6 +179,7 @@ export function WidgetContainer() {
       subscribeToConversation(sentMsg.conversationId);
     } catch (err) {
       console.error("Failed to send", err);
+      displayToast(err instanceof Error ? err.message : "Failed to send message", "destructive");
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
     } finally {
       isSendingRef.current = false;

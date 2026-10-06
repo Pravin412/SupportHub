@@ -6,7 +6,7 @@ import { Badge, Button, Card, Input, Select } from "@support-hub/ui";
 import type { ProjectAccessMember } from "../../lib/api/agents";
 import { api } from "../../lib/api";
 import { useAgents, useMe, useUpdateAgent } from "../../lib/queries";
-import { useUiStore } from "../../lib/store";
+import { displayToast } from "../../lib/display-toast";
 import { PanelHeader } from "../admin-panels";
 import { ProjectAccessForm } from "./project-access-form";
 import { agentSchema, type AgentEdit, type AgentRole } from "./project-access-shared";
@@ -15,7 +15,7 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
   const updateAgent = useUpdateAgent(projectId);
   const agents = useAgents(projectId);
   const me = useMe();
-  const showToast = useUiStore((state) => state.showToast);
+
 
   const [resetPasswords, setResetPasswords] = useState<Record<string, string>>({});
   const [showResetPasswords, setShowResetPasswords] = useState<Record<string, boolean>>({});
@@ -93,17 +93,17 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                       };
                       const parsedValues = agentSchema.omit({ password: true }).safeParse(values);
                       if (!parsedValues.success) {
-                        showToast(parsedValues.error.issues[0]?.message || "Enter valid access details.", "error");
+                        displayToast(parsedValues.error.issues[0]?.message || "Enter valid access details.", "destructive");
                         return;
                       }
                       updateAgent.mutate(
                         { memberId: agent.id, ...parsedValues.data },
                         {
                           onSuccess: () => {
-                            showToast("Access updated.", "success");
+                            displayToast("Access updated.", "success");
                             setEditingAgentId(null);
                           },
-                          onError: (err: any) => showToast(err.message || "Failed to update access", "error")
+                          onError: (err: any) => displayToast(err.message || "Failed to update access", "destructive")
                         }
                       );
                     }}
@@ -178,16 +178,16 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                   if (!projectId) return;
                   const password = resetPasswords[agent.id]?.trim();
                   if (!password || password.length < 8) {
-                    showToast("Password must be at least 8 characters.", "error");
+                    displayToast("Password must be at least 8 characters.", "destructive");
                     return;
                   }
                   if (!window.confirm("Are you sure you want to reset the password for this agent?")) return;
                   try {
                     await api.updateAgentPassword(projectId, agent.id, password);
                     setResetPasswords((current) => ({ ...current, [agent.id]: "" }));
-                    showToast("Password reset successfully.", "success");
+                    displayToast("Password reset successfully.", "success");
                   } catch (err) {
-                    showToast(err instanceof Error ? err.message : "Failed to reset password", "error");
+                    displayToast(err instanceof Error ? err.message : "Failed to reset password", "destructive");
                   }
                 }}
               >
@@ -201,10 +201,10 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                   if (!window.confirm("Are you sure you want to remove access for this agent?")) return;
                   try {
                     await api.removeAgent(projectId, agent.id!);
-                    showToast("Access removed.", "success");
+                    displayToast("Access removed.", "success");
                     agents.refetch();
                   } catch (err) {
-                    showToast(err instanceof Error ? err.message : "Failed to remove access", "error");
+                    displayToast(err instanceof Error ? err.message : "Failed to remove access", "destructive");
                   }
                 }}
               >

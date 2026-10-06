@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
 import { keys, useBotConfig, useChannels } from "../lib/queries";
-import { useUiStore } from "../lib/store";
+import { displayToast } from "../lib/display-toast";
 
 const botSchema = z.object({
   responseMode: z.enum(["AUTOMATED", "HUMAN", "AI"]),
@@ -23,7 +23,7 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
   const bot = useBotConfig(projectId);
   const channels = useChannels(projectId);
   const queryClient = useQueryClient();
-  const showToast = useUiStore((state) => state.showToast);
+
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const form = useForm<BotForm>({
     resolver: zodResolver(botSchema),
@@ -43,11 +43,11 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
 
   const handleAvatarFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
-      showToast("Please select a valid image file.", "error");
+      displayToast("Please select a valid image file.", "destructive");
       return;
     }
     if (file.size > 600 * 1024) {
-      showToast("Image must be smaller than 600KB for widget upload.", "error");
+      displayToast("Image must be smaller than 600KB for widget upload.", "destructive");
       return;
     }
     const reader = new FileReader();
@@ -80,9 +80,9 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
         });
         await queryClient.invalidateQueries({ queryKey: keys.channels(projectId) });
       }
-      showToast("Bot configuration saved successfully!", "success");
+      displayToast("Bot configuration saved successfully!", "success");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to save bot configuration", "error");
+      displayToast(err instanceof Error ? err.message : "Failed to save bot configuration", "destructive");
     }
   };
 

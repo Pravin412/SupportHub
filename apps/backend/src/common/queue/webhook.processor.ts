@@ -31,7 +31,8 @@ export class WebhookProcessor extends WorkerHost {
     const messageId = readPayloadId(job.data.payload);
 
     if (!webhook?.enabled || !webhook.url || !webhook.events.includes(eventName)) {
-      this.logger.log(`[webhook] skipped event=${eventName} job=${eventId} project=${job.data.projectId} message=${messageId}`);
+      const reason = !webhook ? "no_active_webhook" : !webhook.enabled ? "webhook_disabled" : !webhook.url ? "missing_url" : "event_not_subscribed";
+      this.logger.log(`[webhook] skipped reason=${reason} event=${eventName} job=${eventId} project=${job.data.projectId} message=${messageId}`);
       return;
     }
 
@@ -119,6 +120,10 @@ export class WebhookProcessor extends WorkerHost {
       : undefined;
 
     try {
+      const destination = new URL(webhook.url);
+      this.logger.log(
+        `[webhook] sending event=${eventName} job=${eventId} project=${job.data.projectId} message=${messageId} attempt=${job.attemptsMade + 1} destination=${destination.origin}${destination.pathname}`
+      );
       const response = await fetch(webhook.url, {
         method: "POST",
         headers: {
@@ -147,9 +152,9 @@ export class WebhookProcessor extends WorkerHost {
         data: { status: failedLastAttempt ? "FAILED" : "QUEUED" }
       });
       this.logger.error(
-        `[webhook] failed event=${eventName} job=${eventId} project=${job.data.projectId} message=${messageId} url=${webhook.url}: ${
+        `[webhook] failed event=${eventName} job=${eventId} project=${job.data.projectId} message=${messageId} attempt=${job.attemptsMade + 1} final=${failedLastAttempt}: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        } cause=${error instanceof Error && error.cause instanceof Error ? error.cause.message : "none"}`
       );
       throw error;
     }

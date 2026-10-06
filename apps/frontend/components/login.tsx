@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
+import { displayToast } from "../lib/display-toast";
 
 const schema = z.object({ email: z.email(), password: z.string().min(8) });
 type FormData = z.infer<typeof schema>;
@@ -25,6 +26,7 @@ export function LoginPage() {
 }
 
 export function Login({ onDone }: { onDone: () => void }) {
+
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -41,9 +43,7 @@ export function Login({ onDone }: { onDone: () => void }) {
               await api.login(v.email, v.password);
               onDone();
             } catch (error) {
-              form.setError("root", {
-                message: error instanceof Error ? error.message : "Unable to sign in"
-              });
+              displayToast(error instanceof Error ? error.message : "Unable to sign in", "destructive");
             }
           })}
         >
@@ -68,7 +68,7 @@ export function Login({ onDone }: { onDone: () => void }) {
             Sign in
           </Button>
           {form.formState.errors.email && <p className="text-sm text-error-muted">Enter a valid email.</p>}
-          {form.formState.errors.root && <p className="text-sm text-error-muted">{form.formState.errors.root.message}</p>}
+          {form.formState.errors.password && <p className="text-sm text-error-muted">Password must be at least 8 characters.</p>}
         </form>
       </Card>
     </main>

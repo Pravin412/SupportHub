@@ -6,7 +6,7 @@ import { Badge, Button, Card, Input } from "@support-hub/ui";
 import { buildWidgetSnippet } from "@support-hub/utils";
 import { api } from "../lib/api";
 import { keys, useBotConfig, useChannels, useUpdateWidget } from "../lib/queries";
-import { useUiStore } from "../lib/store";
+import { displayToast } from "../lib/display-toast";
 import { ChannelLogoUpload, ChannelVisitorSettingsForm } from "./channels-panel-subcomponents";
 
 export function ChannelsPanel({ projectId }: { projectId?: string }) {
@@ -14,7 +14,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
   const botConfig = useBotConfig(projectId);
   const updateWidget = useUpdateWidget(projectId);
   const queryClient = useQueryClient();
-  const showToast = useUiStore((state) => state.showToast);
+
   const [welcomeMessage, setWelcomeMessage] = useState<Record<string, string>>({});
   const [colorTheme, setColorTheme] = useState<Record<string, string>>({});
   const [logoUrl, setLogoUrl] = useState<Record<string, string>>({});
@@ -28,11 +28,11 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
 
   const handleImageFile = (channelId: string, file: File) => {
     if (!file.type.startsWith("image/")) {
-      showToast("Please select a valid image file.", "error");
+      displayToast("Please select a valid image file.", "destructive");
       return;
     }
     if (file.size > 600 * 1024) {
-      showToast("Image must be smaller than 600KB for widget upload.", "error");
+      displayToast("Image must be smaller than 600KB for widget upload.", "destructive");
       return;
     }
     const reader = new FileReader();
@@ -67,10 +67,10 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
             });
             await queryClient.invalidateQueries({ queryKey: keys.botConfig(projectId) });
           }
-          showToast("Widget channel settings saved successfully!", "success");
+          displayToast("Widget channel settings saved successfully!", "success");
         },
         onError: (err) => {
-          showToast(err.message || "Failed to save widget settings", "error");
+          displayToast(err.message || "Failed to save widget settings", "destructive");
         }
       }
     );

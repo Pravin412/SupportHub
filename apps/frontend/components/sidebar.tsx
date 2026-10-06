@@ -1,16 +1,18 @@
 "use client";
 import { Gauge, HelpCircle, Inbox, LogOut, Folder, TicketCheck, X, MessageSquare } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useUiStore } from "../lib/store";
+import { useSidebarStore } from "../lib/sidebar-store";
+import { useInboxSelectionStore } from "../lib/inbox-selection-store";
 import { NavButton, NavLink } from "./shared";
 import { api } from "../lib/api";
-import { useConfirmationStore } from "../lib/confirmation-store";
+import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 
 export function Sidebar() {
-  const ui = useUiStore();
+  const sidebar = useSidebarStore();
+  const inboxSelection = useInboxSelectionStore();
   const pathname = usePathname();
   const router = useRouter();
-  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
+  const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
 
   const logout = async () => {
     await api.logout().catch(() => undefined);
@@ -24,12 +26,12 @@ export function Sidebar() {
 
   return (
     <>
-      {ui.sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => ui.setSidebar(false)} />
+      {sidebar.sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => sidebar.setSidebar(false)} />
       )}
       <aside
         className={`${
-          ui.sidebarOpen ? "fixed inset-y-0 left-0 z-50 flex flex-col w-64 shadow-xl" : "hidden"
+          sidebar.sidebarOpen ? "fixed inset-y-0 left-0 z-50 flex flex-col w-64 shadow-xl" : "hidden"
         } border-r border-border bg-white md:flex md:flex-col md:shadow-none`}
       >
         <div className="flex h-16 items-center justify-between border-b border-border px-4 shrink-0">
@@ -45,7 +47,7 @@ export function Sidebar() {
           <button
             type="button"
             className="md:hidden grid h-8 w-8 place-items-center rounded bg-slate-100 text-slate-500 hover:bg-slate-200"
-            onClick={() => ui.setSidebar(false)}
+            onClick={() => sidebar.setSidebar(false)}
           >
             <X size={16} />
           </button>
@@ -55,7 +57,7 @@ export function Sidebar() {
             active={pathname === "/" || pathname === "/dashboard"}
             href="/dashboard"
             icon={<Gauge size={18} />}
-            onClick={() => ui.setSidebar(false)}
+            onClick={() => sidebar.setSidebar(false)}
           >
             Dashboard
           </NavLink>
@@ -64,8 +66,8 @@ export function Sidebar() {
             href="/inbox"
             icon={<Inbox size={18} />}
             onClick={() => {
-              ui.resetInboxSelection();
-              ui.setSidebar(false);
+              inboxSelection.resetInboxSelection();
+              sidebar.setSidebar(false);
             }}
           >
             Inbox
@@ -75,7 +77,7 @@ export function Sidebar() {
             active={pathname === "/projects"}
             href="/projects"
             icon={<Folder size={18} />}
-            onClick={() => ui.setSidebar(false)}
+            onClick={() => sidebar.setSidebar(false)}
           >
             Projects
           </NavLink>
@@ -86,7 +88,7 @@ export function Sidebar() {
             active={pathname === "/tickets" || pathname.includes("/tickets")}
             href="/tickets"
             icon={<TicketCheck size={18} />}
-            onClick={() => ui.setSidebar(false)}
+            onClick={() => sidebar.setSidebar(false)}
           >
             Tickets
           </NavLink>
@@ -96,7 +98,7 @@ export function Sidebar() {
             active={pathname === "/documentation"}
             href="/documentation"
             icon={<HelpCircle size={18} />}
-            onClick={() => ui.setSidebar(false)}
+            onClick={() => sidebar.setSidebar(false)}
           >
             Documentation
           </NavLink>
