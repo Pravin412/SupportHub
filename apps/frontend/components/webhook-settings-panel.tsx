@@ -55,7 +55,7 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
       setIsAdding(false);
       refetch();
     } catch (e: any) {
-      createForm.setError("root", { message: e.message || "Failed to create webhook" });
+      showToast(e.message || "Failed to create webhook", "error");
     }
   }
 
@@ -90,7 +90,7 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
       setEditingId(null);
       refetch();
     } catch (e: any) {
-      editForm.setError("root", { message: e.message || "Failed to update webhook" });
+      showToast(e.message || "Failed to update webhook", "error");
     }
   }
 
