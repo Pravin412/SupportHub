@@ -1,3 +1,4 @@
 export enum ClientEvent {
-  MessageCreated = "message.created"
+  MessageCreated = "message.created",
+  ConversationAssigned = "conversation.assigned"
 }

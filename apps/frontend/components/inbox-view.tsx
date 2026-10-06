@@ -8,6 +8,8 @@ import { Socket } from "socket.io-client";
 import { connectRealtime } from "../lib/realtime-client";
 import { ClientEvent } from "../lib/events";
 import { inboxKeys } from "../features/inbox/queries";
+import { ticketKeys } from "../features/tickets/queries";
+import { dashboardKeys } from "../features/dashboard/queries";
 import { InboxProjectsList, InboxConversationsList } from "./inbox-lists";
 import { InboxChatView } from "./inbox-chat-view";
 import { InboxEmptyState } from "./inbox-empty-state";
@@ -56,6 +58,15 @@ export function InboxView() {
       if (activeId) socket.emit("conversation:subscribe", activeId);
     });
     socketRef.current = socket;
+
+    function handleConversationUpdated() {
+      if (selectedProjectId) {
+        void queryClient.invalidateQueries({ queryKey: [...inboxKeys.all, "conversations", selectedProjectId] });
+      }
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.all });
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+    }
+    socket.on(ClientEvent.ConversationAssigned, handleConversationUpdated);
 
     socket.on(ClientEvent.MessageCreated, (newMsg) => {
       if (newMsg.conversationId) {
