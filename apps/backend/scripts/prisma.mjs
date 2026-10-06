@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { loadEnvFile } from "node:process";
+import process, { loadEnvFile } from "node:process";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 
 const backendDir = fileURLToPath(new URL("../", import.meta.url));
 const backendEnv = fileURLToPath(new URL("../.env", import.meta.url));
