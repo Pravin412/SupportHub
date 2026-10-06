@@ -63,6 +63,97 @@ pnpm.cmd --filter backend seed
 pnpm.cmd dev
 ```
 
+## Production Deployment (Ubuntu)
+
+Run deployment commands from `/var/www/SupportHub`, not from `node_modules`.
+Use Node.js 22+ and pnpm 10.29.3. PostgreSQL, Redis, PM2, and HTTPS Nginx
+must be available before starting the applications.
+
+### Environment Setup
+
+Maintain one production environment file: `/var/www/SupportHub/.env`.
+Use `.env.production` as a template, confirm its values, and preserve existing
+production credentials and encryption keys on subsequent deployments.
+Do not deploy development `apps/frontend/.env` or `apps/backend/.env` files.
+
+Manage production configuration privately with the server team.
+Never commit the populated production environment file.
+PM2 loads root `.env`. The frontend loads its public values when frontend `.env`
+is absent. Prisma migration scripts load backend `.env` if present, otherwise
+root `.env`; existing process environment values take priority.
+Public frontend env changes require a new build, not just a PM2 restart.
+
+### Deploy Code and Database Changes
+
+Deploy the updated source, package manifests, `pnpm-lock.yaml`, Prisma migration
+folders, and `apps/backend/scripts/prisma.mjs` together. Back up the production
+database before applying migrations. Then run each command below in order and
+stop if any command fails:
+
+```bash
+cd /var/www/SupportHub
+pnpm install --frozen-lockfile
+pnpm --filter backend prisma:status
+pnpm --filter backend prisma:deploy
+pnpm exec turbo run build --force
+```
+
+`prisma:status` may report pending migrations before deployment. Investigate
+connection errors or failed migrations before proceeding. `prisma:deploy`
+applies committed migrations; it does not create migration files.
+Do not run `prisma:migrate`, `migrate reset`, or the development seed on production.
+Do not mark a migration applied if its database changes are missing.
+
+### Start or Restart Applications
+
+First deployment, after a successful migration and build:
+
+```bash
+pm2 start ecosystem.config.cjs
+pm2 save
+```
+
+Subsequent deployments, after a successful migration and build:
+
+```bash
+pm2 restart ecosystem.config.cjs --update-env
+pm2 save
+```
+
+The ecosystem configuration starts the frontend on port 3000 and backend on
+port 4000. Configure PM2 startup persistence using the command provided by
+`pm2 startup`, then run `pm2 save`.
+
+### Nginx Routing and Verification
+
+The active HTTPS server block for `support.softmc.org` must forward `/` to
+`http://127.0.0.1:3000` and `/api/` to `http://127.0.0.1:4000/`.
+The trailing slash on the backend `proxy_pass` strips `/api/`.
+Enable WebSocket upgrade headers on the backend location for `/api/socket.io`.
+After changing Nginx configuration:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Check the application and migration status:
+
+```bash
+pm2 status
+pnpm --filter backend prisma:status
+curl -i http://127.0.0.1:4000/health
+curl -i https://support.softmc.org/api/health
+pm2 logs supporthub-backend --lines 100 --nostream
+pm2 logs supporthub-frontend --lines 100 --nostream
+```
+
+Verify login, live widget messages, and an active webhook delivery after deployment.
+An HTML Next.js 404 from `/api/` indicates routing to the frontend. A missing-table
+error indicates a database/migration mismatch. Missing database configuration during
+migration means root `.env` is missing or the fallback scripts were not deployed.
+Module-not-found build errors require checking that updated dependencies and
+the lockfile were deployed and installed before building.
+
 ## URLs
 
 - Frontend dashboard/widget: `http://localhost:3000`
@@ -265,6 +356,8 @@ Prisma commands:
 ```bash
 pnpm --filter backend prisma:generate
 pnpm --filter backend prisma:migrate
+pnpm --filter backend prisma:status
+pnpm --filter backend prisma:deploy
 pnpm --filter backend seed
 pnpm --filter backend exec prisma studio
 ```
@@ -277,12 +370,8 @@ npx prisma migrate dev --schema apps/backend/prisma/schema.prisma
 npx prisma studio --schema apps/backend/prisma/schema.prisma
 ```
 
-Development login:
-
-- Email: `admin@gmail.com`
-- Password: `Password@123`
-
-The seed only creates the admin user. Create projects from the dashboard after login.
+The development seed creates the admin user. Obtain development login details
+through your team's private setup process. Create projects from the dashboard after login.
 
 ## Environment
 
@@ -290,15 +379,7 @@ Copy `.env.example` to `.env` at the repository root and configure values as nee
 
 SMTP email sending uses Nodemailer directly:
 
-```ini
-EMAIL_PROVIDER="smtp"
-SMTP_HOST="smtp.example.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="smtp-user@example.com"
-SMTP_PASSWORD="<gmail-app-password>"
-BCC_EMAIL="notifications@example.com"
-```
+Configure SMTP values privately in the environment file using the environment template.
 
 Use `EMAIL_PROVIDER="log"` to print email jobs in the backend logs without sending real email.
 
