@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 import { useUiStore } from "../lib/store";
+import { GlobalConfirmationModal } from "./confirmation-modal";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -22,6 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <ToastContainer />
+      <GlobalConfirmationModal />
       {children}
     </QueryClientProvider>
   );

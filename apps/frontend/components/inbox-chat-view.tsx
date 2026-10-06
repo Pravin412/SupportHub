@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCheck, CirclePlus, Loader2, Send, Smile, User, ChevronD
 import { Button, Input } from "@support-hub/ui";
 import { useUiStore } from "../lib/store";
 import { useUpdateConversationStatus, useDeleteContact } from "../lib/queries";
-import { ConfirmationModal } from "./confirmation-modal";
+import { useConfirmationStore } from "../lib/confirmation-store";
 import { InboxMessageItem } from "./inbox-message-item";
 
 export function InboxChatView({
@@ -31,7 +31,17 @@ export function InboxChatView({
   const activeId = activeConversation?.id;
   const updateStatus = useUpdateConversationStatus();
   const deleteContact = useDeleteContact();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
+  function requestDeleteContact() {
+    const { contactId, projectId } = activeConversation ?? {};
+    if (!contactId || !projectId) return;
+    async function confirmDeleteContact() {
+      await deleteContact.mutateAsync({ projectId, contactId });
+      ui.showToast("Contact deleted.", "success");
+      ui.setConversation(undefined);
+    }
+    openConfirmation({ title: "Delete contact", message: "Are you sure you want to permanently delete this contact and all their conversations? This cannot be undone.", confirmLabel: "Delete Contact", onConfirm: confirmDeleteContact });
+  }
   const isResolved = activeConversation?.status === "RESOLVED";
   const isAssignedToAgent = activeConversation?.automationMode === "HUMAN" || activeConversation?.status === "OPEN";
   const chatStateLabel = isResolved ? "Resolved" : isAssignedToAgent ? "Assigned to agent" : "Bot active";
@@ -131,7 +141,7 @@ export function InboxChatView({
           )}
           <Button
             className="h-7 w-7 p-0 text-muted hover:text-error hover:bg-error-surface bg-transparent border-none shadow-none"
-            onClick={() => setShowDeleteConfirm(true)}
+            onClick={requestDeleteContact}
             disabled={deleteContact.isPending}
             title="Delete contact"
           >
@@ -217,27 +227,6 @@ export function InboxChatView({
           </Button>
         </div>
       </form>
-      <ConfirmationModal
-        open={showDeleteConfirm}
-        title="Delete contact"
-        message="Are you sure you want to permanently delete this contact and all their conversations? This cannot be undone."
-        confirmLabel={deleteContact.isPending ? "Deleting..." : "Delete Contact"}
-        onCancel={() => setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          if (activeConversation?.contactId && activeConversation?.projectId) {
-            deleteContact.mutate({ projectId: activeConversation.projectId, contactId: activeConversation.contactId }, {
-              onSuccess: () => {
-                ui.showToast("Contact deleted.", "success");
-                ui.setConversation(undefined);
-                setShowDeleteConfirm(false);
-              },
-              onError: (err: any) => {
-                ui.showToast(err.message || "Failed to delete contact.", "error");
-              }
-            });
-          }
-        }}
-      />
     </div>
   );
 }

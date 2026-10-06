@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useProjects, useCreateProject, useDeleteProject, useDashboardSummary, useMe } from "../lib/queries";
 import { useUiStore } from "../lib/store";
 import { useState } from "react";
-import { ConfirmationModal } from "./confirmation-modal";
+import { useConfirmationStore } from "../lib/confirmation-store";
 
 const projectSchema = z.object({
   name: z.string().min(2, "Project name must be at least 2 characters.")
@@ -27,8 +27,7 @@ export function ProjectsView() {
   const deleteProject = useDeleteProject();
   const me = useMe();
   const { setProject, selectedProjectId, showToast } = useUiStore();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
+  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
@@ -37,22 +36,14 @@ export function ProjectsView() {
   });
 
   const handleDelete = (projectId: string, projectName: string) => {
-    setDeletingId(projectId);
-    deleteProject.mutate(projectId, {
-      onSuccess: () => {
+    async function confirmDelete() {
+        await deleteProject.mutateAsync(projectId);
         showToast(`Project "${projectName}" deleted.`, "success");
-        setProjectToDelete(null);
         if (selectedProjectId === projectId) {
           setProject("");
         }
-      },
-      onError: (err) => {
-        showToast(err.message || "Failed to delete project", "error");
-      },
-      onSettled: () => {
-        setDeletingId(null);
-      }
-    });
+    }
+    openConfirmation({ title: "Delete project", message: `Are you sure you want to permanently delete project "${projectName}" and all its conversations?`, confirmLabel: "Delete", icon: <Trash2 size={18} />, onConfirm: confirmDelete });
   };
 
   const totalProjects = summary.data?.projectsCount ?? projects.data?.length ?? 0;
@@ -210,8 +201,8 @@ export function ProjectsView() {
                     <Button
                       type="button"
                       title="Delete project"
-                      disabled={deletingId === project.id}
-                      onClick={() => setProjectToDelete({ id: project.id, name: project.name })}
+                      disabled={deleteProject.isPending}
+                      onClick={handleDelete.bind(null, project.id, project.name)}
                       className="shrink-0 border-slate-200 bg-white text-error hover:bg-error-surface hover:text-error-muted hover:border-error-border border shadow-none px-3"
                     >
                       <Trash2 size={16} />
@@ -227,18 +218,6 @@ export function ProjectsView() {
         )}
       </div>
 
-      <ConfirmationModal
-        open={Boolean(projectToDelete)}
-        title="Delete project"
-        message={`Are you sure you want to permanently delete project "${projectToDelete?.name ?? ""}" and all its conversations?`}
-        confirmLabel={deletingId ? "Deleting..." : "Delete"}
-        icon={<Trash2 size={18} />}
-        isLoading={Boolean(deletingId)}
-        onCancel={() => setProjectToDelete(null)}
-        onConfirm={() => {
-          if (projectToDelete) handleDelete(projectToDelete.id, projectToDelete.name);
-        }}
-      />
     </div>
   );
 }

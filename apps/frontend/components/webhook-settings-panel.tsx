@@ -1,9 +1,21 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Plus, Trash2, Edit2, KeyRound, Check, Copy } from "lucide-react";
 import { useWebhooks } from "../lib/queries";
 import { api } from "../lib/api";
 import { Button, Card, Input } from "@support-hub/ui";
 import { useUiStore } from "../lib/store";
+import { useConfirmationStore } from "../lib/confirmation-store";
+import { FieldError } from "./admin/project-access-shared";
+
+const webhookSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  url: z.string().trim().min(1, "URL is required").url("Enter a valid URL")
+    .refine(value => /^https?:\/\//i.test(value), "Use an HTTP or HTTPS URL")
+});
+type WebhookForm = z.infer<typeof webhookSchema>;
 function Callout({ children, tone, className }: { children: React.ReactNode; tone: "error" | "success"; className?: string }) {
   const color = tone === "error" ? "border-error-border bg-error-surface text-error-muted" : "border-emerald-200 bg-emerald-50 text-emerald-800";
   return <div className={`rounded-md border p-3 text-sm ${color} ${className || ''}`}>{children}</div>;
@@ -23,40 +35,39 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
   const showToast = useUiStore((s: any) => s.showToast);
   
   const [isAdding, setIsAdding] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newUrl, setNewUrl] = useState("");
+  const createForm = useForm<WebhookForm>({ resolver: zodResolver(webhookSchema), defaultValues: { name: "", url: "" } });
+  const editForm = useForm<WebhookForm>({ resolver: zodResolver(webhookSchema), defaultValues: { name: "", url: "" } });
   const [newSecret, setNewSecret] = useState<string | null>(null);
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editUrl, setEditUrl] = useState("");
+  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
 
   const activeWebhook = webhooks?.find(w => w.isActive);
 
-  async function handleCreate() {
-    if (!projectId || !newUrl || !newName) return showToast("Name and URL are required", "error");
+  async function handleCreate(data: WebhookForm) {
+    if (!projectId) return createForm.setError("root", { message: "Select a project first" });
+    createForm.clearErrors("root");
     try {
-      const res = await api.createWebhook(projectId, { name: newName, url: newUrl, isActive: webhooks?.length === 0 });
+      const res = await api.createWebhook(projectId, { ...data, isActive: webhooks?.length === 0 });
       setNewSecret(res.signingSecret);
       showToast("Webhook added successfully", "success");
-      setNewName("");
-      setNewUrl("");
+      createForm.reset();
       setIsAdding(false);
       refetch();
     } catch (e: any) {
-      showToast(e.message || "Failed to create webhook", "error");
+      createForm.setError("root", { message: e.message || "Failed to create webhook" });
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!projectId) return;
-    try {
-      await api.deleteWebhook(projectId, id);
+  function requestDelete(id: string, name: string) {
+    const targetProjectId = projectId;
+    if (!targetProjectId) return;
+    async function deleteWebhook() {
+      await api.deleteWebhook(targetProjectId!, id);
       showToast("Webhook deleted", "success");
-      refetch();
-    } catch (e: any) {
-      showToast(e.message || "Failed to delete webhook", "error");
+      await refetch();
     }
+    openConfirmation({ title: "Delete webhook", message: `Delete "${name}"? This cannot be undone.`, confirmLabel: "Delete", icon: <Trash2 size={18} />, onConfirm: deleteWebhook });
   }
 
   async function handleSetActive(id: string) {
@@ -70,15 +81,16 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
     }
   }
 
-  async function handleUpdate(id: string) {
-    if (!projectId || !editUrl || !editName) return showToast("Name and URL are required", "error");
+  async function handleUpdate(id: string, data: WebhookForm) {
+    if (!projectId) return editForm.setError("root", { message: "Select a project first" });
+    editForm.clearErrors("root");
     try {
-      await api.updateWebhook(projectId, id, { name: editName, url: editUrl });
+      await api.updateWebhook(projectId, id, data);
       showToast("Webhook updated", "success");
       setEditingId(null);
       refetch();
     } catch (e: any) {
-      showToast(e.message || "Failed to update webhook", "error");
+      editForm.setError("root", { message: e.message || "Failed to update webhook" });
     }
   }
 
@@ -112,20 +124,23 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
               {webhooks.map(w => (
                 <div key={w.id} className="rounded-md border border-slate-200 p-3">
                   {editingId === w.id ? (
-                    <div className="space-y-3">
+                    <form className="space-y-3" noValidate onSubmit={editForm.handleSubmit(data => handleUpdate(w.id, data))}>
                       <div>
                         <label className="text-xs font-medium text-slate-700">Bot Name</label>
-                        <Input className="mt-1 h-8 text-sm" value={editName} onChange={(e: any) => setEditName(e.target.value)} />
+                        <Input className="mt-1 h-8 text-sm" {...editForm.register("name")} aria-invalid={!!editForm.formState.errors.name} />
+                        <FieldError message={editForm.formState.errors.name?.message} />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-slate-700">Webhook URL</label>
-                        <Input className="mt-1 h-8 text-sm" value={editUrl} onChange={(e: any) => setEditUrl(e.target.value)} />
+                        <Input className="mt-1 h-8 text-sm" {...editForm.register("url")} aria-invalid={!!editForm.formState.errors.url} />
+                        <FieldError message={editForm.formState.errors.url?.message} />
                       </div>
+                      <FieldError message={editForm.formState.errors.root?.message} />
                       <div className="flex gap-2">
-                        <Button className="h-8 bg-brand text-white text-xs px-3 hover:bg-brand/90" onClick={() => handleUpdate(w.id)}>Save</Button>
-                        <Button className="h-8 bg-transparent text-slate-700 text-xs px-3 hover:bg-slate-100 border-0 shadow-none" onClick={() => setEditingId(null)}>Cancel</Button>
+                        <Button type="submit" disabled={editForm.formState.isSubmitting} className="h-8 bg-brand text-white text-xs px-3 hover:bg-brand/90">Save</Button>
+                        <Button type="button" disabled={editForm.formState.isSubmitting} className="h-8 bg-transparent text-slate-700 text-xs px-3 hover:bg-slate-100 border-0 shadow-none" onClick={() => setEditingId(null)}>Cancel</Button>
                       </div>
-                    </div>
+                    </form>
                   ) : (
                     <div className="flex items-center justify-between">
                       <div>
@@ -135,16 +150,11 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
                       <div className="flex gap-1">
                         <Button className="h-8 w-8 p-0 text-slate-500 hover:text-brand bg-transparent hover:bg-slate-50 border-0 shadow-none" onClick={() => {
                           setEditingId(w.id);
-                          setEditName(w.name);
-                          setEditUrl(w.url);
+                          editForm.reset({ name: w.name, url: w.url });
                         }}>
                           <Edit2 size={14} />
                         </Button>
-                        <Button className="h-8 w-8 p-0 text-error hover:text-error bg-transparent hover:bg-error-surface border-0 shadow-none" onClick={async () => {
-                          if (window.confirm("Are you sure you want to delete this webhook?")) {
-                            await handleDelete(w.id);
-                          }
-                        }}>
+                        <Button title="Delete webhook" aria-label={`Delete ${w.name}`} className="h-8 w-8 p-0 text-error hover:text-error bg-transparent hover:bg-error-surface border-0 shadow-none" onClick={requestDelete.bind(null, w.id, w.name)}>
                           <Trash2 size={14} />
                         </Button>
                       </div>
@@ -157,20 +167,23 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
         )}
 
         {isAdding ? (
-          <div className="rounded-md border border-slate-200 p-4 space-y-4 bg-slate-50">
+          <form className="rounded-md border border-slate-200 p-4 space-y-4 bg-slate-50" noValidate onSubmit={createForm.handleSubmit(handleCreate)}>
             <div>
               <label className="text-xs font-medium text-slate-700">Bot Name</label>
-              <Input className="mt-1 bg-white" placeholder="e.g. My Custom AI" value={newName} onChange={(e: any) => setNewName(e.target.value)} />
+              <Input className="mt-1 bg-white" placeholder="e.g. My Custom AI" {...createForm.register("name")} aria-invalid={!!createForm.formState.errors.name} />
+              <FieldError message={createForm.formState.errors.name?.message} />
             </div>
             <div>
               <label className="text-xs font-medium text-slate-700">Webhook URL</label>
-              <Input className="mt-1 bg-white" placeholder="https://..." value={newUrl} onChange={(e: any) => setNewUrl(e.target.value)} />
+              <Input className="mt-1 bg-white" placeholder="https://..." {...createForm.register("url")} aria-invalid={!!createForm.formState.errors.url} />
+              <FieldError message={createForm.formState.errors.url?.message} />
             </div>
+            <FieldError message={createForm.formState.errors.root?.message} />
             <div className="flex gap-2">
-              <Button className="bg-brand text-white hover:bg-brand/90" onClick={handleCreate}>Save</Button>
-              <Button className="bg-transparent text-slate-700 hover:bg-slate-100 border-0 shadow-none" onClick={() => setIsAdding(false)}>Cancel</Button>
+              <Button type="submit" disabled={createForm.formState.isSubmitting} className="bg-brand text-white hover:bg-brand/90">Save</Button>
+              <Button type="button" disabled={createForm.formState.isSubmitting} className="bg-transparent text-slate-700 hover:bg-slate-100 border-0 shadow-none" onClick={() => { createForm.reset(); setIsAdding(false); }}>Cancel</Button>
             </div>
-          </div>
+          </form>
         ) : (
           <Button className="w-full gap-2 border-dashed bg-transparent text-slate-700 hover:bg-slate-50" onClick={() => setIsAdding(true)}>
             <Plus size={16} /> Add Webhook

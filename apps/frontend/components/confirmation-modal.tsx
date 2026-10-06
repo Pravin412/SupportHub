@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@support-hub/ui";
+import { useConfirmationStore } from "../lib/confirmation-store";
 
 type ConfirmationModalProps = {
   open: boolean;
@@ -12,6 +13,7 @@ type ConfirmationModalProps = {
   cancelLabel?: string;
   icon?: ReactNode;
   isLoading?: boolean;
+  error?: string;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -24,6 +26,7 @@ export function ConfirmationModal({
   cancelLabel = "Cancel",
   icon,
   isLoading = false,
+  error,
   onCancel,
   onConfirm
 }: ConfirmationModalProps) {
@@ -41,6 +44,7 @@ export function ConfirmationModal({
             <p className="mt-1 text-sm text-muted">{message}</p>
           </div>
         </div>
+        {error && <p role="alert" className="mt-3 text-sm text-error-muted">{error}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <Button
             className="h-9 border-slate-200 bg-white px-4 text-sm text-slate-900"
@@ -60,4 +64,10 @@ export function ConfirmationModal({
       </div>
     </div>
   );
+}
+
+export function GlobalConfirmationModal() {
+  const { confirmation, isLoading, error, cancelConfirmation, confirm } = useConfirmationStore();
+  if (!confirmation) return null;
+  return <ConfirmationModal {...confirmation} open isLoading={isLoading} error={error} onCancel={cancelConfirmation} onConfirm={confirm} />;
 }

@@ -4,6 +4,11 @@ const { parseEnv } = require("node:util");
 
 // Requires Node.js 22+; parse without shell expansion of secret characters.
 const productionEnv = parseEnv(readFileSync(path.join(__dirname, ".env"), "utf8"));
+if (productionEnv.NEXT_PUBLIC_API_URL?.includes("${IP_ADDRESS}")) {
+  const apiAddress = process.env.IP_ADDRESS ?? productionEnv.IP_ADDRESS;
+  if (!apiAddress) throw new Error("IP_ADDRESS is required by NEXT_PUBLIC_API_URL");
+  productionEnv.NEXT_PUBLIC_API_URL = productionEnv.NEXT_PUBLIC_API_URL.replaceAll("${IP_ADDRESS}", apiAddress);
+}
 const frontendDir = path.join(__dirname, "apps/frontend");
 const publicEnv = Object.fromEntries(
   Object.entries(productionEnv).filter(([key]) => key.startsWith("NEXT_PUBLIC_"))

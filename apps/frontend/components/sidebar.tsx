@@ -1,25 +1,26 @@
 "use client";
 import { Gauge, HelpCircle, Inbox, LogOut, Folder, TicketCheck, X, MessageSquare } from "lucide-react";
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUiStore } from "../lib/store";
 import { NavButton, NavLink } from "./shared";
 import { api } from "../lib/api";
-import { ConfirmationModal } from "./confirmation-modal";
+import { useConfirmationStore } from "../lib/confirmation-store";
 
 export function Sidebar() {
   const ui = useUiStore();
   const pathname = usePathname();
   const router = useRouter();
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const openConfirmation = useConfirmationStore(state => state.openConfirmation);
 
   const logout = async () => {
-    setIsLoggingOut(true);
     await api.logout().catch(() => undefined);
     api.setToken("");
     router.replace("/login");
   };
+
+  function requestLogout() {
+    openConfirmation({ title: "Confirm logout", message: "Are you sure you want to logout from SupportHub?", confirmLabel: "Logout", icon: <LogOut size={18} />, onConfirm: logout });
+  }
 
   return (
     <>
@@ -102,21 +103,11 @@ export function Sidebar() {
         </nav>
 
         <div className="mt-auto border-t border-border p-3 pr-3 pl-0">
-          <NavButton active={false} icon={<LogOut size={18} />} onClick={() => setShowLogoutModal(true)}>
+          <NavButton active={false} icon={<LogOut size={18} />} onClick={requestLogout}>
             Logout
           </NavButton>
         </div>
       </aside>
-      <ConfirmationModal
-        open={showLogoutModal}
-        title="Confirm logout"
-        message="Are you sure you want to logout from SupportHub?"
-        confirmLabel={isLoggingOut ? "Logging out..." : "Logout"}
-        icon={<LogOut size={18} />}
-        isLoading={isLoggingOut}
-        onCancel={() => setShowLogoutModal(false)}
-        onConfirm={logout}
-      />
     </>
   );
 }
