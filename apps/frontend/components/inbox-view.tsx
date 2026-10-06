@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Socket } from "socket.io-client";
 import { connectRealtime } from "../lib/realtime-client";
 import { ClientEvent } from "../lib/events";
+import { inboxKeys } from "../features/inbox/queries";
 import { InboxProjectsList, InboxConversationsList } from "./inbox-lists";
 import { InboxChatView } from "./inbox-chat-view";
 import { InboxEmptyState } from "./inbox-empty-state";
@@ -56,22 +57,19 @@ export function InboxView() {
     });
     socketRef.current = socket;
 
-    if (selectedProjectId) socket.emit("project:subscribe", selectedProjectId);
-    if (activeId) socket.emit("conversation:subscribe", activeId);
-
     socket.on(ClientEvent.MessageCreated, (newMsg) => {
       if (newMsg.conversationId) {
         queryClient.invalidateQueries({ queryKey: keys.messages(newMsg.conversationId) });
       }
       if (selectedProjectId) {
-        queryClient.invalidateQueries({ queryKey: keys.conversations(selectedProjectId, searchQuery) });
+        queryClient.invalidateQueries({ queryKey: [...inboxKeys.all, "conversations", selectedProjectId] });
       }
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [selectedProjectId, activeId, searchQuery, queryClient]);
+  }, [selectedProjectId, activeId, queryClient]);
 
   const sendDraft = () => {
     const content = draft.trim();

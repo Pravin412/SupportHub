@@ -43,9 +43,6 @@ export class IntegrationController {
     @Headers("x-integration-secret") secret: string,
     @Body() dto: any
   ) {
-    console.log("=== INCOMING POST /messages ===");
-    console.log("Project Key:", key);
-    console.log("Payload:", JSON.stringify(dto, null, 2));
     
     const project = await this.authorizeProject(key, secret);
     const contact = await this.prisma.contact.upsert({
@@ -121,10 +118,6 @@ export class IntegrationController {
     @Headers("x-integration-secret") secret: string,
     @Body() dto: any
   ) {
-    console.log("=== INCOMING POST botReply ===");
-    console.log("Project Key:", key);
-    console.log("Conversation ID:", conversationId);
-    console.log("Payload:", JSON.stringify(dto, null, 2));
 
     const project = await this.authorizeProject(key, secret);
 

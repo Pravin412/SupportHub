@@ -50,7 +50,11 @@ export class AuthService {
       });
       throw new UnauthorizedException();
     }
-    await this.prisma.refreshSession.update({ where: { id: session.id }, data: { revokedAt: new Date() } });
+    const consumed = await this.prisma.refreshSession.updateMany({
+      where: { id: session.id, revokedAt: null, expiresAt: { gt: new Date() } },
+      data: { revokedAt: new Date() }
+    });
+    if (consumed.count !== 1) throw new UnauthorizedException();
     return this.issue(session.userId, reply);
   }
 

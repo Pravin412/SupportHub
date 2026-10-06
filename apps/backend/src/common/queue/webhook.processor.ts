@@ -1,6 +1,7 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
+import * as Sentry from "@sentry/node";
 import { CryptoService } from "../crypto/crypto.service";
 import { PrismaService } from "../database/prisma.service";
 import { ExternalWebhookEvent, SupportEvent, WebhookMessageType, WebhookSenderType } from "../events/support-events";
@@ -147,6 +148,9 @@ export class WebhookProcessor extends WorkerHost {
       );
     } catch (error) {
       const failedLastAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+      if (failedLastAttempt) {
+        Sentry.captureException(error, { tags: { source: "webhook", projectId: job.data.projectId }, extra: { eventId, eventName, messageId } });
+      }
       await this.prisma.webhookDelivery.update({
         where: { eventId },
         data: { status: failedLastAttempt ? "FAILED" : "QUEUED" }

@@ -1,5 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { FastifyReply } from "fastify";
+import * as Sentry from "@sentry/node";
 
 type ErrorPayload = {
   message?: string | string[];
@@ -15,8 +16,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const payload = this.getPayload(exception);
     const message = Array.isArray(payload.message) ? payload.message.join(", ") : payload.message;
 
-    if (statusCode === HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (statusCode >= 500) {
       console.error(exception);
+      Sentry.captureException(exception, { tags: { source: "api", statusCode: String(statusCode) } });
     }
 
     response.status(statusCode).send({
