@@ -30,7 +30,7 @@ export function Login({ onDone }: { onDone: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "admin@gmail.com", password: "Password@123" }
+    defaultValues: { email: "", password: "" }
   });
   return (
     <main className="grid min-h-screen place-items-center p-4">
