@@ -50,6 +50,15 @@ export function WidgetContainer() {
   }, [messages]);
 
   useEffect(() => {
+    if (!channelId || !activeUser.profileId) return;
+    const ids = messages.filter((msg) => (msg.senderType === "AGENT" || msg.senderType === "BOT") && (msg.status === "SENT" || msg.status === "PENDING")).map((msg) => msg.id);
+    if (!ids.length) return;
+    void widgetApi.delivered(channelId, activeUser.profileId, ids.slice(0, 50)).then(() => {
+      setMessages((current) => current.map((msg) => ids.slice(0, 50).includes(msg.id) ? { ...msg, status: "DELIVERED" } : msg));
+    }).catch(() => undefined);
+  }, [messages, channelId, activeUser.profileId]);
+
+  useEffect(() => {
     if (!channelId || activeUser.profileId) return;
     const storageKey = guestProfileStorageKey(channelId);
     const storedProfileId = window.localStorage.getItem(storageKey);
@@ -115,6 +124,9 @@ export function WidgetContainer() {
   useEffect(() => {
     const socket = connectRealtime(WIDGET_API_URL);
     socketRef.current = socket;
+    socket.on(ClientEvent.MessageDelivered, (receipt) => {
+      setMessages((current) => current.map((msg) => msg.id === receipt.id ? { ...msg, status: "DELIVERED" } : msg));
+    });
     socket.on("connect", function subscribeAfterConnect() {
       if (conversationIdRef.current) socket.emit("conversation:subscribe", conversationIdRef.current);
     });

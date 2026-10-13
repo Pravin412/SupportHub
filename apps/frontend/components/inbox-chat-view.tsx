@@ -158,19 +158,11 @@ export function InboxChatView({
           onScroll={handleScroll}
           className="h-full overflow-auto px-5 py-6"
         >
-        {activeId && (
-          <div className="mb-4 text-center text-xs text-muted" role="status">
-            New conversation started
-          </div>
-        )}
         <AnimatePresence>
-          {messages.data?.slice().reverse().map((m: any) => <InboxMessageItem key={m.id} message={m} botName={botName} />)}
+          {messages.data?.slice().reverse().map((m: any) => m.senderType === "SYSTEM" ? (
+            <div key={m.id} className="my-4 text-center text-xs text-muted" role="status">{m.content}</div>
+          ) : <InboxMessageItem key={m.id} message={m} botName={botName} />)}
         </AnimatePresence>
-        {isResolved && (
-          <div className="my-4 text-center text-xs text-muted" role="status">
-            Conversation ended
-          </div>
-        )}
         {!messages.isLoading && !messages.data?.length && (
           <div className="grid h-full place-items-center text-center text-xs text-muted">
             No messages in this conversation yet. Send a greeting below!

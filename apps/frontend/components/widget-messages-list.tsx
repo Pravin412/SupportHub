@@ -1,5 +1,5 @@
 "use client";
-import { CheckCheck } from "lucide-react";
+import { Check, CheckCheck, Clock3, CircleAlert } from "lucide-react";
 
 export function WidgetMessagesList({
   messages,
@@ -74,7 +74,7 @@ export function WidgetMessagesList({
             {msg.id !== "welcome" && (
               <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isUser ? "pr-1" : "pl-1"}`}>
                 <span>{time}</span>
-                {isUser ? <CheckCheck size={12} style={{ color: themeColor }} /> : null}
+                {isUser ? msg.status === "DELIVERED" ? <CheckCheck size={12} style={{ color: themeColor }} aria-label="Delivered" /> : msg.status === "FAILED" ? <CircleAlert size={12} aria-label="Failed" /> : msg.id.startsWith("temp-") || msg.status === "PENDING" ? <Clock3 size={12} aria-label="Sending" /> : <Check size={12} style={{ color: themeColor }} aria-label="Sent" /> : null}
               </div>
             )}
           </div>

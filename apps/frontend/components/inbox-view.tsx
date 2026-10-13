@@ -40,6 +40,17 @@ export function InboxView() {
 
   const conversations = useConversations(selectedProjectId, debouncedSearch);
   const botConfig = useBotConfig(selectedProjectId);
+  const selectedContactRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const selected = conversations.data?.find((conversation) => conversation.id === inboxSelection.selectedConversationId);
+    if (selected) {
+      selectedContactRef.current = selected.externalUserId ?? undefined;
+    } else if (inboxSelection.selectedConversationId && selectedContactRef.current) {
+      const latest = conversations.data?.find((conversation) => conversation.externalUserId === selectedContactRef.current);
+      if (latest) inboxSelection.setConversation(latest.id);
+    }
+    if (!inboxSelection.selectedConversationId) selectedContactRef.current = undefined;
+  }, [conversations.data, inboxSelection.selectedConversationId, inboxSelection.setConversation]);
 
   const activeConversation =
     conversations.data?.find((conversation) => conversation.id === inboxSelection.selectedConversationId) ??
@@ -58,6 +69,9 @@ export function InboxView() {
       if (activeId) socket.emit("conversation:subscribe", activeId);
     });
     socketRef.current = socket;
+    socket.on(ClientEvent.MessageDelivered, () => {
+      if (activeId) void queryClient.invalidateQueries({ queryKey: keys.messages(activeId) });
+    });
 
     function handleConversationUpdated() {
       if (selectedProjectId) {

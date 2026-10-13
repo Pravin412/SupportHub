@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CheckCheck } from "lucide-react";
+import { Check, CheckCheck, Clock3, CircleAlert } from "lucide-react";
 import { parseMessageOptions } from "@/lib/messages";
 import { formatMessageTime } from "@/lib/format";
 
@@ -42,7 +42,7 @@ export function InboxMessageItem({ message, botName }: { message: any; botName?:
       </div>
       <div className={`mt-1 flex items-center gap-1 text-[10px] font-semibold text-slate-500 ${isOutgoing ? "pr-1" : "pl-1"}`}>
         <span>{time}</span>
-        {isOutgoing ? <CheckCheck size={12} className="text-chat-bubble-bg" /> : null}
+        {isOutgoing ? message.status === "DELIVERED" ? <CheckCheck size={12} className="text-chat-bubble-bg" aria-label="Delivered" /> : message.status === "FAILED" ? <CircleAlert size={12} aria-label="Failed" /> : message.status === "PENDING" ? <Clock3 size={12} aria-label="Sending" /> : <Check size={12} className="text-chat-bubble-bg" aria-label="Sent" /> : null}
       </div>
     </motion.div>
   );

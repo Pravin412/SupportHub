@@ -470,6 +470,7 @@ export class CoreService {
       take: 31,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { lastMessageAt: "desc" },
+      distinct: ["contactId"],
       select: {
         id: true,
         projectId: true,
@@ -530,22 +531,37 @@ export class CoreService {
   }
 
   async messages(userId: string, conversationId: string, cursor?: string) {
-    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { projectId: true } });
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { projectId: true, contactId: true } });
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
     
     // Mark conversation messages as read when viewed by an agent
-    await this.prisma.conversation.update({
-      where: { id: conversationId },
+    const read = await this.prisma.conversation.updateMany({
+      where: { projectId: c.projectId, contactId: c.contactId, unreadCount: { gt: 0 } },
       data: { unreadCount: 0 }
-    }).catch(() => undefined);
+    });
+    if (read.count) {
+      this.realtime.emitProject(c.projectId, SupportEvent.ConversationAssigned, { id: conversationId });
+    }
 
-    return this.prisma.message.findMany({
-      where: { conversationId },
+    const messages = await this.prisma.message.findMany({
+      where: { conversation: { projectId: c.projectId, contactId: c.contactId } },
       take: 51,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      include: { conversation: true }
     });
+    const sessions = new Map(messages.map((message) => [message.conversationId, message.conversation]));
+    await this.confirmDelivery(c.projectId, messages.filter((message) => message.senderType === "CUSTOMER" && message.status !== "DELIVERED" && message.status !== "FAILED"));
+    const history: Array<{ id: string; conversationId: string; content: string; senderType: string; status: string; createdAt: Date }> = messages.map(({ conversation, ...message }) => message);
+    for (const session of sessions.values()) {
+      history.push({ id: `session-start-${session.id}`, conversationId: session.id, content: "New conversation started", senderType: "SYSTEM", status: "SENT", createdAt: session.createdAt });
+      if (session.status === ConversationStatus.RESOLVED) {
+        history.push({ id: `session-end-${session.id}`, conversationId: session.id, content: "Conversation ended", senderType: "SYSTEM", status: "SENT", createdAt: session.lastMessageAt });
+      }
+    }
+    const markerOrder = (id: string) => id.startsWith("session-end-") ? 2 : id.startsWith("session-start-") ? 0 : 1;
+    return history.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || markerOrder(b.id) - markerOrder(a.id));
   }
 
   async agentMessage(userId: string, conversationId: string, content: string) {
@@ -553,7 +569,7 @@ export class CoreService {
     if (!c) throw new NotFoundException();
     await this.assertMember(userId, c.projectId);
     const msg = await this.prisma.message.create({
-      data: { conversationId, senderType: "AGENT", senderId: userId, content, status: "PENDING" }
+      data: { conversationId, senderType: "AGENT", senderId: userId, content, status: "SENT" }
     });
     this.logger.log(`[agent] saved project=${c.projectId} conversation=${conversationId} message=${msg.id} characters=${content.length}`);
     await this.prisma.conversation.update({
@@ -885,6 +901,35 @@ export class CoreService {
       orderBy: { createdAt: 'desc' },
       take: 50
     });
+  }
+
+  async widgetDelivered(channelId: string, profileId: string, messageIds: string[]) {
+    const channel = await this.prisma.widgetChannel.findUnique({ where: { channelId }, select: { projectId: true, enabled: true } });
+    if (!channel?.enabled) throw new NotFoundException();
+    const messages = await this.prisma.message.findMany({
+      where: {
+        id: { in: messageIds },
+        senderType: { in: ["AGENT", "BOT"] },
+        status: { in: ["PENDING", "SENT"] },
+        conversation: { projectId: channel.projectId, contact: { externalUserId: profileId } }
+      }
+    });
+    await this.confirmDelivery(channel.projectId, messages);
+    return { ok: true };
+  }
+
+  private async confirmDelivery(projectId: string, messages: Array<{ id: string; conversationId: string; status: string }>) {
+    if (!messages.length) return;
+    await this.prisma.message.updateMany({
+      where: { id: { in: messages.map((message) => message.id) }, status: { in: ["PENDING", "SENT"] } },
+      data: { status: "DELIVERED" }
+    });
+    for (const message of messages) {
+      message.status = "DELIVERED";
+      const payload = { id: message.id, conversationId: message.conversationId, status: "DELIVERED" };
+      this.realtime.emitProject(projectId, SupportEvent.MessageDelivered, payload);
+      this.realtime.emitConversation(message.conversationId, SupportEvent.MessageDelivered, payload);
+    }
   }
 
   async widgetSendMessage(channelId: string, profileId: string, content: string, name?: string, email?: string, number?: string) {

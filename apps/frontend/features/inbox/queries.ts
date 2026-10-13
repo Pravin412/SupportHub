@@ -19,7 +19,17 @@ export function useConversations(projectId?: string, search = "") {
 }
 
 export function useMessages(id?: string) {
-  return useQuery({ queryKey: inboxKeys.messages(id), queryFn: () => api.messages(id!), enabled: Boolean(id) });
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: inboxKeys.messages(id),
+    queryFn: async () => {
+      const messages = await api.messages(id!);
+      await queryClient.invalidateQueries({ queryKey: [...inboxKeys.all, "conversations"] });
+      return messages;
+    },
+    enabled: Boolean(id),
+    refetchOnMount: "always"
+  });
 }
 
 export function useSendMessage(id?: string) {

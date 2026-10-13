@@ -1,4 +1,5 @@
 export enum SupportEvent {
+  MessageDelivered = "message.delivered",
   MessageCreated = "message.created",
   TicketCreated = "ticket.created",
   ConversationAssigned = "conversation.assigned"

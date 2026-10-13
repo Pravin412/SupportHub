@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { IsOptional, IsString, MinLength } from "class-validator";
+import { ArrayMaxSize, IsArray, IsOptional, IsString, MinLength } from "class-validator";
 import { CoreService } from "./support.service";
 
 class WidgetMessageDto {
@@ -11,10 +11,20 @@ class WidgetMessageDto {
   @IsString() @IsOptional() number?: string;
 }
 
+class WidgetDeliveryDto {
+  @IsString() @MinLength(1) profileId!: string;
+  @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) messageIds!: string[];
+}
+
 @ApiTags("widget")
 @Controller("widget/:channelId")
 export class WidgetController {
   constructor(private core: CoreService) {}
+
+  @Post("delivered")
+  delivered(@Param("channelId") channelId: string, @Body() dto: WidgetDeliveryDto) {
+    return this.core.widgetDelivered(channelId, dto.profileId, dto.messageIds);
+  }
 
   @Get("config")
   config(@Param("channelId") channelId: string) {
@@ -31,3 +41,4 @@ export class WidgetController {
     return this.core.widgetSendMessage(channelId, dto.profileId, dto.content, dto.name, dto.email, dto.number);
   }
 }
+

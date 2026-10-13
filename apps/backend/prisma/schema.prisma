@@ -43,6 +43,7 @@ enum MessageType {
 enum MessageStatus {
   PENDING
   SENT
+  DELIVERED
   FAILED
 }
 

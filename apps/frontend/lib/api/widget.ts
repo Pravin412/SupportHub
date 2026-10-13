@@ -2,6 +2,8 @@ import type { MessageDto } from "@support-hub/shared-types";
 import { request } from "../api-client";
 
 export const widgetApi = {
+  delivered: (channelId: string, profileId: string, messageIds: string[]) =>
+    request(`/widget/${channelId}/delivered`, { method: "POST", body: JSON.stringify({ profileId, messageIds }) }),
   config: (channelId: string) => request<any>(`/widget/${channelId}/config?v=${Date.now()}`, { cache: "no-store" }),
   messages: (channelId: string, profileId: string) =>
     request<MessageDto[]>(`/widget/${channelId}/messages?profileId=${profileId}`),
