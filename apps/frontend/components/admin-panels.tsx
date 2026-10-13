@@ -69,7 +69,7 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
 
 export function PanelHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-2 border-b bg-white px-4 py-3">
+    <div className="flex items-center gap-3 border-b border-border bg-slate-50/60 px-4 py-3">
       <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">{icon}</span>
       <h2 className="text-base font-semibold">{title}</h2>
     </div>

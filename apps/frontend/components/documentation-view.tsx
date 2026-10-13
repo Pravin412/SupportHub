@@ -7,15 +7,16 @@ import {
   ProjectSetupDocs,
   NextjsDocs,
   FlutterDocs,
+  IonicDocs,
   WebhookDocs,
   ApiDocs
 } from "./documentation-tabs";
 
 export function DocumentationView() {
-  const [activeTab, setActiveTab] = useState<"setup" | "nextjs" | "flutter" | "webhook" | "api">("setup");
+  const [activeTab, setActiveTab] = useState<"setup" | "nextjs" | "flutter" | "ionic" | "webhook" | "api">("setup");
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-5xl xl:max-w-none mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3 border-b pb-4">
         <span className="grid h-10 w-10 place-items-center rounded-lg bg-teal-50 text-teal-700">
           <BookOpen size={20} />
@@ -26,10 +27,11 @@ export function DocumentationView() {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+      <div className="flex gap-2 border-b border-border bg-white/60 overflow-x-auto p-1">
         <TabButton active={activeTab === "setup"} onClick={() => setActiveTab("setup")} icon={<Settings size={16} />}>Project Setup</TabButton>
         <TabButton active={activeTab === "nextjs"} onClick={() => setActiveTab("nextjs")} icon={<Terminal size={16} />}>Next.js / React</TabButton>
         <TabButton active={activeTab === "flutter"} onClick={() => setActiveTab("flutter")} icon={<Smartphone size={16} />}>Flutter / Mobile</TabButton>
+        <TabButton active={activeTab === "ionic"} onClick={() => setActiveTab("ionic")} icon={<Smartphone size={16} />}>Ionic / Capacitor</TabButton>
         <TabButton active={activeTab === "webhook"} onClick={() => setActiveTab("webhook")} icon={<Webhook size={16} />}>Webhooks & Automation</TabButton>
         <TabButton active={activeTab === "api"} onClick={() => setActiveTab("api")} icon={<KeyRound size={16} />}>Bot Reply REST API</TabButton>
       </div>
@@ -38,6 +40,7 @@ export function DocumentationView() {
         {activeTab === "setup" && <ProjectSetupDocs />}
         {activeTab === "nextjs" && <NextjsDocs />}
         {activeTab === "flutter" && <FlutterDocs />}
+        {activeTab === "ionic" && <IonicDocs />}
         {activeTab === "webhook" && <WebhookDocs />}
         {activeTab === "api" && <ApiDocs />}
       </div>

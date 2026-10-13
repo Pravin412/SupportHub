@@ -56,9 +56,9 @@ export function ProjectsView() {
     isGlobalAdmin || me.data?.memberships.some((membership) => membership.projectId === projectId && membership.role === "PROJECT_ADMIN");
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-4 md:p-6 lg:p-8">
+    <div className="mx-auto w-full max-w-5xl xl:max-w-none p-4 md:p-6 lg:p-8">
       {/* Header Section */}
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">Projects</h1>
           <p className="mt-1 text-sm text-slate-500">Create and manage your support workspaces.</p>
@@ -87,26 +87,26 @@ export function ProjectsView() {
 
       {/* Stats Cards Row */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <Card className="flex items-center justify-between p-5 border-slate-200 shadow-sm">
+        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-teal-500 shadow-sm">
           <div>
-            <div className="text-sm font-medium text-slate-500">Total Projects</div>
-            <div className="mt-2 text-3xl font-bold text-slate-900">{totalProjects}</div>
+            <div className="text-xs font-semibold text-secondary">Total Projects</div>
+            <div className="mt-4 text-3xl font-bold text-primary">{totalProjects}</div>
           </div>
-          <Folder size={24} className="text-slate-400" />
+          <Folder size={24} className="h-7 w-7 self-start rounded bg-teal-50 p-1.5 text-brand" />
         </Card>
-        <Card className="flex items-center justify-between p-5 border-slate-200 shadow-sm">
+        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-teal-500 shadow-sm">
           <div>
-            <div className="text-sm font-medium text-slate-500">Open Tickets</div>
-            <div className="mt-2 text-3xl font-bold text-slate-900">{openTickets}</div>
+            <div className="text-xs font-semibold text-secondary">Open Tickets</div>
+            <div className="mt-4 text-3xl font-bold text-primary">{openTickets}</div>
           </div>
-          <Ticket size={24} className="text-slate-400" />
+          <Ticket size={24} className="h-7 w-7 self-start rounded bg-teal-50 p-1.5 text-brand" />
         </Card>
-        <Card className="flex items-center justify-between p-5 border-slate-200 shadow-sm">
+        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-teal-500 shadow-sm">
           <div>
-            <div className="text-sm font-medium text-slate-500">Team Members</div>
-            <div className="mt-2 text-3xl font-bold text-slate-900">{teamMembers}</div>
+            <div className="text-xs font-semibold text-secondary">Team Members</div>
+            <div className="mt-4 text-3xl font-bold text-primary">{teamMembers}</div>
           </div>
-          <Users size={24} className="text-slate-400" />
+          <Users size={24} className="h-7 w-7 self-start rounded bg-teal-50 p-1.5 text-brand" />
         </Card>
       </div>
 
@@ -161,7 +161,7 @@ export function ProjectsView() {
         {projects.data?.map((project) => (
           <Card
             key={project.id}
-            className="flex flex-col p-5 border-slate-200 shadow-sm transition-all hover:border-slate-300"
+            className="flex flex-col p-5 border-slate-200 shadow-sm transition-all hover:border-teal-300 hover:shadow-md"
           >
             <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-3">

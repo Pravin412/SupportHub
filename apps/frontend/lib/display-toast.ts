@@ -5,9 +5,9 @@ export function displayToast(message: string, variant: "warning" | "success" | "
   const { className, duration, ...restOptions } = options ?? {};
   return toast({
     ...restOptions,
-    duration: duration ?? 2000,
+    duration: duration ?? 3000,
     description: message,
     variant,
-    className: ["flex justify-center text-sm md:text-base font-medium font-sans", className].filter(Boolean).join(" ")
+    className: ["font-sans", className].filter(Boolean).join(" ")
   });
 }

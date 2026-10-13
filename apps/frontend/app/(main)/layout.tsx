@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!authed) return null;
 
   return (
-    <div className="h-screen overflow-hidden bg-canvas text-primary">
+    <div className="workspace-theme h-screen overflow-hidden bg-canvas text-primary">
       <div className="grid h-full w-full md:grid-cols-sidebar">
         <Sidebar />
         <div className="flex min-w-0 flex-col overflow-y-auto">

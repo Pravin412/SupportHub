@@ -13,7 +13,7 @@ export function InboxProjectsList({
 }) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="border-b border-border bg-slate-50 p-3.5">
+      <div className="border-b border-border bg-white p-3.5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center rounded bg-teal-100 text-brand">
@@ -88,7 +88,7 @@ export function InboxConversationsList({
 }) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="border-b border-border bg-slate-50 p-3">
+      <div className="border-b border-border bg-white p-3 shadow-sm">
         <div className="flex items-center gap-2">
           <BackButton title="Back to projects" className="h-8 w-8" onClick={onBack} />
           <div className="min-w-0 flex-1">
@@ -121,7 +121,7 @@ export function InboxConversationsList({
               key={c.id}
               type="button"
               className={`block w-full border-b border-border/70 p-3.5 text-left transition-colors ${
-                isSelected ? "bg-teal-50/80 border-l-4 border-l-brand" : "bg-white hover:bg-slate-50"
+                isSelected ? "bg-teal-50 border-l-4 border-l-brand shadow-sm" : "bg-white hover:bg-slate-50"
               }`}
               onClick={() => onSelectConversation(c.id)}
             >

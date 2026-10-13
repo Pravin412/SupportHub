@@ -524,6 +524,7 @@ export class CoreService {
     
     // Optional: Emit a real-time event so the UI updates instantly
     this.realtime.emitProject(c.projectId, SupportEvent.ConversationAssigned, updated);
+    this.realtime.emitConversation(conversationId, SupportEvent.ConversationAssigned, updated);
 
     return { ok: true };
   }
@@ -634,10 +635,11 @@ export class CoreService {
       });
 
       if (activeTicketCount === 0) {
-        await this.prisma.conversation.update({
+        const resolvedConversation = await this.prisma.conversation.update({
           where: { id: ticket.conversationId },
           data: { status: ConversationStatus.RESOLVED, automationMode: AutomationMode.AUTOMATED }
         });
+        this.realtime.emitConversation(ticket.conversationId, SupportEvent.ConversationAssigned, resolvedConversation);
       }
     } else {
       await this.prisma.conversation.update({
@@ -876,7 +878,7 @@ export class CoreService {
       where: { projectId: channel.projectId, contactId: contact.id },
       orderBy: { createdAt: 'desc' }
     });
-    if (!conversation) return [];
+    if (!conversation || conversation.status === ConversationStatus.RESOLVED) return [];
 
     return this.prisma.message.findMany({
       where: { conversationId: conversation.id },
@@ -906,14 +908,9 @@ export class CoreService {
       orderBy: { createdAt: 'desc' }
     });
 
-    if (!conversation) {
+    if (!conversation || conversation.status === ConversationStatus.RESOLVED) {
       conversation = await this.prisma.conversation.create({
         data: { projectId: channel.projectId, contactId: contact.id, status: "PENDING" }
-      });
-    } else if (conversation.status === "RESOLVED") {
-      conversation = await this.prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { status: "PENDING", automationMode: "AUTOMATED" }
       });
     }
 

@@ -32,7 +32,12 @@ export function WidgetContainer() {
   const isSendingRef = useRef(false);
   const socketRef = useRef<Socket | null>(null);
   const conversationIdRef = useRef<string | undefined>(undefined);
+  const resolvedConversationIdsRef = useRef(new Set<string>());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const configRef = useRef(config);
+  const hasHostUserRef = useRef(hasHostUser);
+  configRef.current = config;
+  hasHostUserRef.current = hasHostUser;
 
   const subscribeToConversation = (conversationId?: string) => {
     if (!conversationId) return;
@@ -115,6 +120,7 @@ export function WidgetContainer() {
     });
 
     socket.on(ClientEvent.MessageCreated, (newMsg) => {
+      if (resolvedConversationIdsRef.current.has(newMsg.conversationId)) return;
       setMessages((prev) => {
         const currentConvId = prev.find((msg) => msg.conversationId)?.conversationId;
         if (currentConvId && newMsg.conversationId && newMsg.conversationId !== currentConvId) return prev;
@@ -133,6 +139,17 @@ export function WidgetContainer() {
         }
         return [...prev, newMsg];
       });
+    });
+
+    socket.on(ClientEvent.ConversationAssigned, (conversation) => {
+      if (conversation.id !== conversationIdRef.current || conversation.status !== "RESOLVED") return;
+      resolvedConversationIdsRef.current.add(conversation.id);
+      conversationIdRef.current = undefined;
+      setMessages([{ id: "welcome", content: configRef.current?.welcomeMessage, senderType: "BOT" }]);
+      setHasExistingConversation(false);
+      setConversationStarted(hasHostUserRef.current);
+      setVisitorFormRequested(false);
+      setMessage("");
     });
 
     return () => { socket.disconnect(); };

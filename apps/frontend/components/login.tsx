@@ -33,11 +33,11 @@ export function Login({ onDone }: { onDone: () => void }) {
     defaultValues: { email: "", password: "" }
   });
   return (
-    <main className="grid min-h-screen place-items-center p-4">
-      <Card className="w-full max-w-sm p-5">
-        <h1 className="text-xl font-semibold">SupportHub</h1>
+    <main className="login-surface grid min-h-screen place-items-center px-4 py-8 sm:px-6">
+      <Card className="w-full max-w-sm border border-white/70 border-t-4 border-t-brand bg-white/95 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+        <h1 className="text-3xl font-bold leading-tight text-primary">SupportHub</h1>
         <form
-          className="mt-5 space-y-3"
+          className="mt-8 space-y-4"
           onSubmit={form.handleSubmit(async (v) => {
             try {
               await api.login(v.email, v.password);
@@ -47,10 +47,10 @@ export function Login({ onDone }: { onDone: () => void }) {
             }
           })}
         >
-          <Input className="h-10" placeholder="Email" {...form.register("email")} />
+          <Input className="h-12 border-slate-200 bg-slate-50/80 px-4 text-base shadow-none focus:bg-white" placeholder="Email" {...form.register("email")} />
           <div className="relative">
             <Input
-              className="h-10 pr-10"
+              className="h-12 border-slate-200 bg-slate-50/80 pl-4 pr-12 text-base shadow-none focus:bg-white"
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               {...form.register("password")}
@@ -58,13 +58,13 @@ export function Login({ onDone }: { onDone: () => void }) {
             <button
               type="button"
               title={showPassword ? "Hide password" : "Show password"}
-              className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-500 hover:text-slate-800"
+              className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-md text-slate-500 hover:bg-teal-50 hover:text-brand focus-visible:outline-offset-[-4px]"
               onClick={() => setShowPassword((current) => !current)}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          <Button className="w-full bg-brand text-white" disabled={form.formState.isSubmitting}>
+          <Button className="h-12 w-full border-brand bg-brand text-base font-semibold text-white shadow-md hover:bg-teal-800" disabled={form.formState.isSubmitting}>
             Sign in
           </Button>
           {form.formState.errors.email && <p className="text-sm text-error-muted">Enter a valid email.</p>}

@@ -96,7 +96,7 @@ export function InboxChatView({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0">
+      <div className="flex h-14 items-center justify-between border-b border-border bg-white/95 px-4 shadow-sm backdrop-blur-sm shrink-0">
         <div className="flex flex-1 min-w-0 items-center gap-3">
           <button 
             type="button"
@@ -158,9 +158,19 @@ export function InboxChatView({
           onScroll={handleScroll}
           className="h-full overflow-auto px-5 py-6"
         >
+        {activeId && (
+          <div className="mb-4 text-center text-xs text-muted" role="status">
+            New conversation started
+          </div>
+        )}
         <AnimatePresence>
           {messages.data?.slice().reverse().map((m: any) => <InboxMessageItem key={m.id} message={m} botName={botName} />)}
         </AnimatePresence>
+        {isResolved && (
+          <div className="my-4 text-center text-xs text-muted" role="status">
+            Conversation ended
+          </div>
+        )}
         {!messages.isLoading && !messages.data?.length && (
           <div className="grid h-full place-items-center text-center text-xs text-muted">
             No messages in this conversation yet. Send a greeting below!
@@ -200,7 +210,7 @@ export function InboxChatView({
           onSend();
         }}
       >
-        <div className="flex h-12 items-center gap-3 rounded-full border border-slate-200 bg-white px-4 shadow-sm">
+        <div className="flex h-12 items-center gap-3 rounded-lg border border-border bg-slate-50/60 px-4 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
           <Button type="button" title="Add attachment" className="h-8 w-8 shrink-0 rounded-full border-0 px-0 text-slate-600 hover:bg-slate-100">
             <CirclePlus size={18} />
           </Button>

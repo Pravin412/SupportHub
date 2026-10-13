@@ -57,8 +57,8 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
     status === TicketStatusFilter.All ? ticketList.length : ticketList.filter((ticket) => ticket.status === status).length;
 
   return (
-    <div className="flex h-main flex-col bg-slate-50">
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
+    <div className="flex h-main flex-col bg-canvas">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-white px-4 shadow-sm">
         <div className="min-w-0">
           <h1 className="truncate text-base font-semibold text-slate-950">Tickets</h1>
           <p className="truncate text-xs text-muted">{projectName}</p>
@@ -76,7 +76,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
                 type="button"
                 className={`inline-flex h-9 shrink-0 items-center gap-2 border-b-2 px-3 text-xs font-semibold transition-colors ${
                   active
-                    ? "border-teal-600 text-teal-700"
+                    ? "border-teal-600 bg-teal-50/80 text-teal-700"
                     : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
                 }`}
                 onClick={() => setActiveStatus(tab.value)}

@@ -8,11 +8,12 @@ import { BotService } from "../bot/bot.service";
 import { CoreController } from "./support.controller";
 import { WidgetController } from "./widget.controller";
 import { CoreService } from "./support.service";
+import { MessageRetentionProcessor } from "../../common/queue/message-retention.processor";
 
 @Module({
-  imports: [BullModule.registerQueue({ name: "webhook" }, { name: "email" })],
+  imports: [BullModule.registerQueue({ name: "webhook" }, { name: "email" }, { name: "message-retention" })],
   controllers: [CoreController, WidgetController],
-  providers: [CoreService, BotService, PrismaService, CryptoService, QueueService, RealtimeGateway],
+  providers: [CoreService, BotService, PrismaService, CryptoService, QueueService, RealtimeGateway, MessageRetentionProcessor],
   exports: [CoreService]
 })
 export class SupportModule {}

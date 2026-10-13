@@ -4,11 +4,112 @@
 
 body {
   margin: 0;
-  background: #f7f8fb;
-  color: #172033;
+  background: #f4f6f8;
+  color: #20262f;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
 }
 button,
 input,
 textarea {
   font: inherit;
+}
+
+.login-surface {
+  background-color: #eaf0f1;
+  background-image: linear-gradient(135deg, #eef3f5 0%, #e2eeeb 100%);
+}
+
+@layer components {
+  .workspace-theme h1 {
+    color: #20262f;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .workspace-theme h2, .workspace-theme h3 {
+    color: #303944;
+    line-height: 1.35;
+  }
+
+  .workspace-theme aside {
+    background-color: #fcfdfd;
+  }
+
+  .workspace-theme nav a:hover,
+  .workspace-theme nav button:hover {
+    color: #087f73;
+  }
+
+  .workspace-theme pre {
+    border: 1px solid #25333a;
+    background-color: #17272c;
+    line-height: 1.65;
+  }
+
+  .workspace-theme label > span {
+    color: #405066;
+    font-weight: 600;
+  }
+
+  .workspace-theme input:not([type="checkbox"]):not([type="radio"]),
+  .workspace-theme textarea,
+  .workspace-theme select {
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+}
+
+@layer base {
+  ::selection {
+    background: #cceee8;
+    color: #11564e;
+  }
+
+  button, a, input, select, textarea, [role="checkbox"] {
+    transition: color 0.2s ease, background-color 0.2s ease,
+      border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(button, a, input, select, textarea, [role="checkbox"]):focus-visible {
+    outline: 2px solid #0d9488;
+    outline-offset: 3px;
+  }
+
+  button:not(:disabled):active {
+    filter: brightness(0.96);
+  }
+
+  input, select, textarea {
+    accent-color: #0d9488;
+  }
+
+  th {
+    font-weight: 600;
+  }
+
+  td, th {
+    border-color: #e3e7eb;
+  }
+
+  tbody tr {
+    transition: background-color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    tbody tr:hover {
+      background-color: #f5f9f8;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

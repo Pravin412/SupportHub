@@ -50,7 +50,7 @@ export function Header() {
   const hasResults = results && (results.projects?.length > 0 || results.tickets?.length > 0 || results.contacts?.length > 0 || results.conversations?.length > 0);
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-6 border-b border-border bg-white px-4">
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-6 border-b border-border bg-white/95 px-4 shadow-sm backdrop-blur-md">
       <Button className="h-9 w-9 px-0 md:hidden" onClick={() => sidebar.setSidebar(true)}>
         <Menu size={18} />
       </Button>

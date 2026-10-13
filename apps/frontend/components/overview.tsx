@@ -37,8 +37,8 @@ export function Overview({
   const selectedRangeLabel = dashboardRangeOptions.find((option) => option.value === range)?.label ?? "Selected range";
 
   return (
-    <main className="mx-auto w-full max-w-6xl p-4 md:p-6 lg:p-8">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <main className="mx-auto w-full max-w-6xl xl:max-w-none p-4 md:p-6 lg:p-8">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-2xl font-bold text-primary md:text-3xl">Dashboard</h1>
           <p className="mt-1 text-sm text-secondary">Activity summary from all available projects for {selectedRangeLabel.toLowerCase()}.</p>
