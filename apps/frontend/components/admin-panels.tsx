@@ -33,6 +33,14 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
           <TicketEmailsPanel projectId={projectId} />
 
           <TicketWhatsappPanel projectId={projectId} />
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <ProjectAccessPanel projectId={projectId} />
+          
+          <EmailSmtpPanel projectId={projectId} />
+
+          <BotConfigPanel projectId={projectId} />
 
           <Card className="overflow-hidden border-slate-200">
             <PanelHeader icon={<TicketCheck size={18} />} title="Tickets" />
@@ -47,14 +55,6 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
               </Button>
             </div>
           </Card>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <ProjectAccessPanel projectId={projectId} />
-          
-          <EmailSmtpPanel projectId={projectId} />
-
-          <BotConfigPanel projectId={projectId} />
         </div>
       </motion.section>
 

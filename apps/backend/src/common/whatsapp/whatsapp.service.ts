@@ -235,18 +235,21 @@ export class WhatsappService {
 
     const customerName = ticketDetails?.conversation?.contact?.name?.trim() || "Customer";
     const ticketTitle = ticketDetails?.title ?? ticket.title;
-    const priorityAndStatus = `${ticketDetails?.priority ?? ticket.priority ?? "MEDIUM"} (${ticketDetails?.status ?? ticket.status ?? "OPEN"})`;
-    const contactInfo =
-      ticketDetails?.conversation?.contact?.phone?.trim() ||
-      ticketDetails?.conversation?.contact?.email?.trim() ||
-      "Not provided";
+    const priorityAndStatus = `${ticketDetails?.priority ?? ticket.priority ?? "MEDIUM"} - ${ticketDetails?.status ?? ticket.status ?? "OPEN"}`;
+    const customerEmail = ticketDetails?.conversation?.contact?.email?.trim() || "Not provided";
+    const customerPhone = ticketDetails?.conversation?.contact?.phone?.trim() || "Not provided";
 
     // Standard field mapping:
     // field_1: Customer Name
-    // field_2: Ticket Title
-    // field_3: Priority & Status
-    // field_4: Contact Phone/Email
-    const fields = [customerName, ticketTitle, priorityAndStatus, contactInfo];
+    // field_2: Email
+    // field_3: Phone with priority and status
+    // field_4: Message with ticket ID
+    const fields = [
+      customerName,
+      customerEmail,
+      `${customerPhone} (${priorityAndStatus})`,
+      `${ticketTitle} | Ticket ID: ${ticket.id}`
+    ];
 
     this.logger.log(
       `[whatsapp] Dispatching ticket created alert to ${recipients.length} recipient(s) for ticket=${ticket.id} [template=${templateName}]`

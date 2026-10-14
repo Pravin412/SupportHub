@@ -340,28 +340,39 @@
       if (event.data.colorTheme) {
         latestColorTheme = event.data.colorTheme;
       }
-      if (event.data.logoUrl) {
-        latestLogoUrl = event.data.logoUrl;
+      if (Object.prototype.hasOwnProperty.call(event.data, "logoUrl")) {
+        latestLogoUrl = event.data.logoUrl || "";
       }
       applyLauncherIcon();
     }
   });
 
-  fetch(`${apiUrl}/widget/${encodeURIComponent(channelId)}/config?v=${Date.now()}`, { cache: "no-store" })
+  let configRequestPending = false;
+  let destroyed = false;
+  const refreshLauncherConfig = function () {
+    if (destroyed || configRequestPending || document.hidden) return;
+    configRequestPending = true;
+    return fetch(`${apiUrl}/widget/${encodeURIComponent(channelId)}/config?v=${Date.now()}`, { cache: "no-store" })
     .then(function (response) {
       return response.ok ? response.json() : null;
     })
     .then(function (payload) {
       const config = payload && payload.data ? payload.data : payload;
-      if (!config) return;
+      if (!config || destroyed) return;
       if (config.colorTheme) latestColorTheme = config.colorTheme;
-      if (config.logoUrl || config.botAvatar) latestLogoUrl = config.logoUrl || config.botAvatar;
+      latestLogoUrl = config.logoUrl || "";
       applyLauncherIcon();
     })
     .catch(function () {
       toggleBtn.style.opacity = "1";
       return undefined;
-    });
+    })
+    .finally(function () { configRequestPending = false; });
+  };
+  refreshLauncherConfig();
+  const configRefreshTimer = window.setInterval(refreshLauncherConfig, 15000);
+  window.addEventListener("focus", refreshLauncherConfig);
+  document.addEventListener("visibilitychange", refreshLauncherConfig);
 
   // Expose global SupportHub API
   window.SupportHub = {
@@ -386,6 +397,10 @@
       if (isOpen) toggleBtn.click();
     },
     destroy: function () {
+      destroyed = true;
+      window.clearInterval(configRefreshTimer);
+      window.removeEventListener("focus", refreshLauncherConfig);
+      document.removeEventListener("visibilitychange", refreshLauncherConfig);
       iframeWrapper.remove();
       toggleBtn.remove();
       delete window.SupportHub;

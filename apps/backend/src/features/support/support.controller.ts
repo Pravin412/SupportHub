@@ -231,8 +231,8 @@ export class CoreController {
   }
 
   @Get("tickets")
-  async tickets(@Req() req: FastifyRequest, @Query("projectId") projectId?: string) {
-    return this.core.tickets(await this.userId(req), projectId);
+  async tickets(@Req() req: FastifyRequest, @Query("projectId") projectId?: string, @Query("search") search?: string) {
+    return this.core.tickets(await this.userId(req), projectId, search);
   }
 
   @Put("tickets/:id/status")

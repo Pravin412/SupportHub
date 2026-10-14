@@ -45,12 +45,15 @@ const config: Config = {
       },
       height: {
         main: "calc(100vh - 56px)",
+        settings: "calc(100dvh - 64px)",
+        "widget-preview": "600px",
         "chat-header": "72px"
       },
       minHeight: {
         preview: "360px",
       },
       maxWidth: {
+        widget: "380px",
         message: "78%",
         "chat-msg": "86%",
         "chat-reply": "82%",

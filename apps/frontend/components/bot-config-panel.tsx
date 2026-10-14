@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
-import { keys, useBotConfig, useChannels } from "../lib/queries";
+import { keys, useBotConfig } from "../lib/queries";
 import { displayToast } from "../lib/display-toast";
 
 const botSchema = z.object({
@@ -21,7 +21,6 @@ type BotForm = z.infer<typeof botSchema>;
 
 export function BotConfigPanel({ projectId }: { projectId?: string }) {
   const bot = useBotConfig(projectId);
-  const channels = useChannels(projectId);
   const queryClient = useQueryClient();
 
   const [avatarPreview, setAvatarPreview] = useState<string>("");
@@ -64,22 +63,9 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
   const handleBotSave = async (v: BotForm) => {
     if (!projectId) return;
     try {
-      await api.updateBotConfig(projectId, { ...v, botAvatar: avatarPreview || v.botAvatar || undefined });
-      await queryClient.invalidateQueries({ queryKey: keys.botConfig(projectId) });
-      await queryClient.invalidateQueries({ queryKey: keys.channels(projectId) });
-      const channel = channels.data?.[0];
-      if (channel && avatarPreview) {
-        await api.updateWidget(projectId, {
-          logoUrl: avatarPreview,
-          welcomeMessage: channel.welcomeMessage,
-          colorTheme: channel.colorTheme,
-          collectVisitorInfo: channel.collectVisitorInfo,
-          visitorNameEnabled: channel.visitorNameEnabled,
-          visitorEmailEnabled: channel.visitorEmailEnabled,
-          visitorPhoneEnabled: channel.visitorPhoneEnabled
-        });
-        await queryClient.invalidateQueries({ queryKey: keys.channels(projectId) });
-      }
+      await queryClient.cancelQueries({ queryKey: keys.botConfig(projectId) });
+      const savedBot = await api.updateBotConfig(projectId, { ...v, botAvatar: avatarPreview });
+      queryClient.setQueryData(keys.botConfig(projectId), savedBot);
       displayToast("Bot configuration saved successfully!", "success");
     } catch (err) {
       displayToast(err instanceof Error ? err.message : "Failed to save bot configuration", "destructive");
@@ -117,14 +103,14 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
                 </div>
               )}
               <div>
-                <div className="text-xs font-semibold text-slate-900">Bot Avatar Icon</div>
-                <div className="text-2xs text-muted">Upload custom chatbot profile picture.</div>
+                <div className="text-xs font-semibold text-slate-900">Bot Profile Picture</div>
+                <div className="text-2xs text-muted">Chat header and welcome screen.</div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <label className="cursor-pointer rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
-                Upload Image
+                Upload Profile Picture
                 <input
                   type="file"
                   accept="image/*"

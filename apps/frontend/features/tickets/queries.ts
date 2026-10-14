@@ -6,10 +6,10 @@ export const ticketKeys = {
   list: (projectId?: string) => [...ticketKeys.all, "list", projectId] as const
 };
 
-export function useTickets(projectId?: string) {
+export function useTickets(projectId?: string, search = "") {
   return useQuery({
-    queryKey: ticketKeys.list(projectId),
-    queryFn: () => api.tickets(projectId),
+    queryKey: search ? [...ticketKeys.list(projectId), search] : ticketKeys.list(projectId),
+    queryFn: () => api.tickets(projectId, search),
     enabled: Boolean(projectId)
   });
 }

@@ -7,22 +7,13 @@ import { useGlobalSearch } from "../lib/queries";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-}
+import { useDebouncedSearch } from "../hooks/use-debounced-search";
 
 export function Header() {
   const sidebar = useSidebarStore();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebouncedSearch(query);
   const search = useGlobalSearch(debouncedQuery);
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);

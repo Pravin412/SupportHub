@@ -7,6 +7,18 @@ import { QueueService } from "../../common/queue/queue.service";
 import { RealtimeGateway } from "../../common/realtime/realtime.gateway";
 import { WhatsappService } from "../../common/whatsapp/whatsapp.service";
 import { parsePhoneList } from "../../common/whatsapp/phone.utils";
+import { buildSearchFilter, type SearchField } from "../../common/search/search-filters";
+
+const ticketSearchFields: readonly SearchField<Prisma.TicketWhereInput>[] = [
+  (match) => ({ id: match }),
+  (match) => ({ title: match }),
+  (match) => ({ conversation: { contact: { name: match } } }),
+  (match) => ({ conversation: { contact: { phone: match } } })
+];
+
+const messageSearchFields: readonly SearchField<Prisma.MessageWhereInput>[] = [
+  (match) => ({ content: match })
+];
 
 function makeChannelId(key: string) {
   const random = Math.random().toString(36).slice(2, 8);
@@ -469,7 +481,12 @@ export class CoreService {
   async conversations(userId: string, projectId: string, cursor?: string, search?: string) {
     await this.assertMember(userId, projectId);
     return this.prisma.conversation.findMany({
-      where: { projectId, contact: search ? { name: { contains: search, mode: "insensitive" } } : undefined },
+      where: {
+        projectId,
+        ...buildSearchFilter<Prisma.ConversationWhereInput>(search, [
+          (match) => ({ contact: { name: match } })
+        ])
+      },
       take: 31,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { lastMessageAt: "desc" },
@@ -675,12 +692,15 @@ export class CoreService {
     return ticket;
   }
 
-  async tickets(userId: string, projectId?: string) {
+  async tickets(userId: string, projectId?: string, search?: string) {
     const scopedProject = projectId ?? (await this.projects(userId))[0]?.id;
     if (!scopedProject) return [];
     await this.assertMember(userId, scopedProject);
     return this.prisma.ticket.findMany({
-      where: { projectId: scopedProject },
+      where: {
+        projectId: scopedProject,
+        ...buildSearchFilter(search, ticketSearchFields)
+      },
       take: 50,
       orderBy: { createdAt: "desc" },
       select: {
@@ -869,7 +889,7 @@ export class CoreService {
     });
     if (!channel || !channel.enabled) throw new NotFoundException("Widget offline");
     const botConfig = channel.project.botConfiguration;
-    const botAvatar = channel.logoUrl || botConfig?.botAvatar || null;
+    const botAvatar = botConfig?.botAvatar || null;
     const botName = botConfig?.botName || channel.name || channel.project.name || "Support Bot";
     const welcomeMessage = channel.welcomeMessage || botConfig?.fallbackMessage || "Hi, welcome in. Send us a message and our team will reply as soon as possible.";
 
@@ -877,7 +897,7 @@ export class CoreService {
       name: channel.name || channel.project.name,
       welcomeMessage,
       colorTheme: channel.colorTheme || "#0f4c42",
-      logoUrl: botAvatar,
+      logoUrl: channel.logoUrl || null,
       launcherPosition: channel.launcherPosition,
       botName,
       botAvatar,
@@ -1086,10 +1106,10 @@ export class CoreService {
       this.prisma.project.findMany({
         where: {
           id: { in: projectIds },
-          OR: [
-            { name: { contains: searchQuery, mode: "insensitive" } },
-            { key: { contains: searchQuery, mode: "insensitive" } }
-          ]
+          ...buildSearchFilter<Prisma.ProjectWhereInput>(searchQuery, [
+            (match) => ({ name: match }),
+            (match) => ({ key: match })
+          ])
         },
         take: 5,
         select: { id: true, name: true, key: true }
@@ -1098,10 +1118,7 @@ export class CoreService {
       this.prisma.ticket.findMany({
         where: {
           projectId: { in: projectIds },
-          OR: [
-            { title: { contains: searchQuery, mode: "insensitive" } },
-            { id: { contains: searchQuery, mode: "insensitive" } }
-          ]
+          ...buildSearchFilter(searchQuery, ticketSearchFields)
         },
         take: 5,
         select: { id: true, title: true, status: true, projectId: true }
@@ -1110,11 +1127,11 @@ export class CoreService {
       this.prisma.contact.findMany({
         where: {
           projectId: { in: projectIds },
-          OR: [
-            { name: { contains: searchQuery, mode: "insensitive" } },
-            { email: { contains: searchQuery, mode: "insensitive" } },
-            { phone: { contains: searchQuery, mode: "insensitive" } }
-          ]
+          ...buildSearchFilter<Prisma.ContactWhereInput>(searchQuery, [
+            (match) => ({ name: match }),
+            (match) => ({ email: match }),
+            (match) => ({ phone: match })
+          ])
         },
         take: 5,
         select: { id: true, name: true, email: true, phone: true, projectId: true }
@@ -1124,9 +1141,7 @@ export class CoreService {
         where: {
           projectId: { in: projectIds },
           messages: {
-            some: {
-              content: { contains: searchQuery, mode: "insensitive" }
-            }
+            some: buildSearchFilter(searchQuery, messageSearchFields)
           }
         },
         take: 5,
@@ -1135,7 +1150,7 @@ export class CoreService {
           projectId: true,
           contact: { select: { name: true } },
           messages: {
-            where: { content: { contains: searchQuery, mode: "insensitive" } },
+            where: buildSearchFilter(searchQuery, messageSearchFields),
             take: 1,
             select: { content: true }
           }
@@ -1456,7 +1471,7 @@ export class CoreService {
       phoneNumber: phone,
       templateName,
       language,
-      fields: ["Test Customer", "Test Ticket: SupportHub WhatsApp Verification", "HIGH (OPEN)", phone]
+      fields: ["Test Customer", "test@example.com", `${phone} (MEDIUM - OPEN)`, "SupportHub WhatsApp Verification | Ticket ID: TEST"]
     });
     if (!result.success) {
       throw new BadRequestException(result.message || "WhatsApp test message failed");

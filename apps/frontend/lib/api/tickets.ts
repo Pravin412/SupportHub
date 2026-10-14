@@ -3,7 +3,7 @@ import { request } from "../api-client";
 export const ticketsApi = {
   updateTicketStatus: (id: string, status: "OPEN" | "IN_PROGRESS" | "ASSIGNED" | "WAITING" | "RESOLVED" | "CLOSED") =>
     request(`/tickets/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) }),
-  tickets: (projectId?: string) =>
+  tickets: (projectId?: string, search = "") =>
     request<
       Array<{
         id: string;
@@ -16,5 +16,5 @@ export const ticketsApi = {
         customerName: string;
         customerPhone?: string | null;
       }>
-    >(`/tickets${projectId ? `?projectId=${projectId}` : ""}`)
+    >(`/tickets?${new URLSearchParams({ ...(projectId ? { projectId } : {}), ...(search ? { search } : {}) })}`)
 };

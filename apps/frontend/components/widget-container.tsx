@@ -83,13 +83,11 @@ export function WidgetContainer() {
         if (!isMounted) return;
         
         setConfig(configData);
-        if (configData.colorTheme || configData.logoUrl) {
-          window.parent.postMessage({ 
-            type: 'supporthub-config', 
-            colorTheme: configData.colorTheme,
-            logoUrl: configData.logoUrl 
-          }, '*');
-        }
+        window.parent.postMessage({ 
+          type: 'supporthub-config', 
+          colorTheme: configData.colorTheme,
+          logoUrl: configData.logoUrl || null
+        }, '*');
 
         if (activeUser.profileId) {
           const history = await widgetApi.messages(channelId, activeUser.profileId);
@@ -120,6 +118,35 @@ export function WidgetContainer() {
     loadData();
     return () => { isMounted = false; };
   }, [channelId, activeUser.profileId, hasHostUser]);
+
+  useEffect(() => {
+    if (!channelId) return;
+    let disposed = false;
+    let refreshing = false;
+    const refreshConfig = async () => {
+      if (refreshing || document.hidden) return;
+      refreshing = true;
+      try {
+        const updated = await widgetApi.config(channelId);
+        if (disposed) return;
+        setConfig(updated);
+        window.parent.postMessage({ type: "supporthub-config", colorTheme: updated.colorTheme, logoUrl: updated.logoUrl || null }, "*");
+      } catch {
+        // Keep the current appearance during temporary connection failures.
+      } finally {
+        refreshing = false;
+      }
+    };
+    const timer = window.setInterval(refreshConfig, 15000);
+    window.addEventListener("focus", refreshConfig);
+    document.addEventListener("visibilitychange", refreshConfig);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshConfig);
+      document.removeEventListener("visibilitychange", refreshConfig);
+    };
+  }, [channelId]);
 
   useEffect(() => {
     const socket = connectRealtime(WIDGET_API_URL);

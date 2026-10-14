@@ -16,21 +16,12 @@ import { InboxEmptyState } from "./inbox-empty-state";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-}
+import { useDebouncedSearch } from "../hooks/use-debounced-search";
 
 export function InboxView() {
   const [draft, setDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebouncedSearch(searchQuery);
   const inboxSelection = useInboxSelectionStore();
   const queryClient = useQueryClient();
   const projects = useProjects(true);

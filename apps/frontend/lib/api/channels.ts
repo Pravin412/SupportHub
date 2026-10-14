@@ -14,5 +14,5 @@ export const channelsApi = {
       visitorEmailEnabled?: boolean;
       visitorPhoneEnabled?: boolean;
     }
-  ) => request(`/projects/${projectId}/widget`, { method: "PUT", body: JSON.stringify(data) })
+  ) => request<ChannelDto>(`/projects/${projectId}/widget`, { method: "PUT", body: JSON.stringify(data) })
 };

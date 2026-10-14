@@ -23,9 +23,9 @@ export default function ProjectTicketsPage({ params }: { params: Promise<{ proje
   }
 
   return (
-    <div className="grid h-main bg-slate-50 md:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="flex min-h-0 flex-col border-r border-slate-200 bg-white">
-        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 px-4">
+    <div className="flex h-main flex-col bg-[#f7f9fc] md:grid md:grid-cols-[240px_minmax(0,1fr)]">
+      <aside className="flex max-h-48 shrink-0 flex-col border-b border-slate-200 bg-white md:max-h-none md:min-h-0 md:border-b-0 md:border-r">
+        <div className="flex shrink-0 items-center gap-2 px-4 pb-4 pt-6">
           <span className="grid h-8 w-8 place-items-center rounded-md bg-teal-50 text-brand">
             <TicketCheck size={17} />
           </span>
@@ -35,7 +35,7 @@ export default function ProjectTicketsPage({ params }: { params: Promise<{ proje
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-4">
           {projects.data?.map((project) => (
             <ProjectTicketNavItem
               key={project.id}
@@ -48,7 +48,7 @@ export default function ProjectTicketsPage({ params }: { params: Promise<{ proje
         </div>
       </aside>
 
-      <section className="min-h-0">
+      <section className="min-h-0 min-w-0 flex-1">
         {selectedProject ? (
           <TicketsView projectId={selectedProject.id} projectName={selectedProject.name} />
         ) : (
@@ -74,21 +74,21 @@ function ProjectTicketNavItem({
   return (
     <button
       type="button"
-      className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors ${
-        active ? "border-l-4 border-l-brand bg-teal-50" : "border-l-4 border-l-transparent bg-white hover:bg-slate-50"
+      className={`relative flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-3 text-left transition-colors ${
+        active ? "border-teal-100 bg-teal-50/70 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-teal-500" : "border-slate-200 bg-white hover:bg-slate-50"
       }`}
       onClick={onClick}
     >
       <span className="flex min-w-0 items-center gap-3">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-slate-100 text-slate-600">
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${active ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-500"}`}>
           <Folder size={15} />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-slate-950">{project.name}</span>
+          <span className="block truncate text-xs font-semibold text-slate-950">{project.name}</span>
           <span className="block truncate font-mono text-[10px] text-muted">{project.key}</span>
         </span>
       </span>
-      <Badge className={active ? "border-teal-200 bg-white text-brand" : "border-slate-200 bg-slate-50 text-slate-600"}>
+      <Badge className={active ? "shrink-0 border-teal-100 bg-teal-100 text-brand" : "shrink-0 border-slate-100 bg-slate-100 text-slate-500"}>
         {openTickets}
       </Badge>
     </button>

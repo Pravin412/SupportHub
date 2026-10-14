@@ -31,14 +31,14 @@ export function ChannelLogoUpload({
             </div>
           )}
           <div>
-            <div className="text-xs font-semibold text-slate-900">Project / Bot Logo</div>
-            <div className="text-2xs text-muted">Displayed in chatbot header, next to bot replies, and launcher.</div>
+            <div className="text-xs font-semibold text-slate-900">Chat Launcher Image</div>
+            <div className="text-2xs text-muted">Floating chat bubble when the widget is closed.</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <label className="cursor-pointer rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
-            Upload Image
+            Upload Launcher Image
             <input
               type="file"
               accept="image/*"

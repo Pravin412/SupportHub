@@ -21,7 +21,8 @@ export function WidgetFrame({
   shouldShowVisitorForm,
   startConversation,
   themeColor,
-  visitorForm
+  visitorForm,
+  onClose
 }: {
   activeUser: { profileId?: string };
   channelId?: string;
@@ -40,13 +41,14 @@ export function WidgetFrame({
   startConversation: () => void;
   themeColor: string;
   visitorForm: { name: string; email: string; number: string };
+  onClose?: () => void;
 }) {
-  const botLogo = config?.logoUrl || config?.botAvatar || null;
+  const botLogo = config?.botAvatar || null;
 
   return (
     <div className="flex flex-col h-full w-full bg-white text-slate-900 overflow-hidden shadow-xl border border-slate-200" style={{ borderRadius: "12px" }}>
       <div className={`flex flex-col h-full w-full ${!config ? "filter blur-xs select-none pointer-events-none" : ""}`}>
-        <WidgetHeader botLogo={botLogo} botName={config?.botName} themeColor={themeColor} />
+        <WidgetHeader botLogo={botLogo} botName={config?.botName} themeColor={themeColor} onClose={onClose} />
         <div className="flex-1 flex flex-col min-h-0">
           {shouldShowNewConversationScreen ? (
             <NewConversationScreen

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Code2, Copy, Globe, MessageCircle, Save } from "lucide-react";
+import { Check, Code2, Copy, Globe, MessageCircle, Save } from "lucide-react";
 import { Badge, Button, Card, Input } from "@support-hub/ui";
 import { buildWidgetSnippet } from "@support-hub/utils";
 import { api } from "../lib/api";
@@ -19,6 +19,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
   const [colorTheme, setColorTheme] = useState<Record<string, string>>({});
   const [logoUrl, setLogoUrl] = useState<Record<string, string>>({});
   const [botName, setBotName] = useState<Record<string, string>>({});
+  const [copiedChannelId, setCopiedChannelId] = useState<string | null>(null);
   const [visitorSettings, setVisitorSettings] = useState<Record<string, {
     collectVisitorInfo: boolean;
     visitorNameEnabled: boolean;
@@ -58,14 +59,15 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
       },
       {
         onSuccess: async () => {
-          if (projectId && nextBotName && botConfig.data) {
-            await api.updateBotConfig(projectId, {
+          if (projectId && botConfig.data && nextBotName) {
+            await queryClient.cancelQueries({ queryKey: keys.botConfig(projectId) });
+            const savedBot = await api.updateBotConfig(projectId, {
               responseMode: botConfig.data.responseMode,
-              botName: nextBotName,
+              botName: nextBotName || botConfig.data.botName,
               fallbackMessage: botConfig.data.fallbackMessage,
-              botAvatar: botConfig.data.botAvatar ?? undefined
+              botAvatar: botConfig.data.botAvatar ?? ""
             });
-            await queryClient.invalidateQueries({ queryKey: keys.botConfig(projectId) });
+            queryClient.setQueryData(keys.botConfig(projectId), savedBot);
           }
           displayToast("Widget channel settings saved successfully!", "success");
         },
@@ -170,12 +172,28 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
               </div>
 
               <div className="mt-6 rounded-md bg-slate-950 p-3 text-xs text-slate-100">
-                <div className="mb-2 flex items-center gap-2 text-slate-300"><Code2 size={14} /> Install this widget channel</div>
+                <div className="mb-2 flex items-center justify-between gap-2 text-slate-300">
+                  <div className="flex items-center gap-2"><Code2 size={14} /> Widget install snippet</div>
+                  <Button
+                    type="button"
+                    className="h-8 w-8 shrink-0 border-0 bg-transparent px-0 text-slate-300 shadow-none hover:text-white"
+                    title={copiedChannelId === channel.id ? "Copied" : "Copy snippet"}
+                    aria-label={copiedChannelId === channel.id ? "Copied" : "Copy snippet"}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(snippet);
+                        setCopiedChannelId(channel.id);
+                        setTimeout(() => setCopiedChannelId((current) => current === channel.id ? null : current), 2000);
+                      } catch {
+                        displayToast("Could not copy snippet.", "destructive");
+                      }
+                    }}
+                  >
+                    {copiedChannelId === channel.id ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                  </Button>
+                </div>
                 <code className="block break-all leading-relaxed">{snippet}</code>
               </div>
-              <Button className="mt-3 h-9 gap-2 border-slate-200 bg-white text-xs text-slate-900" onClick={() => navigator.clipboard?.writeText(snippet)}>
-                <Copy size={14} /> Copy Snippet
-              </Button>
             </div>
           );
         })}

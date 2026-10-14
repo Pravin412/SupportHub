@@ -4,11 +4,13 @@ import { Button } from "@support-hub/ui";
 export const WidgetHeader = ({
   botLogo,
   botName,
-  themeColor
+  themeColor,
+  onClose
 }: {
   botLogo?: string | null;
   botName?: string;
   themeColor: string;
+  onClose?: () => void;
 }) => {
   return (
     <div className="flex items-center justify-between px-4 py-3 text-white" style={{ backgroundColor: themeColor }}>
@@ -26,7 +28,9 @@ export const WidgetHeader = ({
         </div>
       </div>
       <Button
-        onClick={() => window.parent.postMessage("supporthub-close-widget", "*")}
+        aria-label="Close chat"
+        title="Close chat"
+        onClick={onClose ?? (() => window.parent.postMessage("supporthub-close-widget", "*"))}
         className="h-8 w-8 rounded-full border-0 bg-transparent p-0 text-white hover:bg-white/20"
       >
         <X size={18} />

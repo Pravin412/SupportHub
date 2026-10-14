@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { dashboardKeys } from "@/features/dashboard/queries";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -23,7 +24,12 @@ export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (v: { name: string; key?: string }) => api.createProject(v.name, v.key),
-    onSuccess: () => qc.invalidateQueries({ queryKey: projectKeys.all })
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: projectKeys.all }),
+        qc.invalidateQueries({ queryKey: dashboardKeys.all })
+      ]);
+    }
   });
 }
 
@@ -31,6 +37,11 @@ export function useDeleteProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (projectId: string) => api.deleteProject(projectId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: projectKeys.all })
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: projectKeys.all }),
+        qc.invalidateQueries({ queryKey: dashboardKeys.all })
+      ]);
+    }
   });
 }
