@@ -91,10 +91,10 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-xs text-error">{message}</p>;
 }
 
-export function WidgetLoadingSkeleton({ themeColor }: { themeColor: string }) {
+export function WidgetLoadingSkeleton({ themeColor }: { themeColor?: string }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-[2px]">
-      <LoadingIndicator themeColor={themeColor} />
+      <LoadingIndicator themeColor={themeColor ?? "currentColor"} className="text-widget" />
     </div>
   );
 }

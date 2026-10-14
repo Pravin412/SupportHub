@@ -6,7 +6,7 @@ import { WidgetLoadingSkeleton } from "../../components/widget-form-and-loading"
 
 export default function WidgetPage() {
   return (
-    <Suspense fallback={<WidgetLoadingSkeleton themeColor="#0f4c42" />}>
+    <Suspense fallback={<WidgetLoadingSkeleton />}>
       <WidgetContainer />
     </Suspense>
   );

@@ -10,6 +10,7 @@ const config: Config = {
         "muted-light": "#7b8797",
         "muted-dark": "#8b97a8",
         brand: "#087f73",
+        widget: "#0f4c42",
         canvas: "#f4f6f8",
         input: "#f8fafc",
         hover: "#f1f5f5",
