@@ -106,7 +106,7 @@ export function InboxChatView({
           >
             <ArrowLeft size={16} />
           </button>
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal-100 text-brand">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-100 text-brand">
             <User size={16} />
           </span>
           <div className="min-w-0 flex-1">
@@ -120,7 +120,7 @@ export function InboxChatView({
                 </span>
               )}
               {activeConversation?.externalUserId && (
-                <span className="max-w-full break-all rounded bg-teal-50 px-1.5 py-0.5 font-mono text-[10px] text-teal-700" title={activeConversation.externalUserId}>
+                <span className="max-w-full break-all rounded bg-blue-50 px-1.5 py-0.5 font-mono text-[10px] text-blue-700" title={activeConversation.externalUserId}>
                   ID: {activeConversation.externalUserId}
                 </span>
               )}
@@ -133,7 +133,7 @@ export function InboxChatView({
         <div className="flex shrink-0 items-center gap-2 ml-2">
           {activeConversation?.status === "OPEN" && (
             <Button
-              className="h-7 gap-1.5 rounded border border-teal-600 bg-teal-50 px-3 text-xs font-semibold text-teal-700 shadow-sm hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-7 gap-1.5 rounded border border-blue-600 bg-blue-50 px-3 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => activeId && updateStatus.mutate({ id: activeId, status: "RESOLVED" })}
               disabled={!activeId || updateStatus.isPending}
             >
@@ -202,7 +202,7 @@ export function InboxChatView({
           onSend();
         }}
       >
-        <div className="flex h-12 items-center gap-3 rounded-lg border border-border bg-slate-50/60 px-4 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+        <div className="flex h-12 items-center gap-3 rounded-lg border border-border bg-slate-50/60 px-4 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
           <Button type="button" title="Add attachment" className="h-8 w-8 shrink-0 rounded-full border-0 px-0 text-slate-600 hover:bg-slate-100">
             <CirclePlus size={18} />
           </Button>

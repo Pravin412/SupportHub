@@ -4,7 +4,7 @@ export const InboxEmptyState = ({ selectedProjectId }: { selectedProjectId?: str
   return (
     <div className="grid h-full place-items-center bg-input p-6 text-center">
       <div className="max-w-xs space-y-2">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-teal-50 text-brand">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-blue-50 text-brand">
           <MessageSquare size={24} />
         </div>
         <h3 className="text-sm font-semibold text-primary">

@@ -6,7 +6,7 @@ type LoadingIndicatorProps = {
   className?: string;
 };
 
-export function LoadingIndicator({ themeColor = "#0f766e", className = "" }: LoadingIndicatorProps) {
+export function LoadingIndicator({ themeColor = "#2563EB", className = "" }: LoadingIndicatorProps) {
   return (
     <div className={`relative flex h-16 w-16 items-center justify-center ${className}`}>
       {/* Background track */}

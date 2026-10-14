@@ -209,6 +209,7 @@ export class CoreService {
         widgetChannel: {
           create: {
             channelId: makeChannelId(key),
+            colorTheme: "#2563EB",
             name: `${data.name} Website`
           }
         }
@@ -275,7 +276,7 @@ export class CoreService {
         select: channelSelect
       })) ??
       (await this.prisma.widgetChannel.create({
-        data: { projectId, channelId: makeChannelId(project.key), name: `${project.name} Website` },
+        data: { projectId, channelId: makeChannelId(project.key), name: `${project.name} Website`, colorTheme: "#2563EB" },
         select: channelSelect
       }));
 
@@ -349,7 +350,7 @@ export class CoreService {
             channelId: makeChannelId(project.key),
             name: `${project.name} Website`,
             welcomeMessage: data.welcomeMessage,
-            colorTheme: data.colorTheme,
+            colorTheme: data.colorTheme ?? "#2563EB",
             logoUrl: data.logoUrl,
             collectVisitorInfo: data.collectVisitorInfo,
             visitorNameEnabled: data.visitorNameEnabled,
@@ -896,7 +897,7 @@ export class CoreService {
     return {
       name: channel.name || channel.project.name,
       welcomeMessage,
-      colorTheme: channel.colorTheme || "#0f4c42",
+      colorTheme: channel.colorTheme || "#2563EB",
       logoUrl: channel.logoUrl || null,
       launcherPosition: channel.launcherPosition,
       botName,

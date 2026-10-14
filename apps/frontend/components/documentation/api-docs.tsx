@@ -42,14 +42,14 @@ export function ApiDocs() {
         <div>The API modifies the conversation status, not the ticket status directly, though it triggers a ticket creation if needed.</div>
       </div>
 
-      <div className="rounded-md border border-teal-200 bg-teal-50/50 p-4 text-xs text-teal-900 space-y-1">
+      <div className="rounded-md border border-blue-200 bg-blue-50/50 p-4 text-xs text-blue-900 space-y-1">
         <div className="font-semibold">Which ID goes where:</div>
         <div>
           Use the <code>Widget channel ID</code> only in <code>data-channel-id</code>. Use the <code>Integration key</code> in the REST API URL, and send the <code>Integration secret</code> in <code>x-integration-secret</code>.
         </div>
       </div>
 
-      <div className="rounded-md border border-teal-200 bg-teal-50/50 p-4 text-xs text-teal-900 space-y-1">
+      <div className="rounded-md border border-blue-200 bg-blue-50/50 p-4 text-xs text-blue-900 space-y-1">
         <div className="font-semibold">Interactive Button Support:</div>
         <div>
           When you include the <code>options</code> array, buttons will be rendered in the chatbot widget. Clicking any option automatically sends that reply back to SupportHub.

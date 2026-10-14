@@ -92,7 +92,7 @@ export function ProjectAccessForm({ projectId }: { projectId?: string }) {
           <span className="text-sm font-medium">Email</span>
           <Input className="mt-1" placeholder="agent@example.com" autoComplete="new-password" {...agentForm.register("email")} />
           {isLookingUpAgent && <p className="mt-1 text-xs text-muted">Checking email...</p>}
-          {agentEmailExists && <p className="mt-1 text-xs font-medium text-teal-700">Existing user. Password is already set.</p>}
+          {agentEmailExists && <p className="mt-1 text-xs font-medium text-blue-700">Existing user. Password is already set.</p>}
           <FieldError message={agentForm.formState.errors.email?.message} />
         </label>
         {!agentEmailExists && (

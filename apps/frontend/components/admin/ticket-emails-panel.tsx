@@ -122,7 +122,7 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
         {notificationRecipients.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {notificationRecipients.map((email) => (
-              <Badge key={email} className="gap-1 border-teal-100 bg-teal-50 text-teal-800">
+              <Badge key={email} className="gap-1 border-blue-100 bg-blue-50 text-blue-800">
                 <Button
                   type="button"
                   title="Edit recipient"
@@ -137,7 +137,7 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
                 <Button
                   type="button"
                   title="Remove recipient"
-                  className="ml-1 h-auto border-0 bg-transparent p-0.5 text-teal-700 shadow-none hover:bg-teal-100 hover:text-teal-950"
+                  className="ml-1 h-auto border-0 bg-transparent p-0.5 text-blue-700 shadow-none hover:bg-blue-100 hover:text-blue-950"
                   onClick={() => removeNotificationRecipient(email)}
                 >
                   <X size={12} />

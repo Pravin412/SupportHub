@@ -22,7 +22,7 @@ export default function TicketsPage() {
     <div className="grid h-main bg-slate-50 md:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="flex min-h-0 flex-col border-r border-slate-200 bg-white">
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 px-4">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-teal-50 text-brand">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-blue-50 text-brand">
             <TicketCheck size={17} />
           </span>
           <div>
@@ -69,7 +69,7 @@ function ProjectTicketNavItem({
     <button
       type="button"
       className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors ${
-        active ? "border-l-4 border-l-brand bg-teal-50" : "border-l-4 border-l-transparent bg-white hover:bg-slate-50"
+        active ? "border-l-4 border-l-brand bg-blue-50" : "border-l-4 border-l-transparent bg-white hover:bg-slate-50"
       }`}
       onClick={onClick}
     >
@@ -82,7 +82,7 @@ function ProjectTicketNavItem({
           <span className="block truncate font-mono text-[10px] text-muted">{project.key}</span>
         </span>
       </span>
-      <Badge className={active ? "border-teal-200 bg-white text-brand" : "border-slate-200 bg-slate-50 text-slate-600"}>
+      <Badge className={active ? "border-blue-200 bg-white text-brand" : "border-slate-200 bg-slate-50 text-slate-600"}>
         {openTickets}
       </Badge>
     </button>

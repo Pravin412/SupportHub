@@ -20,17 +20,17 @@ export function WidgetPreview({ projectId, projectKey, projectName }: {
     logoUrl: channel?.logoUrl || null,
     botAvatar: bot.data?.botAvatar || null,
     welcomeMessage: channel?.welcomeMessage || bot.data?.fallbackMessage || "Hi, welcome in. Send us a message and our team will reply as soon as possible.",
-    colorTheme: channel?.colorTheme || "#0f4c42"
+    colorTheme: channel?.colorTheme || "#2563EB"
   };
 
   return (
     <Card className="overflow-hidden border-slate-200 xl:col-span-2">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-teal-50 text-brand"><MessageCircle size={18} /></span>
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-50 text-brand"><MessageCircle size={18} /></span>
           <h2 className="text-base font-semibold">Live Chatbot Widget Preview</h2>
         </div>
-        <Badge className="max-w-full break-all whitespace-normal border-teal-100 bg-teal-50 text-brand">{channel?.channelId ?? projectKey ?? "Draft"}</Badge>
+        <Badge className="max-w-full break-all whitespace-normal border-blue-100 bg-blue-50 text-brand">{channel?.channelId ?? projectKey ?? "Draft"}</Badge>
       </div>
       <PreviewWidget key={projectId} config={config} channelId={channel?.channelId} />
     </Card>
@@ -47,7 +47,7 @@ function PreviewWidget({ config, channelId }: {
   const [messages, setMessages] = useState<Array<{ id: string; content: string; senderType: string }>>([]);
   const [visitorForm, setVisitorForm] = useState({ name: "", email: "", number: "" });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const themeColor = config.colorTheme || "#0f4c42";
+  const themeColor = config.colorTheme || "#2563EB";
   const startChat = () => {
     setStarted(true);
     setShowForm(false);

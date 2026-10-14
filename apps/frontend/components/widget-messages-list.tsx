@@ -44,7 +44,7 @@ export function WidgetMessagesList({
                 }`}
               >
                 {!isUser && msg.senderType === "BOT" && (
-                  <span className="mb-1 block text-[10px] font-bold uppercase text-teal-700">
+                  <span className="mb-1 block text-[10px] font-bold uppercase text-blue-700">
                     {botName?.trim() || "Support Bot"}
                   </span>
                 )}

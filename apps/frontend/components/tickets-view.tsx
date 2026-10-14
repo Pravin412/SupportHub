@@ -66,9 +66,9 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-4 pt-6 lg:px-6">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <h1 className="text-xl font-semibold text-slate-950">Tickets</h1>
-          <p className="max-w-full truncate rounded border border-teal-200 bg-white px-2 py-0.5 text-xs text-teal-700">{projectName}</p>
+          <p className="max-w-full truncate rounded border border-blue-200 bg-white px-2 py-0.5 text-xs text-blue-700">{projectName}</p>
         </div>
-        <Badge className="shrink-0 border-teal-100 bg-teal-50 text-brand">{tickets.data?.length ?? 0}</Badge>
+        <Badge className="shrink-0 border-blue-100 bg-blue-50 text-brand">{tickets.data?.length ?? 0}</Badge>
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-8 lg:px-6">
@@ -91,7 +91,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
                 type="button"
                 className={`inline-flex h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-xs font-medium transition-colors ${
                   active
-                    ? "border-teal-500 text-teal-700"
+                    ? "border-blue-500 text-blue-700"
                     : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
                 }`}
                 onClick={() => setActiveStatus(tab.value)}
@@ -99,7 +99,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
                 {tab.label}
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                    active ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-500"
+                    active ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
                   }`}
                 >
                   {countByStatus(tab.value)}
@@ -129,7 +129,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
           {!tickets.isLoading && !ticketList.length && (
             <div className="grid min-h-56 place-items-center text-center">
               <div>
-                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-teal-50 text-brand">
+                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-blue-50 text-brand">
                   <TicketCheck size={22} />
                 </div>
                 <p className="mt-3 text-sm font-semibold text-slate-900">{debouncedSearch ? "No matching tickets" : "No tickets yet"}</p>
@@ -153,20 +153,20 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
           {filteredTickets.map((ticket) => (
             <div
               key={ticket.id}
-              className="grid grid-cols-[minmax(220px,1fr)_140px_120px_110px] items-center gap-3 border-b border-slate-100 bg-white px-4 py-4 text-sm last:border-b-0 hover:bg-teal-50/30"
+              className="grid grid-cols-[minmax(220px,1fr)_140px_120px_110px] items-center gap-3 border-b border-slate-100 bg-white px-4 py-4 text-sm last:border-b-0 hover:bg-blue-50/30"
             >
               <button
                 type="button"
                 className="flex min-w-0 items-center gap-3 text-left"
                 onClick={() => openConversation(ticket.conversationId)}
               >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal-100/70 text-brand">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-100/70 text-brand">
                   <User size={16} />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-semibold text-slate-950">{ticket.customerName}</span>
                   <span className="mt-0.5 block truncate text-[11px] text-muted">{ticket.customerPhone ?? "Mobile not provided"}</span>
-                  <span className="mt-1 block break-all font-mono text-[10px] text-teal-700">ID: {ticket.id}</span>
+                  <span className="mt-1 block break-all font-mono text-[10px] text-blue-700">ID: {ticket.id}</span>
                 </span>
               </button>
 
@@ -178,7 +178,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
 
               <Button
                 type="button"
-                className="h-8 gap-1.5 rounded-md border-teal-100 bg-teal-50 px-2 text-xs text-teal-700 shadow-none hover:bg-teal-100"
+                className="h-8 gap-1.5 rounded-md border-blue-100 bg-blue-50 px-2 text-xs text-blue-700 shadow-none hover:bg-blue-100"
                 onClick={() => openConversation(ticket.conversationId)}
               >
                 <CheckCircle2 size={14} /> Open chat

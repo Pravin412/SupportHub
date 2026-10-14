@@ -31,7 +31,7 @@ export function TabButton({ children, active, onClick, icon }: any) {
       onClick={onClick}
       className={`h-auto rounded-none border-0 border-b-2 bg-transparent px-4 py-2 text-sm font-medium shadow-none transition-colors whitespace-nowrap ${
         active 
-          ? "border-teal-600 text-teal-700" 
+          ? "border-blue-600 text-blue-700" 
           : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
       }`}
     >

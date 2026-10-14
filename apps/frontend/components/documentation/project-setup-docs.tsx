@@ -90,7 +90,7 @@ export function ProjectSetupDocs() {
         </ol>
       </div>
 
-      <div className="rounded-md border border-teal-200 bg-teal-50/50 p-4 text-xs text-teal-900 space-y-1">
+      <div className="rounded-md border border-blue-200 bg-blue-50/50 p-4 text-xs text-blue-900 space-y-1">
         <div className="font-semibold">Quick rules for developers:</div>
         <div>Use <code>channelId</code> only for the widget.</div>
         <div>Use the Integration key and Integration secret only in backend APIs.</div>

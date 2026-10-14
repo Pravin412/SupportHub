@@ -86,7 +86,7 @@ export function IntegrationPanel({ projectId }: { projectId?: string }) {
           </div>
         </label>
 
-        <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
           Use this value as SUPPORT_HUB_INTEGRATION_SECRET in your bot environment.
         </div>
 

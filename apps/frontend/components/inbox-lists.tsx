@@ -16,7 +16,7 @@ export function InboxProjectsList({
       <div className="border-b border-border bg-white p-3.5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded bg-teal-100 text-brand">
+            <span className="grid h-7 w-7 place-items-center rounded bg-blue-100 text-brand">
               <Folder size={15} />
             </span>
             <div>
@@ -38,7 +38,7 @@ export function InboxProjectsList({
           <button
             key={p.id}
             type="button"
-            className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-teal-50/70"
+            className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-blue-50/70"
             onClick={() => onSelectProject(p.id)}
           >
             <div className="min-w-0 flex-1">
@@ -121,7 +121,7 @@ export function InboxConversationsList({
               key={c.id}
               type="button"
               className={`block w-full border-b border-border/70 p-3.5 text-left transition-colors ${
-                isSelected ? "bg-teal-50 border-l-4 border-l-brand shadow-sm" : "bg-white hover:bg-slate-50"
+                isSelected ? "bg-blue-50 border-l-4 border-l-brand shadow-sm" : "bg-white hover:bg-slate-50"
               }`}
               onClick={() => onSelectConversation(c.id)}
             >

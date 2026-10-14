@@ -256,9 +256,9 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
 
   return (
     <Card className="overflow-hidden border-slate-200 shadow-sm">
-      <div className="flex items-center justify-between border-b bg-emerald-50/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b bg-blue-50/50 px-4 py-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-md bg-emerald-100 text-emerald-800">
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-blue-100 text-blue-800">
             <MessageSquare size={18} />
           </span>
           <div>
@@ -278,7 +278,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
 
       <form className="space-y-4 p-4" onSubmit={form.handleSubmit(onSubmit)} autoComplete="off">
         {/* Main Ticket Raised Toggle */}
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50/30 p-3">
+        <div className="rounded-lg border border-blue-100 bg-blue-50/30 p-3">
           <CheckboxField
             control={form.control}
             name="ticketCreatedEnabled"
@@ -313,7 +313,8 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
             />
             <Button
               type="button"
-              className="gap-2 bg-emerald-700 text-white hover:bg-emerald-800"
+              variant="primary"
+              className="gap-2"
               onClick={addRecipientNumber}
             >
               <Plus size={16} /> Add
@@ -329,13 +330,13 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
               {recipientNumbers.map((phone) => (
                 <Badge
                   key={phone}
-                  className="gap-1.5 border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-900 font-mono text-xs"
+                  className="gap-1.5 border-blue-200 bg-blue-50 px-2.5 py-1 text-blue-900 font-mono text-xs"
                 >
                   <span>+{phone}</span>
                   <button
                     type="button"
                     title="Remove number"
-                    className="ml-1 rounded text-emerald-700 hover:bg-emerald-200 hover:text-emerald-950 p-0.5 transition-colors"
+                    className="ml-1 rounded text-blue-700 hover:bg-blue-200 hover:text-blue-950 p-0.5 transition-colors"
                     onClick={() => removeRecipientNumber(phone)}
                   >
                     <X size={12} />
@@ -352,7 +353,8 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
             <label htmlFor="ticket-whatsapp-template-select" className="text-sm font-medium text-slate-800">WhatsApp Template for Ticket Raised</label>
             <Button
               type="button"
-              className="h-8 gap-1 border border-emerald-300 bg-white px-2.5 text-xs text-emerald-800 hover:bg-emerald-50"
+              variant="outline"
+              className="h-8 gap-1 px-2.5 text-xs"
               onClick={() => {
                 setEditingTemplateId(null);
                 templateForm.reset({ name: "", displayName: "", language: "en_US", description: "" });
@@ -371,7 +373,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                 id="ticket-whatsapp-template-select"
                 value={field.value || ""}
                 onChange={field.onChange}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
               >
                 <option value="">-- Select a WhatsApp Template --</option>
                 {templatesQuery.data?.map((tmpl) => (
@@ -386,7 +388,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
           {/* Template Parameter Payload Preview */}
           <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700">
             <div className="flex items-center gap-1 font-semibold text-slate-800 mb-1">
-              <Sparkles size={13} className="text-emerald-600" />
+              <Sparkles size={13} className="text-blue-600" />
               <span>Dynamic Template Parameters:</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
@@ -407,7 +409,8 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
               </h3>
               <Button
                 type="button"
-                className="h-7 px-2.5 text-xs gap-1 border border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50"
+                variant="outline"
+                className="h-7 px-2.5 text-xs gap-1"
                 onClick={() => {
                   setEditingTemplateId(null);
                   templateForm.reset({ name: "", displayName: "", language: "en_US", description: "" });
@@ -421,7 +424,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
             {/* Form to add template */}
             {showAddTemplateForm && (
               <div
-                className="rounded-md border border-emerald-200 bg-white p-3 space-y-2.5 shadow-sm"
+                className="rounded-md border border-blue-200 bg-white p-3 space-y-2.5 shadow-sm"
               >
                 <h4 className="text-xs font-semibold text-slate-800">{editingTemplateId ? "Edit WhatsApp Template" : "Add Approved WhatsApp Template"}</h4>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -477,7 +480,8 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                 <div className="flex justify-end pt-1">
                   <Button
                     type="button"
-                    className="h-8 px-3 bg-emerald-700 text-white hover:bg-emerald-800 text-xs gap-1"
+                    variant="primary"
+                    className="h-8 px-3 text-xs gap-1"
                     onClick={templateForm.handleSubmit(handleCreateTemplate)}
                     disabled={templateForm.formState.isSubmitting}
                   >
@@ -509,7 +513,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                   <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    className="h-7 w-7 shrink-0 rounded grid place-items-center text-slate-500 hover:text-emerald-700 hover:bg-emerald-50"
+                    className="h-7 w-7 shrink-0 rounded grid place-items-center text-slate-500 hover:text-blue-700 hover:bg-blue-50"
                     title="Edit template"
                     aria-label={`Edit ${tmpl.displayName}`}
                     onClick={() => {
@@ -612,7 +616,8 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
           <div className="min-w-0 space-y-1">
           <Button
             type="button"
-            className="gap-2 text-xs border border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50"
+            variant="outline"
+            className="gap-2 text-xs"
             onClick={handleTest}
             disabled={testing}
           >
@@ -626,7 +631,8 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
 
           <Button
             type="submit"
-            className="gap-2 bg-emerald-700 text-white hover:bg-emerald-800"
+            variant="primary"
+            className="gap-2"
             disabled={!projectId || form.formState.isSubmitting}
           >
             <Save size={16} /> Save WhatsApp Settings

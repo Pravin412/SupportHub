@@ -258,7 +258,7 @@ export function WidgetContainer() {
     await sendWidgetMessage(text);
   };
 
-  const themeColor = config?.colorTheme || "#0f4c42";
+  const themeColor = config?.colorTheme || "#2563EB";
   const shouldShowVisitorForm = Boolean(shouldCollectVisitorInfo && visitorFormRequested);
   const shouldShowNewConversationScreen = Boolean(config && !conversationStarted && !hasExistingConversation);
 

@@ -35,8 +35,8 @@
 
 body {
   margin: 0;
-  background: #f4f6f8;
-  color: #20262f;
+  background: theme("colors.canvas");
+  color: theme("colors.primary");
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -49,29 +49,28 @@ textarea {
 }
 
 .login-surface {
-  background-color: #eaf0f1;
-  background-image: linear-gradient(135deg, #eef3f5 0%, #e2eeeb 100%);
+  background-color: #f3f4f6;
 }
 
 @layer components {
   .workspace-theme h1 {
-    color: #20262f;
+    color: theme("colors.primary");
     font-weight: 700;
     line-height: 1.25;
   }
 
   .workspace-theme h2, .workspace-theme h3 {
-    color: #303944;
+    color: theme("colors.primary");
     line-height: 1.35;
   }
 
   .workspace-theme aside {
-    background-color: #fcfdfd;
+    background-color: #ffffff;
   }
 
   .workspace-theme nav a:hover,
   .workspace-theme nav button:hover {
-    color: #087f73;
+    color: theme("colors.brand");
   }
 
   .workspace-theme pre {
@@ -94,8 +93,8 @@ textarea {
 
 @layer base {
   ::selection {
-    background: #cceee8;
-    color: #11564e;
+    background: #dbeafe;
+    color: #1e40af;
   }
 
   button, a, input, select, textarea, [role="checkbox"] {
@@ -114,7 +113,7 @@ textarea {
   }
 
   input, select, textarea {
-    accent-color: #0d9488;
+    accent-color: #2563EB;
   }
 
   th {
@@ -122,7 +121,7 @@ textarea {
   }
 
   td, th {
-    border-color: #e3e7eb;
+    border-color: theme("colors.border");
   }
 
   tbody tr {
@@ -131,7 +130,7 @@ textarea {
 
   @media (hover: hover) {
     tbody tr:hover {
-      background-color: #f5f9f8;
+      background-color: #f3f4f6;
     }
   }
 

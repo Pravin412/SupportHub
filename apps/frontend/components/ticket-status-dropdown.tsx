@@ -40,7 +40,7 @@ export const StatusDropdown = ({ value, onChange }: { value: TicketStatus; onCha
               key={status.value}
               type="button"
               role="menuitem"
-              className="flex h-8 w-full items-center justify-between rounded px-2 text-left text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-800"
+              className="flex h-8 w-full items-center justify-between rounded px-2 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-800"
               onClick={() => {
                 setOpen(false);
                 if (status.value !== value) onChange(status.value);

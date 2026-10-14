@@ -54,8 +54,9 @@ export function Overview({
                 <button
                   key={option.value}
                   type="button"
+                  aria-pressed={active}
                   className={`h-7 rounded px-2 text-xs font-semibold transition-colors ${
-                    active ? "bg-teal-50 text-teal-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                    active ? "bg-brand-soft text-brand" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                   }`}
                   onClick={() => onRangeChange(option.value)}
                 >
@@ -112,7 +113,7 @@ export function Overview({
               <h2 className="text-base font-bold text-primary">Conversation Summary</h2>
               <p className="mt-1 text-xs text-secondary">Conversation activity for {selectedRangeLabel.toLowerCase()}.</p>
             </div>
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
+            <span className="grid h-9 w-9 place-items-center rounded-md bg-blue-50 text-brand">
               <MessageSquare size={18} />
             </span>
           </div>
@@ -131,7 +132,7 @@ export function Overview({
               <h2 className="text-base font-bold text-primary">Project Summary</h2>
               <p className="mt-1 text-xs text-secondary">Project coverage, team members, and active widget channels.</p>
             </div>
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
+            <span className="grid h-9 w-9 place-items-center rounded-md bg-blue-50 text-brand">
               <Radio size={18} />
             </span>
           </div>

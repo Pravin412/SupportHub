@@ -62,7 +62,7 @@
   toggleBtn.style.width = "56px";
   toggleBtn.style.height = "56px";
   toggleBtn.style.borderRadius = "28px";
-  toggleBtn.style.backgroundColor = "#0f766e";
+  toggleBtn.style.backgroundColor = "#2563EB";
   toggleBtn.style.color = "#fff";
   toggleBtn.style.border = "none";
   toggleBtn.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
@@ -135,7 +135,7 @@
   let currentBtnLeft = null;
   let currentBtnTop = null;
   let latestLogoUrl = "";
-  let latestColorTheme = "#0f766e";
+  let latestColorTheme = "#2563EB";
   let hasCustomPosition = false;
   let dragActuallyMoved = false;
 

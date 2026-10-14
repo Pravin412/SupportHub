@@ -81,7 +81,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
   return (
     <Card className="overflow-hidden border-slate-200 xl:col-span-2">
       <div className="flex items-center gap-2 border-b bg-white px-4 py-3">
-        <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
+        <span className="grid h-9 w-9 place-items-center rounded-md bg-blue-50 text-brand">
           <Globe size={18} />
         </span>
         <div>
@@ -115,7 +115,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                   {currentLogo ? (
                     <img src={currentLogo} alt={channel.name} className="h-11 w-11 rounded-full object-cover border border-slate-200 shadow-sm" />
                   ) : (
-                    <span className="grid h-11 w-11 place-items-center rounded-full bg-teal-50 text-brand"><MessageCircle size={20} /></span>
+                    <span className="grid h-11 w-11 place-items-center rounded-full bg-blue-50 text-brand"><MessageCircle size={20} /></span>
                   )}
                   <div>
                     <div className="font-semibold">{channel.name}</div>
@@ -123,7 +123,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                     <div className="mt-1 font-mono text-xs text-slate-600">Widget channel ID: {channel.channelId}</div>
                   </div>
                 </div>
-                <Badge className="border-teal-100 bg-teal-50 text-brand">{channel.enabled ? "Active" : "Disabled"}</Badge>
+                <Badge className="border-blue-100 bg-blue-50 text-brand">{channel.enabled ? "Active" : "Disabled"}</Badge>
               </div>
 
               <div className="mt-6 border-t pt-4">
@@ -148,14 +148,14 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                   <label className="block">
                     <span className="text-sm font-medium">Color Theme (Hex)</span>
                     <div className="mt-1 flex items-center gap-2">
-                      <Input type="color" className="h-10 w-12 cursor-pointer rounded-md border" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#0f4c42"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
-                      <Input className="flex-1 font-mono uppercase" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#0f4c42"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
+                      <Input type="color" className="h-10 w-12 cursor-pointer rounded-md border" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
+                      <Input className="flex-1 font-mono uppercase" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
                     </div>
                   </label>
                 </div>
 
                 <ChannelVisitorSettingsForm
-                  colorTheme={colorTheme[channel.id] ?? channel.colorTheme ?? "#0f4c42"}
+                  colorTheme={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"}
                   settings={currentVisitorSettings}
                   onUpdateSetting={updateVisitorSetting}
                 />
@@ -164,7 +164,7 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                   <Button 
                     className="gap-2 h-9 text-xs bg-brand text-white hover:bg-brand/90" 
                     disabled={updateWidget.isPending}
-                    onClick={() => handleSave(channel.id, channel.welcomeMessage, channel.colorTheme ?? "#0f4c42", channel.logoUrl ?? "", channel)}
+                    onClick={() => handleSave(channel.id, channel.welcomeMessage, channel.colorTheme ?? "#2563EB", channel.logoUrl ?? "", channel)}
                   >
                     <Save size={14} /> {updateWidget.isPending ? "Saving..." : "Save Settings"}
                   </Button>

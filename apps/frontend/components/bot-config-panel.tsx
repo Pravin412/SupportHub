@@ -75,7 +75,7 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
   return (
     <Card className="overflow-hidden border-slate-200">
       <div className="flex items-center gap-2 border-b bg-white px-4 py-3">
-        <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
+        <span className="grid h-9 w-9 place-items-center rounded-md bg-blue-50 text-brand">
           <Bot size={18} />
         </span>
         <div>
@@ -95,7 +95,7 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
                 <img
                   src={avatarPreview}
                   alt="Bot avatar"
-                  className="h-12 w-12 rounded-full object-cover border-2 border-teal-600 shadow-sm"
+                  className="h-12 w-12 rounded-full object-cover border-2 border-blue-600 shadow-sm"
                 />
               ) : (
                 <div className="grid h-12 w-12 place-items-center rounded-full border-2 border-dashed border-slate-300 bg-white text-slate-400">

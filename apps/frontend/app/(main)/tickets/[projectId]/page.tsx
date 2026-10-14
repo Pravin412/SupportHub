@@ -26,7 +26,7 @@ export default function ProjectTicketsPage({ params }: { params: Promise<{ proje
     <div className="flex h-main flex-col bg-[#f7f9fc] md:grid md:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="flex max-h-48 shrink-0 flex-col border-b border-slate-200 bg-white md:max-h-none md:min-h-0 md:border-b-0 md:border-r">
         <div className="flex shrink-0 items-center gap-2 px-4 pb-4 pt-6">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-teal-50 text-brand">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-blue-50 text-brand">
             <TicketCheck size={17} />
           </span>
           <div>
@@ -75,12 +75,12 @@ function ProjectTicketNavItem({
     <button
       type="button"
       className={`relative flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-3 text-left transition-colors ${
-        active ? "border-teal-100 bg-teal-50/70 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-teal-500" : "border-slate-200 bg-white hover:bg-slate-50"
+        active ? "border-blue-100 bg-blue-50/70 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-blue-500" : "border-slate-200 bg-white hover:bg-slate-50"
       }`}
       onClick={onClick}
     >
       <span className="flex min-w-0 items-center gap-3">
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${active ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-500"}`}>
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${active ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
           <Folder size={15} />
         </span>
         <span className="min-w-0">
@@ -88,7 +88,7 @@ function ProjectTicketNavItem({
           <span className="block truncate font-mono text-[10px] text-muted">{project.key}</span>
         </span>
       </span>
-      <Badge className={active ? "shrink-0 border-teal-100 bg-teal-100 text-brand" : "shrink-0 border-slate-100 bg-slate-100 text-slate-500"}>
+      <Badge className={active ? "shrink-0 border-blue-100 bg-blue-100 text-brand" : "shrink-0 border-slate-100 bg-slate-100 text-slate-500"}>
         {openTickets}
       </Badge>
     </button>

@@ -21,7 +21,7 @@ export function NavLink({
       onClick={onClick}
       className={`flex h-[38px] w-full items-center gap-3 rounded-r-lg px-4 text-left text-sm font-semibold transition-colors ${
         active 
-          ? "border-l-4 border-brand bg-teal-50 text-brand" 
+          ? "border-l-4 border-brand bg-blue-50 text-brand" 
           : "border-l-4 border-transparent text-secondary hover:bg-hover"
       }`}
     >
@@ -46,7 +46,7 @@ export function NavButton({
     <button
       className={`flex h-[38px] w-full items-center gap-3 rounded-r-lg px-4 text-left text-sm font-semibold transition-colors ${
         active 
-          ? "border-l-4 border-brand bg-teal-50 text-brand" 
+          ? "border-l-4 border-brand bg-blue-50 text-brand" 
           : "border-l-4 border-transparent text-secondary hover:bg-hover"
       }`}
       onClick={onClick}
@@ -73,10 +73,10 @@ export function MetricCard({
   neutral?: boolean;
 }) {
   return (
-    <section className="flex flex-col justify-between rounded-lg border border-border border-t-2 border-t-teal-500 bg-white p-5 shadow-sm">
+    <section className="flex flex-col justify-between rounded-lg border border-border border-t-2 border-t-blue-500 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <div className="text-xs font-semibold text-secondary">{title}</div>
-        <span className="grid h-7 w-7 place-items-center rounded bg-teal-50 text-brand">{icon}</span>
+        <span className="grid h-7 w-7 place-items-center rounded bg-blue-50 text-brand">{icon}</span>
       </div>
       <div className="mt-4">
         <div className="text-3xl font-bold text-primary">{value}</div>

@@ -81,7 +81,7 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
   return (
     <Card className="overflow-hidden border-slate-200">
       <div className="flex items-center gap-2 border-b bg-white px-4 py-3">
-        <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-50 text-brand">
+        <span className="grid h-9 w-9 place-items-center rounded-md bg-blue-50 text-brand">
           <Mail size={18} />
         </span>
         <h2 className="text-base font-semibold">Email SMTP Settings</h2>

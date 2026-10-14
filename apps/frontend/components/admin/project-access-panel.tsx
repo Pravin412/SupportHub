@@ -72,7 +72,7 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                 <label className="flex min-h-9 items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 accent-teal-700"
+                    className="h-4 w-4 rounded border-slate-300 accent-blue-700"
                     checked={agentEdits[agent.id]?.emailNotificationsEnabled ?? agent.emailNotificationsEnabled}
                     onChange={(event) => updateAgentEdit(agent, { emailNotificationsEnabled: event.target.checked })}
                   />
@@ -126,7 +126,7 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                   <div className="text-xs text-muted">{agent.user.email}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={agent.emailNotificationsEnabled ? "border-teal-100 bg-teal-50 text-teal-800" : "border-slate-200 bg-slate-50 text-slate-500"}>
+                  <Badge className={agent.emailNotificationsEnabled ? "border-blue-100 bg-blue-50 text-blue-800" : "border-slate-200 bg-slate-50 text-slate-500"}>
                     {agent.emailNotificationsEnabled ? "Ticket emails on" : "Ticket emails off"}
                   </Badge>
                   <Badge className="border-slate-200 bg-slate-50 text-slate-700">

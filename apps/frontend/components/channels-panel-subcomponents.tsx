@@ -22,7 +22,7 @@ export function ChannelLogoUpload({
               <img
                 src={currentLogo}
                 alt="Logo preview"
-                className="h-14 w-14 rounded-full object-cover border-2 border-teal-600 shadow-sm"
+                className="h-14 w-14 rounded-full object-cover border-2 border-blue-600 shadow-sm"
               />
             </div>
           ) : (
@@ -98,7 +98,7 @@ export function ChannelVisitorSettingsForm({
         <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
           <input
             type="checkbox"
-            className="h-4 w-4 accent-teal-700"
+            className="h-4 w-4 accent-blue-700"
             checked={settings.collectVisitorInfo}
             onChange={(e) => onUpdateSetting("collectVisitorInfo", e.target.checked)}
           />
@@ -116,7 +116,7 @@ export function ChannelVisitorSettingsForm({
               <label key={key} className="flex items-center gap-2 text-xs font-medium text-slate-700">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-teal-700"
+                  className="h-4 w-4 accent-blue-700"
                   checked={settings[key as keyof typeof settings]}
                   disabled={!settings.collectVisitorInfo}
                   onChange={(e) => onUpdateSetting(key as any, e.target.checked)}

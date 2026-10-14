@@ -18,7 +18,7 @@ export function DocumentationView() {
   return (
     <div className="w-full max-w-5xl xl:max-w-none mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3 border-b pb-4">
-        <span className="grid h-10 w-10 place-items-center rounded-lg bg-teal-50 text-teal-700">
+        <span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-700">
           <BookOpen size={20} />
         </span>
         <div>

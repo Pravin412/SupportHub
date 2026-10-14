@@ -87,33 +87,33 @@ export function ProjectsView() {
 
       {/* Stats Cards Row */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-teal-500 shadow-sm">
+        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-blue-500 shadow-sm">
           <div>
             <div className="text-xs font-semibold text-secondary">Total Projects</div>
             <div className="mt-4 text-3xl font-bold text-primary">{totalProjects}</div>
           </div>
-          <Folder size={24} className="h-7 w-7 self-start rounded bg-teal-50 p-1.5 text-brand" />
+          <Folder size={24} className="h-7 w-7 self-start rounded bg-blue-50 p-1.5 text-brand" />
         </Card>
-        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-teal-500 shadow-sm">
+        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-blue-500 shadow-sm">
           <div>
             <div className="text-xs font-semibold text-secondary">Open Tickets</div>
             <div className="mt-4 text-3xl font-bold text-primary">{openTickets}</div>
           </div>
-          <Ticket size={24} className="h-7 w-7 self-start rounded bg-teal-50 p-1.5 text-brand" />
+          <Ticket size={24} className="h-7 w-7 self-start rounded bg-blue-50 p-1.5 text-brand" />
         </Card>
-        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-teal-500 shadow-sm">
+        <Card className="flex items-center justify-between p-5 border-border border-t-2 border-t-blue-500 shadow-sm">
           <div>
             <div className="text-xs font-semibold text-secondary">Team Members</div>
             <div className="mt-4 text-3xl font-bold text-primary">{teamMembers}</div>
           </div>
-          <Users size={24} className="h-7 w-7 self-start rounded bg-teal-50 p-1.5 text-brand" />
+          <Users size={24} className="h-7 w-7 self-start rounded bg-blue-50 p-1.5 text-brand" />
         </Card>
       </div>
 
       {/* Available Projects Heading */}
       <div className="mb-4 flex items-center gap-2">
         <h2 className="text-base font-bold text-slate-900">Available Projects</h2>
-        <span className="flex h-5 items-center justify-center rounded-full bg-teal-50 px-2 text-xs font-medium text-brand">
+        <span className="flex h-5 items-center justify-center rounded-full bg-blue-50 px-2 text-xs font-medium text-brand">
           {projects.data?.length ?? 0}
         </span>
       </div>
@@ -123,7 +123,7 @@ export function ProjectsView() {
         {/* Create Project Card Block */}
         {isGlobalAdmin && <Card className="p-5 border-slate-200 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-teal-50 text-brand">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-blue-50 text-brand">
               <Plus size={20} />
             </span>
             <div>
@@ -161,7 +161,7 @@ export function ProjectsView() {
         {projects.data?.map((project) => (
           <Card
             key={project.id}
-            className="flex flex-col p-5 border-slate-200 shadow-sm transition-all hover:border-teal-300 hover:shadow-md"
+            className="flex flex-col p-5 border-slate-200 shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
           >
             <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -173,7 +173,7 @@ export function ProjectsView() {
                   <p className="text-xs font-mono text-slate-500">{project.key}</p>
                 </div>
               </div>
-              <Badge className="bg-teal-50 text-brand border-0">Active</Badge>
+              <Badge className="bg-blue-50 text-brand border-0">Active</Badge>
             </div>
 
             <div className="flex items-center gap-2 border-t border-slate-100 pt-4 mt-auto">
