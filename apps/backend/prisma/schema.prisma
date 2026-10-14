@@ -106,6 +106,8 @@ model Project {
   botConfiguration      BotConfiguration?
   notificationSettings  ProjectNotificationSettings?
   emailSettings         ProjectEmailSettings?
+  whatsappSettings      ProjectWhatsappSettings?
+  whatsappTemplates     ProjectWhatsappTemplate[]
 }
 
 model WidgetChannel {
@@ -292,3 +294,49 @@ model ProjectEmailSettings {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
+
+model ProjectWhatsappSettings {
+  id                      String   @id @default(cuid())
+  projectId               String   @unique
+  enabled                 Boolean  @default(true)
+  ticketCreatedEnabled    Boolean  @default(false)
+  recipientPhoneNumbers   String[] @default([])
+  ticketCreatedTemplateId String?
+  providerUrl             String?
+  vendorId                String?
+  accessToken             String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  project                 Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectWhatsappTemplate {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  displayName String
+  language    String   @default("en_US")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model WhatsappNotification {
+  id           String         @id @default(cuid())
+  projectId    String
+  phoneNumber  String
+  templateName String
+  status       DeliveryStatus @default(QUEUED)
+  errorMessage String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([projectId, createdAt])
+}
+

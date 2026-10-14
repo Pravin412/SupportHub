@@ -104,6 +104,7 @@ export class IntegrationController {
           });
           this.realtime.emitProject(project.id, SupportEvent.TicketCreated, ticket);
           await this.core.queueTicketEmail(project.id, "created", ticket);
+          await this.core.queueTicketWhatsapp(project.id, "created", ticket);
         }
       }
     }
@@ -177,6 +178,7 @@ export class IntegrationController {
           });
           this.realtime.emitProject(project.id, SupportEvent.TicketCreated, ticket);
           await this.core.queueTicketEmail(project.id, "created", ticket);
+          await this.core.queueTicketWhatsapp(project.id, "created", ticket);
         }
       }
     }

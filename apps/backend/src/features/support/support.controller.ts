@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, Unauthoriz
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength, IsNumber } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength, IsNumber } from "class-validator";
 import { TicketPriority, TicketStatus, ConversationStatus, Role } from "@prisma/client";
 import { BotService } from "../bot/bot.service";
 import { CoreService } from "./support.service";
@@ -56,6 +56,24 @@ class EmailSettingsDto {
   @IsString() smtpUser!: string;
   @IsString() @IsOptional() smtpPassword?: string;
   @IsString() @IsOptional() fromName?: string;
+}
+class WhatsappSettingsDto {
+  @IsBoolean() @IsOptional() enabled?: boolean;
+  @IsBoolean() @IsOptional() ticketCreatedEnabled?: boolean;
+  @IsArray() @IsString({ each: true }) @IsOptional() recipientPhoneNumbers?: string[];
+  @IsString() @IsOptional() ticketCreatedTemplateId?: string | null;
+  @IsString() @IsOptional() providerUrl?: string | null;
+  @IsString() @IsOptional() vendorId?: string | null;
+  @IsString() @IsOptional() accessToken?: string | null;
+}
+class TestWhatsappDto {
+  @IsString() @IsOptional() phoneNumber?: string;
+}
+class WhatsappTemplateDto {
+  @IsString() @MinLength(2) name!: string;
+  @IsString() @MinLength(2) displayName!: string;
+  @IsString() @IsOptional() language?: string;
+  @IsString() @IsOptional() description?: string;
 }
 class WidgetSettingsDto {
   @IsString() @IsOptional() welcomeMessage?: string;
@@ -265,6 +283,62 @@ export class CoreController {
   @Post("projects/:id/email-settings/test")
   async testEmailSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
     return this.core.testEmailSettings(await this.userId(req), id);
+  }
+
+  @Get("projects/:id/whatsapp-settings")
+  async whatsappSettings(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.whatsappSettings(await this.userId(req), id);
+  }
+
+  @Put("projects/:id/whatsapp-settings")
+  async updateWhatsappSettings(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Body() dto: WhatsappSettingsDto
+  ) {
+    return this.core.updateWhatsappSettings(await this.userId(req), id, dto);
+  }
+
+  @Post("projects/:id/whatsapp-settings/test")
+  async testWhatsappSettings(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Body() dto: TestWhatsappDto
+  ) {
+    return this.core.testWhatsappSettings(await this.userId(req), id, dto?.phoneNumber);
+  }
+
+  @Get("projects/:id/whatsapp-templates")
+  async whatsappTemplates(@Req() req: FastifyRequest, @Param("id") id: string) {
+    return this.core.whatsappTemplates(await this.userId(req), id);
+  }
+
+  @Post("projects/:id/whatsapp-templates")
+  async createWhatsappTemplate(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Body() dto: WhatsappTemplateDto
+  ) {
+    return this.core.createWhatsappTemplate(await this.userId(req), id, dto);
+  }
+
+  @Put("projects/:id/whatsapp-templates/:templateId")
+  async updateWhatsappTemplate(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Param("templateId") templateId: string,
+    @Body() dto: WhatsappTemplateDto
+  ) {
+    return this.core.updateWhatsappTemplate(await this.userId(req), id, templateId, dto);
+  }
+
+  @Delete("projects/:id/whatsapp-templates/:templateId")
+  async deleteWhatsappTemplate(
+    @Req() req: FastifyRequest,
+    @Param("id") id: string,
+    @Param("templateId") templateId: string
+  ) {
+    return this.core.deleteWhatsappTemplate(await this.userId(req), id, templateId);
   }
 
   @Get("projects/:id/bot")

@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Bell, Plus, Save, X } from "lucide-react";
+import { AlertCircle, Bell, Plus, Save, X } from "lucide-react";
 import { Badge, Button, Card, Input } from "@support-hub/ui";
 import { parseEmailList } from "@support-hub/utils";
 import { api } from "../../lib/api";
-import { useNotificationSettings } from "../../lib/queries";
+import { useEmailSettings, useNotificationSettings } from "../../lib/queries";
 import { displayToast } from "../../lib/display-toast";
 import { PanelHeader } from "../admin-panels";
 import { CheckboxField } from "../checkbox-field";
@@ -29,21 +29,27 @@ function FieldError({ message }: { message?: string }) {
 
 export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
   const notificationSettings = useNotificationSettings(projectId);
+  const emailSettings = useEmailSettings(projectId);
   const [emailInput, setEmailInput] = useState("");
 
+  const hasSmtpConfigured = Boolean(
+    emailSettings.data?.smtpHost && emailSettings.data?.smtpUser
+  );
 
   const notificationForm = useForm<z.infer<typeof notificationSchema>>({
     resolver: zodResolver(notificationSchema),
-    defaultValues: { notificationEmail: "", ticketCreatedEnabled: true, ticketAssignedEnabled: true }
+    defaultValues: { notificationEmail: "", ticketCreatedEnabled: false, ticketAssignedEnabled: false }
   });
 
   useEffect(() => {
-    notificationForm.reset({
-      notificationEmail: notificationSettings.data?.notificationEmail ?? "",
-      ticketCreatedEnabled: notificationSettings.data?.ticketCreatedEnabled ?? true,
-      ticketAssignedEnabled: notificationSettings.data?.ticketAssignedEnabled ?? true
-    });
-  }, [notificationSettings.data, notificationForm]);
+    if (notificationSettings.data) {
+      notificationForm.reset({
+        notificationEmail: notificationSettings.data.notificationEmail ?? "",
+        ticketCreatedEnabled: hasSmtpConfigured ? (notificationSettings.data.ticketCreatedEnabled ?? false) : false,
+        ticketAssignedEnabled: hasSmtpConfigured ? (notificationSettings.data.ticketAssignedEnabled ?? false) : false
+      });
+    }
+  }, [notificationSettings.data, hasSmtpConfigured, notificationForm]);
 
   const notificationRecipients = parseEmailList(notificationForm.watch("notificationEmail"));
   const setNotificationRecipients = (emails: string[]) => {
@@ -73,6 +79,15 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
         className="space-y-4 p-4"
         onSubmit={notificationForm.handleSubmit(async (v) => {
           if (!projectId) return;
+
+          if ((v.ticketCreatedEnabled || v.ticketAssignedEnabled) && !hasSmtpConfigured) {
+            displayToast(
+              "You should first configure Email SMTP Settings. Once you fill this, then only you can enable ticket emails.",
+              "destructive"
+            );
+            return;
+          }
+
           try {
             await api.updateNotificationSettings(projectId, v);
             displayToast("Ticket email settings saved successfully!", "success");
@@ -131,16 +146,44 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
             ))}
           </div>
         )}
-        <CheckboxField 
-          control={notificationForm.control} 
-          name="ticketCreatedEnabled" 
-          label="Send mail when keyword raises a ticket" 
-        />
-        <CheckboxField 
-          control={notificationForm.control} 
-          name="ticketAssignedEnabled" 
-          label="Send mail when ticket status changes" 
-        />
+
+        {!hasSmtpConfigured && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-950">Email SMTP Settings Required</p>
+              <p className="mt-0.5 text-amber-800">
+                You should first configure Email SMTP Settings below. Once you fill this, then only you can enable ticket emails.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div
+          onClick={() => {
+            if (!hasSmtpConfigured) {
+              displayToast(
+                "You should first configure Email SMTP Settings. Once you fill this, then only you can enable ticket emails.",
+                "destructive"
+              );
+            }
+          }}
+          className="space-y-3"
+        >
+          <CheckboxField 
+            control={notificationForm.control} 
+            name="ticketCreatedEnabled" 
+            label="Send mail when keyword raises a ticket" 
+            disabled={!hasSmtpConfigured}
+          />
+          <CheckboxField 
+            control={notificationForm.control} 
+            name="ticketAssignedEnabled" 
+            label="Send mail when ticket status changes" 
+            disabled={!hasSmtpConfigured}
+          />
+        </div>
+
         <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={!projectId || notificationForm.formState.isSubmitting}>
           <Save size={16} /> Save Emails
         </Button>

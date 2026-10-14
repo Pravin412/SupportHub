@@ -85,8 +85,8 @@ export function ProjectSetupDocs() {
           <li>Add only extra recipient emails that are not managed as project admins or project agents.</li>
           <li>If a project access user's email is also in the extra recipient list, their Project Access notification toggle still controls whether they receive ticket emails.</li>
           <li>Enable ticket created, ticket assigned, conversation assigned, or message received notifications as needed.</li>
-          <li>For local testing, use <code>EMAIL_PROVIDER="log"</code> so emails print in backend logs.</li>
-          <li>For production SMTP, configure the SMTP values in the backend environment.</li>
+          <li>Ticket emails require SMTP settings saved on the selected project.</li>
+          <li>For production SMTP, configure the SMTP values in each project's Email SMTP Settings.</li>
         </ol>
       </div>
 

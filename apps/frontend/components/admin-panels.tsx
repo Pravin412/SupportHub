@@ -8,6 +8,7 @@ import Link from "next/link";
 import { IntegrationPanel } from "./admin/integration-panel";
 import { WebhookSettingsPanel } from "./webhook-settings-panel";
 import { TicketEmailsPanel } from "./admin/ticket-emails-panel";
+import { TicketWhatsappPanel } from "./admin/ticket-whatsapp-panel";
 import { ProjectAccessPanel } from "./admin/project-access-panel";
 import { EmailSmtpPanel } from "./email-smtp-panel";
 import { BotConfigPanel } from "./bot-config-panel";
@@ -30,6 +31,8 @@ export function AdminPanels({ project }: { project?: { id: string; name: string;
           <WebhookSettingsPanel projectId={projectId} />
 
           <TicketEmailsPanel projectId={projectId} />
+
+          <TicketWhatsappPanel projectId={projectId} />
 
           <Card className="overflow-hidden border-slate-200">
             <PanelHeader icon={<TicketCheck size={18} />} title="Tickets" />

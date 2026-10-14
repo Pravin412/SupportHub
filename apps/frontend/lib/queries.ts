@@ -21,6 +21,8 @@ export const keys = {
   webhook: settingsKeys.webhook,
   notificationSettings: settingsKeys.notificationSettings,
   emailSettings: settingsKeys.emailSettings,
+  whatsappSettings: settingsKeys.whatsappSettings,
+  whatsappTemplates: settingsKeys.whatsappTemplates,
   botConfig: settingsKeys.botConfig,
   globalSearch: searchKeys.global
 };

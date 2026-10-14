@@ -10,10 +10,12 @@ import { WidgetController } from "./widget.controller";
 import { CoreService } from "./support.service";
 import { MessageRetentionProcessor } from "../../common/queue/message-retention.processor";
 
+import { WhatsappService } from "../../common/whatsapp/whatsapp.service";
+
 @Module({
   imports: [BullModule.registerQueue({ name: "webhook" }, { name: "email" }, { name: "message-retention" })],
   controllers: [CoreController, WidgetController],
-  providers: [CoreService, BotService, PrismaService, CryptoService, QueueService, RealtimeGateway, MessageRetentionProcessor],
-  exports: [CoreService]
+  providers: [CoreService, BotService, PrismaService, CryptoService, QueueService, RealtimeGateway, MessageRetentionProcessor, WhatsappService],
+  exports: [CoreService, WhatsappService]
 })
 export class SupportModule {}

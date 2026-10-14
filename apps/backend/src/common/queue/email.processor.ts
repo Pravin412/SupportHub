@@ -54,61 +54,34 @@ export class EmailProcessor extends WorkerHost {
   }
 
   private async send(data: EmailJob) {
-    const provider = (process.env.EMAIL_PROVIDER ?? "log").toLowerCase();
-    if (provider === "smtp") return this.sendWithSmtp(data);
-
-    this.logger.log(`[email:log] to=${data.to} subject="${data.subject}" text="${data.text ?? ""}"`);
+    return this.sendWithSmtp(data);
   }
 
   private async sendWithSmtp(data: EmailJob) {
     const bcc = process.env.BCC_EMAIL;
     
-    // First try project-specific SMTP settings
+    // Only project-specific SMTP settings are used. No default SMTP fallback.
     const projectSmtp = await this.prisma.projectEmailSettings.findUnique({
       where: { projectId: data.projectId }
     });
 
-    if (projectSmtp && projectSmtp.enabled) {
-      const smtpPassword = this.crypto.decryptSecret(projectSmtp.smtpPassword);
-      const isPort465 = projectSmtp.smtpPort === 465;
-      const secure = isPort465 ? true : projectSmtp.smtpSecure;
-      const transporter = nodemailer.createTransport({
-        host: projectSmtp.smtpHost,
-        port: projectSmtp.smtpPort,
-        secure,
-        auth: { user: projectSmtp.smtpUser, pass: smtpPassword }
-      });
-
-      await transporter.sendMail({
-        from: projectSmtp.fromName ? `"${projectSmtp.fromName}" <${projectSmtp.smtpUser}>` : projectSmtp.smtpUser,
-        to: data.to,
-        bcc,
-        subject: data.subject,
-        text: data.text ?? data.subject
-      });
+    if (!projectSmtp || !projectSmtp.enabled || !projectSmtp.smtpHost || !projectSmtp.smtpUser || !projectSmtp.smtpPassword) {
+      this.logger.warn(`[email] Skipped sending email: Project ${data.projectId} has no custom SMTP settings configured.`);
       return;
     }
 
-    // Fallback to global SMTP settings
-    const host = process.env.SMTP_HOST;
-    const port = Number(process.env.SMTP_PORT ?? 587);
-    const secure = (process.env.SMTP_SECURE ?? String(port === 465)).toLowerCase() === "true";
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASSWORD;
-
-    if (!host || !user || !pass) {
-      throw new Error("SMTP_HOST, SMTP_USER, and SMTP_PASSWORD are required for EMAIL_PROVIDER=smtp");
-    }
-
+    const smtpPassword = this.crypto.decryptSecret(projectSmtp.smtpPassword);
+    const isPort465 = projectSmtp.smtpPort === 465;
+    const secure = isPort465 ? true : projectSmtp.smtpSecure;
     const transporter = nodemailer.createTransport({
-      host,
-      port,
+      host: projectSmtp.smtpHost,
+      port: projectSmtp.smtpPort,
       secure,
-      auth: { user, pass }
+      auth: { user: projectSmtp.smtpUser, pass: smtpPassword }
     });
 
     await transporter.sendMail({
-      from: user,
+      from: projectSmtp.fromName ? `"${projectSmtp.fromName}" <${projectSmtp.smtpUser}>` : projectSmtp.smtpUser,
       to: data.to,
       bcc,
       subject: data.subject,

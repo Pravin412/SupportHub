@@ -88,7 +88,7 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
       </div>
       <form className="space-y-4 p-4" onSubmit={form.handleSubmit(onSubmit)} autoComplete="off">
         <p className="text-sm text-muted">
-          Configure custom SMTP to send emails for this project instead of the default global email.
+          Configure SMTP for this project. Ticket emails are sent only after these settings are saved for the selected project.
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
