@@ -96,7 +96,7 @@ export function InboxChatView({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center justify-between border-b border-border bg-white/95 px-4 shadow-sm backdrop-blur-sm shrink-0">
+      <div className="flex min-h-14 items-center justify-between border-b border-border bg-white/95 px-4 py-2 shadow-sm backdrop-blur-sm shrink-0">
         <div className="flex flex-1 min-w-0 items-center gap-3">
           <button 
             type="button"
@@ -110,7 +110,7 @@ export function InboxChatView({
             <User size={16} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <strong className="truncate text-xs font-bold text-secondary leading-tight">
                 {activeConversation?.contactName ?? "Customer"}
               </strong>
@@ -120,7 +120,7 @@ export function InboxChatView({
                 </span>
               )}
               {activeConversation?.externalUserId && (
-                <span className="hidden md:inline-block shrink-0 max-w-[120px] truncate rounded bg-teal-50 px-1.5 py-0.5 font-mono text-[10px] text-teal-700" title={activeConversation.externalUserId}>
+                <span className="max-w-full break-all rounded bg-teal-50 px-1.5 py-0.5 font-mono text-[10px] text-teal-700" title={activeConversation.externalUserId}>
                   ID: {activeConversation.externalUserId}
                 </span>
               )}

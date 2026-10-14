@@ -141,7 +141,7 @@ export function InboxConversationsList({
                         </span>
                       )}
                       {c.externalUserId && !c.contactPhone && (
-                        <span className="truncate text-slate-500 font-mono text-[10px]">
+                        <span className="max-w-full break-all text-slate-500 font-mono text-[10px]">
                           ID: {c.externalUserId}
                         </span>
                       )}
