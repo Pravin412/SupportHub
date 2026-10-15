@@ -224,7 +224,7 @@ export function InboxChatView({
           </Button>
           <Button
             type="submit"
-            className="h-9 w-9 shrink-0 rounded-full border-0 bg-[#00594f] px-0 text-white shadow-sm hover:bg-[#004a42] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 w-9 shrink-0 rounded-full border-0 bg-brand px-0 text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!draft.trim() || isSending}
           >
             <Send size={16} />

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock3, Loader2, Search, TicketCheck, User } from "lucide-react";
-import { Badge, Button, Input } from "@support-hub/ui";
+import { Badge, Button, Input, Tabs, TabsList, TabsTrigger } from "@support-hub/ui";
 import { api } from "../lib/api";
 import { keys, useTickets } from "../lib/queries";
 import { useInboxSelectionStore } from "../lib/inbox-selection-store";
@@ -82,32 +82,18 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
           className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-xs shadow-none placeholder:text-slate-400"
         />
         </div>
-        <div className="flex gap-1 overflow-x-auto border-b border-slate-200">
-          {ticketTabs.map((tab) => {
-            const active = activeStatus === tab.value;
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                className={`inline-flex h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-xs font-medium transition-colors ${
-                  active
-                    ? "border-blue-500 text-blue-700"
-                    : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                }`}
-                onClick={() => setActiveStatus(tab.value)}
-              >
+        <Tabs value={activeStatus} onValueChange={(value) => setActiveStatus(value as TicketStatusFilterValue)}>
+          <TabsList className="w-full gap-1 overflow-x-auto border-slate-200">
+            {ticketTabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="group h-11 shrink-0 px-3 text-xs">
                 {tab.label}
-                <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                    active ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
-                  }`}
-                >
+                <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 group-data-[state=active]:bg-blue-100 group-data-[state=active]:text-blue-700">
                   {countByStatus(tab.value)}
                 </span>
-              </button>
-            );
-          })}
-        </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <div className="min-w-[650px]">
