@@ -1,5 +1,7 @@
 "use client";
 
+import { UserRole } from "@support-hub/shared-types";
+
 import Link from "next/link";
 import { Folder, Globe2, LayoutGrid, List, Plus, Settings, Ticket, Trash2, Users } from "lucide-react";
 import { Badge, Button, Card, Input } from "@support-hub/ui";
@@ -11,15 +13,11 @@ import { useInboxSelectionStore } from "../lib/inbox-selection-store";
 import { displayToast } from "../lib/display-toast";
 import { useState } from "react";
 import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
+import { FieldError } from "./admin/project-access-shared";
 
 const projectSchema = z.object({
   name: z.string().min(2, "Project name must be at least 2 characters.")
 });
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <p className="mt-1 text-xs font-medium text-error-muted">{message}</p>;
-}
 
 export function ProjectsView() {
   const projects = useProjects(true);
@@ -27,7 +25,8 @@ export function ProjectsView() {
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
   const me = useMe();
-  const { setProject, selectedProjectId } = useInboxSelectionStore();
+  const setProject = useInboxSelectionStore((state) => state.setProject);
+  const selectedProjectId = useInboxSelectionStore((state) => state.selectedProjectId);
 
   const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -51,9 +50,9 @@ export function ProjectsView() {
   const totalProjects = summary.data?.projectsCount ?? projects.data?.length ?? 0;
   const openTickets = summary.data?.openTicketsCount ?? 0;
   const teamMembers = summary.data?.agentsCount ?? 0;
-  const isGlobalAdmin = me.data?.role === "ADMIN";
+  const isGlobalAdmin = me.data?.role === UserRole.ADMIN;
   const canManageProject = (projectId: string) =>
-    isGlobalAdmin || me.data?.memberships.some((membership) => membership.projectId === projectId && membership.role === "PROJECT_ADMIN");
+    isGlobalAdmin || me.data?.memberships.some((membership) => membership.projectId === projectId && membership.role === UserRole.PROJECT_ADMIN);
 
   return (
     <div className="mx-auto w-full max-w-5xl xl:max-w-none p-4 md:p-6 lg:p-8">

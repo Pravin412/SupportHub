@@ -1,7 +1,9 @@
 "use client";
 
+import { UserRole } from "@support-hub/shared-types";
+
 import { useState } from "react";
-import { Edit2, Eye, EyeOff, Save, Users, X } from "lucide-react";
+import { ChevronDown, Edit2, Eye, EyeOff, Save, UserPlus, Users, X } from "lucide-react";
 import { Badge, Button, Card, Input, Select } from "@support-hub/ui";
 import type { ProjectAccessMember } from "../../lib/api/agents";
 import { api } from "../../lib/api";
@@ -20,6 +22,8 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
   const [resetPasswords, setResetPasswords] = useState<Record<string, string>>({});
   const [showResetPasswords, setShowResetPasswords] = useState<Record<string, boolean>>({});
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
+  const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
+  const [showAddAccess, setShowAddAccess] = useState(false);
   const [agentEdits, setAgentEdits] = useState<Record<string, AgentEdit>>({});
 
   const updateAgentEdit = (
@@ -33,6 +37,8 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
         email: current[agent.id]?.email ?? agent.user.email,
         role: current[agent.id]?.role ?? (agent.role as AgentRole),
         emailNotificationsEnabled: current[agent.id]?.emailNotificationsEnabled ?? agent.emailNotificationsEnabled,
+        mobileNumber: current[agent.id]?.mobileNumber ?? agent.mobileNumber ?? "",
+        whatsappNotificationsEnabled: current[agent.id]?.whatsappNotificationsEnabled ?? agent.whatsappNotificationsEnabled,
         ...values
       }
     }));
@@ -41,12 +47,36 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
   return (
     <Card className="overflow-hidden border-slate-200">
       <PanelHeader icon={<Users size={18} />} title="Project Access" />
-      <ProjectAccessForm projectId={projectId} />
+      <div className="p-4">
+        <Button type="button" className="gap-2 bg-brand text-white hover:bg-brand/90"
+          aria-expanded={showAddAccess} aria-controls="add-project-access"
+          onClick={() => setShowAddAccess((current) => !current)}>
+          {showAddAccess ? <X size={16} /> : <UserPlus size={16} />}
+          {showAddAccess ? "Cancel" : "Add project access"}
+        </Button>
+      </div>
+      {showAddAccess && <div id="add-project-access" className="border-t">
+        <ProjectAccessForm projectId={projectId} onSuccess={() => setShowAddAccess(false)} />
+      </div>}
       <div className="space-y-2 border-t bg-slate-50 p-4">
-        {agents.data?.filter(agent => agent.role !== "ADMIN").map((agent) => (
-          <div key={agent.id} className="rounded-md border bg-white px-3 py-2 text-sm">
+        {agents.data?.filter(agent => agent.role !== UserRole.ADMIN).map((agent) => (
+          <div key={agent.id} className="overflow-hidden rounded-md border bg-white text-sm">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+              aria-expanded={expandedAgentId === agent.id}
+              aria-controls={`project-access-${agent.id}`}
+              onClick={() => setExpandedAgentId((current) => current === agent.id ? null : agent.id)}
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-slate-900">{agent.user.name}</span>
+                <span className="block truncate text-xs text-muted">{agent.user.email}</span>
+              </span>
+              <ChevronDown size={16} className={`shrink-0 text-slate-500 transition-transform ${expandedAgentId === agent.id ? "rotate-180" : ""}`} />
+            </button>
+            <div id={`project-access-${agent.id}`} hidden={expandedAgentId !== agent.id} className="border-t px-3 py-3">
             {editingAgentId === agent.id ? (
-              <div className="grid gap-2 md:grid-cols-[1fr_1fr_160px]">
+              <div className="grid min-w-0 gap-2 sm:grid-cols-2">
                 <Input
                   className="h-9"
                   placeholder="Name"
@@ -59,26 +89,48 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                   placeholder="Email"
                   autoComplete="new-password"
                   value={agentEdits[agent.id]?.email ?? agent.user.email}
-                  onChange={(event) => updateAgentEdit(agent, { email: event.target.value })}
+                  onChange={(event) => {
+                    const email = event.target.value;
+                    const valid = agentSchema.shape.email.safeParse(email).success;
+                    updateAgentEdit(agent, { email, ...(!valid ? { emailNotificationsEnabled: false } : {}) });
+                  }}
                 />
+                <label className="block space-y-1 text-xs text-muted">
+                  <span>Mobile number (optional)</span>
+                  <Input type="tel" className="h-9" placeholder="+91 9876543210"
+                    value={agentEdits[agent.id]?.mobileNumber ?? agent.mobileNumber ?? ""}
+                    onChange={(event) => {
+                      const mobileNumber = event.target.value;
+                      const valid = /^[1-9]\d{8,14}$/.test(mobileNumber.replace(/[\s()+-]/g, ""));
+                      updateAgentEdit(agent, { mobileNumber, ...(!valid ? { whatsappNotificationsEnabled: false } : {}) });
+                    }} />
+                </label>
                 <Select
                   className="h-9"
                   value={agentEdits[agent.id]?.role ?? agent.role}
                   onChange={(event) => updateAgentEdit(agent, { role: event.target.value as "PROJECT_ADMIN" | "PROJECT_AGENT" })}
                 >
-                  {me.data?.role === "ADMIN" && <option value="PROJECT_ADMIN">Project Admin</option>}
+                  {me.data?.role === UserRole.ADMIN && <option value="PROJECT_ADMIN">Project Admin</option>}
                   <option value="PROJECT_AGENT">Project Agent</option>
                 </Select>
                 <label className="flex min-h-9 items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-slate-300 accent-blue-700"
+                    disabled={!agentSchema.shape.email.safeParse(agentEdits[agent.id]?.email ?? agent.user.email).success}
                     checked={agentEdits[agent.id]?.emailNotificationsEnabled ?? agent.emailNotificationsEnabled}
                     onChange={(event) => updateAgentEdit(agent, { emailNotificationsEnabled: event.target.checked })}
                   />
                   <span>Ticket emails</span>
                 </label>
-                <div className="flex gap-2 md:col-span-3">
+                <label className="flex min-h-9 items-center gap-2 text-sm">
+                  <input type="checkbox" className="h-4 w-4 accent-blue-700"
+                    disabled={!/^[1-9]\d{8,14}$/.test((agentEdits[agent.id]?.mobileNumber ?? agent.mobileNumber ?? "").replace(/[\s()+-]/g, ""))}
+                    checked={agentEdits[agent.id]?.whatsappNotificationsEnabled ?? agent.whatsappNotificationsEnabled}
+                    onChange={(event) => updateAgentEdit(agent, { whatsappNotificationsEnabled: event.target.checked })} />
+                  <span>Ticket WhatsApp notifications</span>
+                </label>
+                <div className="flex gap-2 sm:col-span-2">
                   <Button
                     type="button"
                     className="h-9 gap-2 bg-brand px-3 text-white hover:bg-brand/90"
@@ -89,7 +141,9 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                         name: agent.user.name,
                         email: agent.user.email,
                         role: agent.role as AgentRole,
-                        emailNotificationsEnabled: agent.emailNotificationsEnabled
+                        mobileNumber: agent.mobileNumber ?? "",
+                          whatsappNotificationsEnabled: agent.whatsappNotificationsEnabled,
+                          emailNotificationsEnabled: agent.emailNotificationsEnabled
                       };
                       const parsedValues = agentSchema.omit({ password: true }).safeParse(values);
                       if (!parsedValues.success) {
@@ -121,16 +175,14 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="font-medium text-slate-900">{agent.user.name}</div>
-                  <div className="text-xs text-muted">{agent.user.email}</div>
-                </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {agent.mobileNumber && <span className="text-xs text-muted">{agent.mobileNumber}</span>}
+                  <Badge className="border-slate-200 bg-slate-50 text-slate-700">{agent.whatsappNotificationsEnabled ? "WhatsApp on" : "WhatsApp off"}</Badge>
                   <Badge className={agent.emailNotificationsEnabled ? "border-blue-100 bg-blue-50 text-blue-800" : "border-slate-200 bg-slate-50 text-slate-500"}>
                     {agent.emailNotificationsEnabled ? "Ticket emails on" : "Ticket emails off"}
                   </Badge>
                   <Badge className="border-slate-200 bg-slate-50 text-slate-700">
-                    {agent.role === "PROJECT_ADMIN" ? "Project Admin" : "Project Agent"}
+                    {agent.role === UserRole.PROJECT_ADMIN ? "Project Admin" : "Project Agent"}
                   </Badge>
                   <Button
                     type="button"
@@ -143,6 +195,8 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                           name: agent.user.name,
                           email: agent.user.email,
                           role: agent.role as AgentRole,
+                          mobileNumber: agent.mobileNumber ?? "",
+                          whatsappNotificationsEnabled: agent.whatsappNotificationsEnabled,
                           emailNotificationsEnabled: agent.emailNotificationsEnabled
                         }
                       }));
@@ -210,6 +264,7 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
               >
                 Remove
               </Button>
+            </div>
             </div>
           </div>
         ))}

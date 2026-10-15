@@ -6,3 +6,4 @@ export { Select } from "./components/select";
 export { Textarea } from "./components/textarea";
 export { cn } from "./lib/utils";
 export { Checkbox } from "./components/checkbox";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";

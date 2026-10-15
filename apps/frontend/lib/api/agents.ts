@@ -4,6 +4,8 @@ export type ProjectAccessMember = {
   id: string;
   role: string;
   emailNotificationsEnabled: boolean;
+  mobileNumber: string | null;
+  whatsappNotificationsEnabled: boolean;
   user: { id: string; name: string; email: string };
 };
 
@@ -22,16 +24,18 @@ export const agentsApi = {
     email: string,
     password: string | undefined,
     role: "PROJECT_ADMIN" | "PROJECT_AGENT",
-    emailNotificationsEnabled: boolean
+    emailNotificationsEnabled: boolean,
+    mobileNumber?: string,
+    whatsappNotificationsEnabled?: boolean
   ) =>
     request(`/projects/${projectId}/agents`, {
       method: "POST",
-      body: JSON.stringify({ name, email, password, role, emailNotificationsEnabled })
+      body: JSON.stringify({ name, email, password, role, emailNotificationsEnabled, mobileNumber, whatsappNotificationsEnabled })
     }),
   updateAgent: (
     projectId: string,
     memberId: string,
-    data: { name: string; email: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean }
+    data: { name: string; email: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean; mobileNumber?: string; whatsappNotificationsEnabled?: boolean }
   ) =>
     request<ProjectAccessMember>(`/projects/${projectId}/agents/${memberId}`, {
       method: "PUT",

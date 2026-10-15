@@ -3,6 +3,8 @@ import type { ProjectDto } from "../types";
 
 export const projectsApi = {
   projects: () => request<ProjectDto[]>("/projects"),
+  renameProject: (projectId: string, name: string) =>
+    request<ProjectDto>(`/projects/${projectId}`, { method: "PUT", body: JSON.stringify({ name }) }),
   createProject: (name: string, key?: string) =>
     request<ProjectDto & { integrationKey: string; integrationSecret: string }>("/projects", {
       method: "POST",

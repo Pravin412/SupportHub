@@ -1,3 +1,4 @@
+import type { Role } from "@support-hub/shared-types";
 import { clearAccessToken, refreshAccessToken, request, setAccessToken } from "../api-client";
 
 export const authApi = {
@@ -21,7 +22,7 @@ export const authApi = {
       id: string;
       email: string;
       name: string;
-      role: "ADMIN" | "PROJECT_ADMIN" | "PROJECT_AGENT";
-      memberships: Array<{ projectId: string; role: "ADMIN" | "PROJECT_ADMIN" | "PROJECT_AGENT" }>;
+      role: Role;
+      memberships: Array<{ projectId: string; role: Role }>;
     }>("/auth/me")
 };

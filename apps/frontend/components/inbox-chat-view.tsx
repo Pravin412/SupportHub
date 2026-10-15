@@ -28,7 +28,7 @@ export function InboxChatView({
   onSend: () => void;
   isSending: boolean;
 }) {
-  const inboxSelection = useInboxSelectionStore();
+  const setConversation = useInboxSelectionStore((state) => state.setConversation);
 
   const activeId = activeConversation?.id;
   const updateStatus = useUpdateConversationStatus();
@@ -40,7 +40,7 @@ export function InboxChatView({
     async function confirmDeleteContact() {
       await deleteContact.mutateAsync({ projectId, contactId });
       displayToast("Contact deleted.", "success");
-      inboxSelection.setConversation(undefined);
+      setConversation(undefined);
     }
     openConfirmation({ title: "Delete contact", message: "Are you sure you want to permanently delete this contact and all their conversations? This cannot be undone.", confirmLabel: "Delete Contact", onConfirm: confirmDeleteContact });
   }
@@ -101,7 +101,7 @@ export function InboxChatView({
           <button 
             type="button"
             className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-600 hover:bg-slate-200" 
-            onClick={() => inboxSelection.setConversation("")}
+            onClick={() => setConversation("")}
             title="Back to inbox"
           >
             <ArrowLeft size={16} />

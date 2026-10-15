@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
 import { keys, useBotConfig } from "../lib/queries";
+import { FieldError } from "./admin/project-access-shared";
 import { displayToast } from "../lib/display-toast";
 
 const botSchema = z.object({
@@ -161,8 +162,4 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
       </form>
     </Card>
   );
-}
-
-function FieldError({ message }: { message?: string }) {
-  return message ? <p className="mt-1 text-xs font-medium text-error-muted">{message}</p> : null;
 }

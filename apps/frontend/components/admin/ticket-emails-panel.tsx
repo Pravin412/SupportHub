@@ -90,6 +90,7 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
 
           try {
             await api.updateNotificationSettings(projectId, v);
+            await notificationSettings.refetch();
             displayToast("Ticket email settings saved successfully!", "success");
           } catch (err) {
             displayToast(err instanceof Error ? err.message : "Failed to save ticket email settings", "destructive");

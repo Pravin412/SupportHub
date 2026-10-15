@@ -149,6 +149,8 @@ model ProjectMember {
   userId                    String
   role                      Role    @default(PROJECT_AGENT)
   emailNotificationsEnabled Boolean @default(false)
+  mobileNumber              String?
+  whatsappNotificationsEnabled Boolean @default(false)
   project                   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user                      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 

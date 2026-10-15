@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 import { BookOpen, Settings, Smartphone, Terminal, Users, Webhook, KeyRound } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@support-hub/ui";
 import {
   CodeBlock,
-  TabButton,
   ProjectSetupDocs,
   NextjsDocs,
   FlutterDocs,
@@ -12,8 +12,19 @@ import {
   ApiDocs
 } from "./documentation-tabs";
 
+type DocTab = "setup" | "nextjs" | "flutter" | "ionic" | "webhook" | "api";
+
+const docTabs: { id: DocTab; label: string; icon: typeof Settings; Content: () => React.JSX.Element }[] = [
+  { id: "setup", label: "Project Setup", icon: Settings, Content: ProjectSetupDocs },
+  { id: "nextjs", label: "Next.js / React", icon: Terminal, Content: NextjsDocs },
+  { id: "flutter", label: "Flutter / Mobile", icon: Smartphone, Content: FlutterDocs },
+  { id: "ionic", label: "Ionic / Capacitor", icon: Smartphone, Content: IonicDocs },
+  { id: "webhook", label: "Webhooks & Automation", icon: Webhook, Content: WebhookDocs },
+  { id: "api", label: "Bot Reply REST API", icon: KeyRound, Content: ApiDocs }
+];
+
 export function DocumentationView() {
-  const [activeTab, setActiveTab] = useState<"setup" | "nextjs" | "flutter" | "ionic" | "webhook" | "api">("setup");
+  const [activeTab, setActiveTab] = useState<DocTab>("setup");
 
   return (
     <div className="w-full max-w-5xl xl:max-w-none mx-auto p-6 space-y-6">
@@ -27,23 +38,27 @@ export function DocumentationView() {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-border bg-white/60 overflow-x-auto p-1">
-        <TabButton active={activeTab === "setup"} onClick={() => setActiveTab("setup")} icon={<Settings size={16} />}>Project Setup</TabButton>
-        <TabButton active={activeTab === "nextjs"} onClick={() => setActiveTab("nextjs")} icon={<Terminal size={16} />}>Next.js / React</TabButton>
-        <TabButton active={activeTab === "flutter"} onClick={() => setActiveTab("flutter")} icon={<Smartphone size={16} />}>Flutter / Mobile</TabButton>
-        <TabButton active={activeTab === "ionic"} onClick={() => setActiveTab("ionic")} icon={<Smartphone size={16} />}>Ionic / Capacitor</TabButton>
-        <TabButton active={activeTab === "webhook"} onClick={() => setActiveTab("webhook")} icon={<Webhook size={16} />}>Webhooks & Automation</TabButton>
-        <TabButton active={activeTab === "api"} onClick={() => setActiveTab("api")} icon={<KeyRound size={16} />}>Bot Reply REST API</TabButton>
-      </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DocTab)}>
+        <TabsList className="w-full overflow-x-auto bg-white/60 p-1 pb-0">
+          {docTabs.map(({ id, label, icon: Icon }) => (
+            <TabsTrigger
+              key={id}
+              value={id}
+            >
+              <Icon size={16} />
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-        {activeTab === "setup" && <ProjectSetupDocs />}
-        {activeTab === "nextjs" && <NextjsDocs />}
-        {activeTab === "flutter" && <FlutterDocs />}
-        {activeTab === "ionic" && <IonicDocs />}
-        {activeTab === "webhook" && <WebhookDocs />}
-        {activeTab === "api" && <ApiDocs />}
-      </div>
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          {docTabs.map(({ id, Content }) => (
+            <TabsContent key={id} value={id} className="m-0">
+              <Content />
+            </TabsContent>
+          ))}
+        </div>
+      </Tabs>
       
       <div className="mt-8">
         <div className="flex items-center gap-2 mb-4">

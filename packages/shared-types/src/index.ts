@@ -1,4 +1,23 @@
-export type Role = "ADMIN" | "PROJECT_ADMIN" | "PROJECT_AGENT";
+export enum UserRole {
+  ADMIN = "ADMIN",
+  PROJECT_ADMIN = "PROJECT_ADMIN",
+  PROJECT_AGENT = "PROJECT_AGENT"
+}
+
+export type Role = `${UserRole}`;
+
+export const rolePermissions: Record<Role, { manageAllProjectSettings: boolean; manageProjectSettings: boolean }> = {
+  [UserRole.ADMIN]: { manageAllProjectSettings: true, manageProjectSettings: true },
+  [UserRole.PROJECT_ADMIN]: { manageAllProjectSettings: false, manageProjectSettings: true },
+  [UserRole.PROJECT_AGENT]: { manageAllProjectSettings: false, manageProjectSettings: false }
+};
+
+export function canManageProjectSettings(globalRole?: Role, projectRole?: Role): boolean {
+  return Boolean(
+    (globalRole && rolePermissions[globalRole]?.manageAllProjectSettings) ||
+    (projectRole && rolePermissions[projectRole]?.manageProjectSettings)
+  );
+}
 export type ConversationStatus = "OPEN" | "PENDING" | "SNOOZED" | "RESOLVED";
 export type AutomationMode = "AUTOMATED" | "HUMAN" | "AI";
 export type SenderType = "CUSTOMER" | "AGENT" | "BOT" | "SYSTEM";

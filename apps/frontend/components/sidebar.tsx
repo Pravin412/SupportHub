@@ -9,7 +9,7 @@ import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 
 export function Sidebar() {
   const sidebar = useSidebarStore();
-  const inboxSelection = useInboxSelectionStore();
+  const resetInboxSelection = useInboxSelectionStore((state) => state.resetInboxSelection);
   const pathname = usePathname();
   const router = useRouter();
   const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
@@ -66,7 +66,7 @@ export function Sidebar() {
             href="/inbox"
             icon={<Inbox size={18} />}
             onClick={() => {
-              inboxSelection.resetInboxSelection();
+              resetInboxSelection();
               sidebar.setSidebar(false);
             }}
           >

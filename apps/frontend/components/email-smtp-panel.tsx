@@ -1,4 +1,6 @@
 "use client";
+
+import { canManageProjectSettings } from "@support-hub/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Save, Send, Eye, EyeOff } from "lucide-react";
 import { Button, Card, Input } from "@support-hub/ui";
@@ -52,13 +54,14 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
   }, [settings.data, form]);
 
   const projectRole = me.data?.memberships.find((membership) => membership.projectId === projectId)?.role;
-  const canEdit = me.data?.role === "ADMIN" || projectRole === "PROJECT_ADMIN";
+  const canEdit = canManageProjectSettings(me.data?.role, projectRole);
   if (!canEdit) return null;
 
   const onSubmit = async (v: z.infer<typeof smtpSchema>) => {
     if (!projectId) return;
     try {
       await api.updateEmailSettings(projectId, v);
+      await settings.refetch();
       displayToast("SMTP settings saved successfully!", "success");
     } catch (err) {
       displayToast(err instanceof Error ? err.message : "Failed to save SMTP settings", "destructive");

@@ -191,6 +191,19 @@ export class CoreService {
     };
   }
 
+  async renameProject(userId: string, projectId: string, name: string) {
+    await this.assertProjectAdmin(userId, projectId);
+    const cleanName = name.trim();
+    if (cleanName.length < 2) throw new BadRequestException("Project name must contain at least 2 characters");
+    const project = await this.prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
+    if (!project) throw new NotFoundException("Project not found");
+    return this.prisma.project.update({
+      where: { id: projectId },
+      data: { name: cleanName },
+      select: { id: true, name: true, key: true, widgetChannel: { select: { id: true, channelId: true, enabled: true } } }
+    });
+  }
+
   async createProject(userId: string, data: { name: string; key?: string }) {
     await this.assertGlobalAdmin(userId);
     const secret = this.crypto.randomToken();
@@ -366,7 +379,7 @@ export class CoreService {
     await this.assertMember(userId, projectId);
     return this.prisma.projectMember.findMany({
       where: { projectId },
-      select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
+      select: { id: true, role: true, emailNotificationsEnabled: true, mobileNumber: true, whatsappNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
     });
   }
 
@@ -381,7 +394,15 @@ export class CoreService {
     return user ? { exists: true, user } : { exists: false };
   }
 
-  async createAgent(userId: string, projectId: string, data: { email: string; name: string; password?: string; role?: Role; emailNotificationsEnabled?: boolean }) {
+  private agentContact(data: { mobileNumber?: string; whatsappNotificationsEnabled?: boolean }) {
+    const raw = data.mobileNumber?.trim() || "";
+    const mobileNumber = raw.replace(/[\s()+-]/g, "");
+    if (raw && !/^[1-9]\d{8,14}$/.test(mobileNumber)) throw new BadRequestException("Enter a valid mobile number including country code");
+    if (data.whatsappNotificationsEnabled && !mobileNumber) throw new BadRequestException("A mobile number is required for WhatsApp notifications");
+    return { mobileNumber: mobileNumber || null, whatsappNotificationsEnabled: !!mobileNumber && data.whatsappNotificationsEnabled === true };
+  }
+
+  async createAgent(userId: string, projectId: string, data: { email: string; name: string; password?: string; role?: Role; emailNotificationsEnabled?: boolean; mobileNumber?: string; whatsappNotificationsEnabled?: boolean }) {
     await this.assertProjectAdmin(userId, projectId);
     const currentUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     const normalizedEmail = data.email.trim().toLowerCase();
@@ -389,6 +410,7 @@ export class CoreService {
     if (currentUser?.role !== "ADMIN" && requestedRole === "PROJECT_ADMIN") {
       throw new ForbiddenException("Only admin can add project admins");
     }
+    const contact = this.agentContact(data);
     const existingUser = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!existingUser && !data.password) throw new BadRequestException("Password is required for a new user");
 
@@ -407,9 +429,9 @@ export class CoreService {
         });
     return this.prisma.projectMember.upsert({
       where: { projectId_userId: { projectId, userId: user.id } },
-      update: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false },
-      create: { projectId, userId: user.id, role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false },
-      select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
+      update: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false, ...contact },
+      create: { projectId, userId: user.id, role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled ?? false, ...contact },
+      select: { id: true, role: true, emailNotificationsEnabled: true, mobileNumber: true, whatsappNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
     });
   }
 
@@ -431,7 +453,7 @@ export class CoreService {
     return { ok: true };
   }
 
-  async updateAgent(userId: string, projectId: string, memberId: string, data: { email: string; name: string; role: Role; emailNotificationsEnabled: boolean }) {
+  async updateAgent(userId: string, projectId: string, memberId: string, data: { email: string; name: string; role: Role; emailNotificationsEnabled: boolean; mobileNumber?: string; whatsappNotificationsEnabled?: boolean }) {
     await this.assertProjectAdmin(userId, projectId);
     const currentUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     const member = await this.prisma.projectMember.findUnique({
@@ -455,6 +477,7 @@ export class CoreService {
       throw new BadRequestException("Email is already used by another user");
     }
 
+    const contact = this.agentContact(data);
     await this.prisma.user.update({
       where: { id: member.userId },
       data: { name: data.name.trim(), email: normalizedEmail }
@@ -462,8 +485,8 @@ export class CoreService {
 
     return this.prisma.projectMember.update({
       where: { id: memberId },
-      data: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled },
-      select: { id: true, role: true, emailNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
+      data: { role: requestedRole, emailNotificationsEnabled: data.emailNotificationsEnabled, ...contact },
+      select: { id: true, role: true, emailNotificationsEnabled: true, mobileNumber: true, whatsappNotificationsEnabled: true, user: { select: { id: true, name: true, email: true } } }
     });
   }
 

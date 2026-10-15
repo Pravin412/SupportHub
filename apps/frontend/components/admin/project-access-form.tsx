@@ -1,5 +1,7 @@
 "use client";
 
+import { UserRole } from "@support-hub/shared-types";
+
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +14,7 @@ import { displayToast } from "@/lib/display-toast";
 import { CheckboxField } from "../checkbox-field";
 import { agentSchema, FieldError } from "./project-access-shared";
 
-export function ProjectAccessForm({ projectId }: { projectId?: string }) {
+export function ProjectAccessForm({ projectId, onSuccess }: { projectId?: string; onSuccess?: () => void }) {
   const createAgent = useCreateAgent(projectId);
   const me = useMe();
 
@@ -22,9 +24,18 @@ export function ProjectAccessForm({ projectId }: { projectId?: string }) {
 
   const agentForm = useForm({
     resolver: zodResolver(agentSchema),
-    defaultValues: { name: "", email: "", password: "", role: "PROJECT_AGENT" as const, emailNotificationsEnabled: false }
+    defaultValues: { name: "", email: "", password: "", role: "PROJECT_AGENT" as const, emailNotificationsEnabled: false, mobileNumber: "", whatsappNotificationsEnabled: false }
   });
+  const mobileNumber = agentForm.watch("mobileNumber");
+  const validMobile = /^[1-9]\d{8,14}$/.test(mobileNumber.replace(/[\s()+-]/g, ""));
+  useEffect(() => {
+    if (!validMobile) agentForm.setValue("whatsappNotificationsEnabled", false);
+  }, [agentForm, validMobile]);
   const watchedAgentEmail = agentForm.watch("email");
+  const validEmail = agentSchema.shape.email.safeParse(watchedAgentEmail).success;
+  useEffect(() => {
+    if (!validEmail) agentForm.setValue("emailNotificationsEnabled", false);
+  }, [agentForm, validEmail]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -74,8 +85,9 @@ export function ProjectAccessForm({ projectId }: { projectId?: string }) {
           {
             onSuccess: () => {
               displayToast("Project access added successfully!", "success");
-              agentForm.reset({ name: "", email: "", password: "", role: "PROJECT_AGENT", emailNotificationsEnabled: false });
+              agentForm.reset({ name: "", email: "", password: "", role: "PROJECT_AGENT", emailNotificationsEnabled: false, mobileNumber: "", whatsappNotificationsEnabled: false });
               setAgentLookup(null);
+              onSuccess?.();
             },
             onError: (err: any) => displayToast(err.message || "Failed to add project access", "destructive")
           }
@@ -95,6 +107,12 @@ export function ProjectAccessForm({ projectId }: { projectId?: string }) {
           {agentEmailExists && <p className="mt-1 text-xs font-medium text-blue-700">Existing user. Password is already set.</p>}
           <FieldError message={agentForm.formState.errors.email?.message} />
         </label>
+        <label className="block">
+          <span className="text-sm font-medium">Mobile number (optional)</span>
+          <Input className="mt-1" type="tel" placeholder="+91 9876543210" {...agentForm.register("mobileNumber")} />
+          <p className="mt-1 text-xs text-muted">Include the country code, e.g. +91 9876543210. To receive WhatsApp alerts, also check the WhatsApp notifications box below.</p>
+          <FieldError message={agentForm.formState.errors.mobileNumber?.message} />
+        </label>
         {!agentEmailExists && (
           <label className="block">
             <span className="text-sm font-medium">Password</span>
@@ -110,13 +128,14 @@ export function ProjectAccessForm({ projectId }: { projectId?: string }) {
         <label className="block">
           <span className="text-sm font-medium">Role</span>
           <Select className="mt-1" {...agentForm.register("role")}>
-            {me.data?.role === "ADMIN" && <option value="PROJECT_ADMIN">Project Admin</option>}
+            {me.data?.role === UserRole.ADMIN && <option value="PROJECT_ADMIN">Project Admin</option>}
             <option value="PROJECT_AGENT">Project Agent</option>
           </Select>
           <FieldError message={agentForm.formState.errors.role?.message} />
         </label>
-        <div className="flex items-end pb-2">
-          <CheckboxField control={agentForm.control} name="emailNotificationsEnabled" label="Receive ticket email notifications" />
+        <div className="flex flex-col justify-end gap-3 pb-2">
+          <CheckboxField control={agentForm.control} name="emailNotificationsEnabled" label="Receive ticket email notifications" disabled={!validEmail} />
+          <CheckboxField control={agentForm.control} name="whatsappNotificationsEnabled" label="Receive ticket WhatsApp notifications" disabled={!validMobile} />
         </div>
       </div>
       <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={!projectId || createAgent.isPending}>

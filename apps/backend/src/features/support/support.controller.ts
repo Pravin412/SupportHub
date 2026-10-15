@@ -21,7 +21,14 @@ class ProjectDto {
   @IsString() @MinLength(2) name!: string;
   @IsString() @MinLength(2) @IsOptional() key?: string;
 }
-class AgentDto {
+class ProjectNameDto {
+  @IsString() @MinLength(2) name!: string;
+}
+class AgentContactDto {
+  @IsString() @IsOptional() mobileNumber?: string;
+  @IsBoolean() @IsOptional() whatsappNotificationsEnabled?: boolean;
+}
+class AgentDto extends AgentContactDto {
   @IsEmail() email!: string;
   @IsString() @MinLength(2) name!: string;
   @IsString() @MinLength(8) @IsOptional() password?: string;
@@ -31,7 +38,7 @@ class AgentDto {
 class AgentPasswordDto {
   @IsString() @MinLength(8) password!: string;
 }
-class AgentUpdateDto {
+class AgentUpdateDto extends AgentContactDto {
   @IsEmail() email!: string;
   @IsString() @MinLength(2) name!: string;
   @IsEnum(Role) role!: Role;
@@ -129,6 +136,11 @@ export class CoreController {
   @Delete("projects/:id")
   async deleteProject(@Req() req: FastifyRequest, @Param("id") id: string) {
     return this.core.deleteProject(await this.userId(req), id);
+  }
+
+  @Put("projects/:id")
+  async renameProject(@Req() req: FastifyRequest, @Param("id") id: string, @Body() dto: ProjectNameDto) {
+    return this.core.renameProject(await this.userId(req), id, dto.name);
   }
 
   @Delete("projects/:id/contacts/:contactId")

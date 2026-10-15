@@ -175,7 +175,14 @@ export class WhatsappService {
       return;
     }
 
-    const recipients = parsePhoneList(settings.recipientPhoneNumbers);
+    const members = await this.prisma.projectMember.findMany({
+      where: { projectId, whatsappNotificationsEnabled: true, mobileNumber: { not: null } },
+      select: { mobileNumber: true }
+    });
+    const recipients = parsePhoneList([
+      ...settings.recipientPhoneNumbers,
+      ...members.flatMap((member) => member.mobileNumber ? [member.mobileNumber] : [])
+    ]);
     if (!recipients.length) {
       this.logger.debug(`[whatsapp] Ticket ${ticket.id} created but no recipient numbers configured for project ${projectId}`);
       return;

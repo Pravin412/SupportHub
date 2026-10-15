@@ -44,8 +44,8 @@ export function useBotConfig(projectId?: string) {
 export function useCreateAgent(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { name: string; email: string; password?: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean }) =>
-      api.createAgent(projectId!, v.name, v.email, v.password, v.role, v.emailNotificationsEnabled),
+    mutationFn: (v: { name: string; email: string; password?: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean; mobileNumber?: string; whatsappNotificationsEnabled?: boolean }) =>
+      api.createAgent(projectId!, v.name, v.email, v.password, v.role, v.emailNotificationsEnabled, v.mobileNumber, v.whatsappNotificationsEnabled),
     onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.agents(projectId) })
   });
 }
@@ -53,8 +53,8 @@ export function useCreateAgent(projectId?: string) {
 export function useUpdateAgent(projectId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { memberId: string; name: string; email: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean }) =>
-      api.updateAgent(projectId!, v.memberId, { name: v.name, email: v.email, role: v.role, emailNotificationsEnabled: v.emailNotificationsEnabled }),
+    mutationFn: (v: { memberId: string; name: string; email: string; role: "PROJECT_ADMIN" | "PROJECT_AGENT"; emailNotificationsEnabled: boolean; mobileNumber?: string; whatsappNotificationsEnabled?: boolean }) =>
+      api.updateAgent(projectId!, v.memberId, { name: v.name, email: v.email, role: v.role, emailNotificationsEnabled: v.emailNotificationsEnabled, mobileNumber: v.mobileNumber, whatsappNotificationsEnabled: v.whatsappNotificationsEnabled }),
     onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.agents(projectId) })
   });
 }

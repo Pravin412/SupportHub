@@ -1,5 +1,7 @@
 "use client";
 
+import { canManageProjectSettings } from "@support-hub/shared-types";
+
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +19,6 @@ import {
   Pencil,
   Eye,
   EyeOff,
-  CheckCircle2,
   Sparkles
 } from "lucide-react";
 import { Badge, Button, Card, Input } from "@support-hub/ui";
@@ -126,7 +127,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
   }, [templatesQuery.data, form]);
 
   const projectRole = me.data?.memberships.find((m) => m.projectId === projectId)?.role;
-  const canEdit = me.data?.role === "ADMIN" || projectRole === "PROJECT_ADMIN";
+  const canEdit = canManageProjectSettings(me.data?.role, projectRole);
   if (!canEdit) return null;
 
   const recipientNumbers = parsePhoneList(form.watch("recipientPhoneNumbers"));
@@ -249,10 +250,6 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
       }
     });
   };
-
-  const activeTemplate = templatesQuery.data?.find(
-    (t) => t.id === selectedTemplateId || t.name === selectedTemplateId
-  );
 
   return (
     <Card className="overflow-hidden border-slate-200 shadow-sm">
