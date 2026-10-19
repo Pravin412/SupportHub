@@ -2,106 +2,27 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, Unauthoriz
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
-import { IsArray, IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength, IsNumber } from "class-validator";
-import { TicketPriority, TicketStatus, ConversationStatus, Role } from "@prisma/client";
 import { BotService } from "../bot/bot.service";
 import { CoreService } from "./support.service";
-
-class TicketDto {
-  @IsString() @MinLength(3) title!: string;
-  @IsEnum(TicketPriority) @IsOptional() priority: TicketPriority = "MEDIUM";
-}
-class ConversationStatusDto {
-  @IsEnum(ConversationStatus) status!: ConversationStatus;
-}
-class TicketStatusDto {
-  @IsEnum(TicketStatus) status!: TicketStatus;
-}
-class ProjectDto {
-  @IsString() @MinLength(2) name!: string;
-  @IsString() @MinLength(2) @IsOptional() key?: string;
-}
-class ProjectNameDto {
-  @IsString() @MinLength(2) name!: string;
-}
-class AgentContactDto {
-  @IsString() @IsOptional() mobileNumber?: string;
-  @IsBoolean() @IsOptional() whatsappNotificationsEnabled?: boolean;
-}
-class AgentDto extends AgentContactDto {
-  @IsEmail() email!: string;
-  @IsString() @MinLength(2) name!: string;
-  @IsString() @MinLength(8) @IsOptional() password?: string;
-  @IsEnum(Role) @IsOptional() role?: Role;
-  @IsBoolean() @IsOptional() emailNotificationsEnabled?: boolean;
-}
-class AgentPasswordDto {
-  @IsString() @MinLength(8) password!: string;
-}
-class AgentUpdateDto extends AgentContactDto {
-  @IsEmail() email!: string;
-  @IsString() @MinLength(2) name!: string;
-  @IsEnum(Role) role!: Role;
-  @IsBoolean() emailNotificationsEnabled!: boolean;
-}
-class WebhookDto {
-  @IsString() name!: string;
-  @IsString() url!: string;
-  @IsBoolean() @IsOptional() isActive?: boolean;
-}
-class NotificationSettingsDto {
-  @IsString() notificationEmail!: string;
-  @IsBoolean() @IsOptional() ticketCreatedEnabled?: boolean;
-  @IsBoolean() @IsOptional() ticketAssignedEnabled?: boolean;
-  @IsBoolean() @IsOptional() conversationAssignedEnabled?: boolean;
-  @IsBoolean() @IsOptional() messageReceivedEnabled?: boolean;
-}
-class EmailSettingsDto {
-  @IsString() smtpHost!: string;
-  @IsNumber() smtpPort!: number;
-  @IsBoolean() smtpSecure!: boolean;
-  @IsString() smtpUser!: string;
-  @IsString() @IsOptional() smtpPassword?: string;
-  @IsString() @IsOptional() fromName?: string;
-}
-class WhatsappSettingsDto {
-  @IsBoolean() @IsOptional() enabled?: boolean;
-  @IsBoolean() @IsOptional() ticketCreatedEnabled?: boolean;
-  @IsArray() @IsString({ each: true }) @IsOptional() recipientPhoneNumbers?: string[];
-  @IsString() @IsOptional() ticketCreatedTemplateId?: string | null;
-  @IsString() @IsOptional() providerUrl?: string | null;
-  @IsString() @IsOptional() vendorId?: string | null;
-  @IsString() @IsOptional() accessToken?: string | null;
-}
-class TestWhatsappDto {
-  @IsString() @IsOptional() phoneNumber?: string;
-}
-class WhatsappTemplateDto {
-  @IsString() @MinLength(2) name!: string;
-  @IsString() @MinLength(2) displayName!: string;
-  @IsString() @IsOptional() language?: string;
-  @IsString() @IsOptional() description?: string;
-}
-class WidgetSettingsDto {
-  @IsString() @IsOptional() welcomeMessage?: string;
-  @IsString() @IsOptional() colorTheme?: string;
-  @IsString() @IsOptional() logoUrl?: string;
-  @IsBoolean() @IsOptional() collectVisitorInfo?: boolean;
-  @IsBoolean() @IsOptional() visitorNameEnabled?: boolean;
-  @IsBoolean() @IsOptional() visitorEmailEnabled?: boolean;
-  @IsBoolean() @IsOptional() visitorPhoneEnabled?: boolean;
-}
-enum BotResponseMode {
-  AUTOMATED = "AUTOMATED",
-  HUMAN = "HUMAN",
-  AI = "AI"
-}
-class BotConfigDto {
-  @IsEnum(BotResponseMode) responseMode!: BotResponseMode;
-  @IsString() @MinLength(2) botName!: string;
-  @IsString() @MinLength(8) fallbackMessage!: string;
-  @IsString() @IsOptional() botAvatar?: string;
-}
+import {
+  AgentDto,
+  AgentPasswordDto,
+  AgentUpdateDto,
+  BotConfigDto,
+  ConversationStatusDto,
+  EmailSettingsDto,
+  NotificationSettingsDto,
+  ProjectDto,
+  ProjectNameDto,
+  TestWhatsappDto,
+  TicketDto,
+  TicketStatusDto,
+  UpdateWebhookDto,
+  WebhookDto,
+  WhatsappSettingsDto,
+  WhatsappTemplateDto,
+  WidgetSettingsDto
+} from "./support.dto";
 
 @ApiTags("core")
 @ApiBearerAuth()
@@ -263,7 +184,7 @@ export class CoreController {
   }
 
   @Put("projects/:id/webhooks/:webhookId")
-  async updateWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Param("webhookId") webhookId: string, @Body() dto: WebhookDto) {
+  async updateWebhook(@Req() req: FastifyRequest, @Param("id") id: string, @Param("webhookId") webhookId: string, @Body() dto: UpdateWebhookDto) {
     return this.core.updateWebhook(await this.userId(req), id, webhookId, dto);
   }
 

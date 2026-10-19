@@ -43,6 +43,7 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
   const openConfirmation = useConfirmationModalStore(state => state.openConfirmation);
 
   const activeWebhook = webhooks?.find(w => w.isActive);
+  const [selectedActiveId, setSelectedActiveId] = useState<string | null>(null);
 
   async function handleCreate(data: WebhookForm) {
     if (!projectId) return createForm.setError("root", { message: "Select a project first" });
@@ -107,16 +108,29 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Active Webhook (Auto-Reply Bot)</label>
-              <select 
-                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                value={activeWebhook?.id || ""}
-                onChange={(e: any) => handleSetActive(e.target.value)}
-              >
-                <option value="" disabled>Select an active webhook...</option>
-                {webhooks.map(w => (
-                  <option key={w.id} value={w.id}>{w.name} ({w.url})</option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={selectedActiveId ?? activeWebhook?.id ?? ""}
+                  onChange={(e: any) => setSelectedActiveId(e.target.value)}
+                >
+                  <option value="" disabled>Select an active webhook...</option>
+                  {webhooks.map(w => (
+                    <option key={w.id} value={w.id}>{w.name} ({w.url})</option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  label="Save"
+                  className="shrink-0"
+                  disabled={!selectedActiveId || selectedActiveId === activeWebhook?.id}
+                  onClick={async () => {
+                    if (!selectedActiveId) return;
+                    await handleSetActive(selectedActiveId);
+                    setSelectedActiveId(null);
+                  }}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

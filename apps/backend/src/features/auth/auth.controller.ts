@@ -1,14 +1,9 @@
 import { Body, Controller, Get, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { IsEmail, IsString, MinLength } from "class-validator";
 import { JwtService } from "@nestjs/jwt";
 import { AuthService } from "./auth.service";
-
-class LoginDto {
-  @IsEmail() email!: string;
-  @IsString() @MinLength(8) password!: string;
-}
+import { LoginDto } from "./auth.dto";
 
 @ApiTags("auth")
 @Controller("auth")

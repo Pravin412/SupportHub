@@ -1,7 +1,5 @@
 import { Body, Controller, Headers, Param, Post, UnauthorizedException } from "@nestjs/common";
-import { ConversationStatus } from "@prisma/client";
 import { ApiTags } from "@nestjs/swagger";
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
 import { CoreService } from "../support/support.service";
 
 import { CryptoService } from "../../common/crypto/crypto.service";
@@ -9,22 +7,7 @@ import { PrismaService } from "../../common/database/prisma.service";
 import { SupportEvent } from "../../common/events/support-events";
 import { QueueService } from "../../common/queue/queue.service";
 import { RealtimeGateway } from "../../common/realtime/realtime.gateway";
-
-class CustomerMessageDto {
-  @IsString() externalUserId!: string;
-  @IsString() @MinLength(1) content!: string;
-  @IsString() @IsOptional() externalMessageId?: string;
-  @IsString() @IsOptional() name?: string;
-  @IsEmail() @IsOptional() email?: string;
-  @IsString() @IsOptional() number?: string;
-  @IsEnum(ConversationStatus) @IsOptional() status?: ConversationStatus;
-  @IsString() @IsOptional() assignedTo?: "human";
-}
-
-class ConversationStatusDto {
-  @IsEnum(ConversationStatus) status!: ConversationStatus;
-  @IsString() @IsOptional() assignedTo?: "human";
-}
+import { ConversationStatusDto, CustomerMessageDto } from "./integration.dto";
 
 @ApiTags("integrations")
 @Controller("integrations/:projectKey")
