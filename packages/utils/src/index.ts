@@ -53,13 +53,24 @@ export function normalizePhoneNumber(countryCode?: string | number, phoneNumber?
   return full.length >= 9 ? full : null;
 }
 
+// Same rule as the project access member form: digits only, country code required, 9-15 digits.
+export const PHONE_PATTERN = /^[1-9]\d{8,14}$/;
+
+export function normalizePhone(value: string): string {
+  return value.replace(/[\s()+-]/g, "");
+}
+
+export function isValidPhone(value: string): boolean {
+  return PHONE_PATTERN.test(normalizePhone(value));
+}
+
 export function parsePhoneList(value?: string | string[] | null): string[] {
   if (!value) return [];
   return Array.from(
     new Set(
-      (Array.isArray(value) ? value : value.split(/[\s,;]+/))
-        .map((phone) => phone.replace(/\D/g, "").replace(/^0+/, ""))
-        .filter((phone) => phone.length >= 9)
+      (Array.isArray(value) ? value : value.split(/[,;\n]+/))
+        .map(normalizePhone)
+        .filter((phone) => PHONE_PATTERN.test(phone))
     )
   );
 }

@@ -149,7 +149,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
     if (!raw) return;
     const cleanNumbers = parsePhoneList(raw);
     if (!cleanNumbers.length) {
-      displayToast("Enter a valid phone number with country code (e.g. 919876543210).", "destructive");
+      displayToast("Enter a valid phone number with country code (e.g. +91 9876543210).", "destructive");
       return;
     }
     const merged = Array.from(new Set([...recipientNumbers, ...cleanNumbers]));
@@ -298,7 +298,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
           <div className="flex gap-2">
             <Input
               value={phoneInput}
-              placeholder="e.g. 919876543210 (with country code)"
+              placeholder="e.g. +91 9876543210"
               onChange={(e) => setPhoneInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
