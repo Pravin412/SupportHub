@@ -119,6 +119,11 @@ export function InboxChatView({
                   {activeConversation.contactPhone}
                 </span>
               )}
+              {activeConversation?.contactEmail && (
+                <span className="max-w-full break-all rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600" title={activeConversation.contactEmail}>
+                  {activeConversation.contactEmail}
+                </span>
+              )}
               {activeConversation?.externalUserId && (
                 <span className="max-w-full break-all rounded bg-blue-50 px-1.5 py-0.5 font-mono text-[10px] text-blue-700" title={activeConversation.externalUserId}>
                   ID: {activeConversation.externalUserId}

@@ -140,6 +140,11 @@ export function InboxConversationsList({
                           {c.contactPhone}
                         </span>
                       )}
+                      {c.contactEmail && (
+                        <span className="max-w-full break-all text-slate-600 font-mono text-[10px]">
+                          {c.contactEmail}
+                        </span>
+                      )}
                       {c.externalUserId && !c.contactPhone && (
                         <span className="max-w-full break-all text-slate-500 font-mono text-[10px]">
                           ID: {c.externalUserId}
