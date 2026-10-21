@@ -21,7 +21,19 @@ import {
   EyeOff,
   Sparkles
 } from "lucide-react";
-import { Badge, Button, Card, Input } from "@support-hub/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@support-hub/ui";
 import { parsePhoneList } from "@support-hub/utils";
 import { api } from "../../lib/api";
 import {
@@ -54,6 +66,9 @@ const newTemplateSchema = z.object({
   language: z.string(),
   description: z.string().optional()
 });
+
+// Radix Select items cannot have an empty value, so the "no template" option uses this sentinel.
+const NO_TEMPLATE_VALUE = "__no_template__";
 
 type NewTemplateInput = {
   name: string;
@@ -289,7 +304,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
         {/* Recipient Phone Numbers */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-slate-800">Recipient Phone Numbers</label>
+            <Label className="text-sm font-medium text-slate-800 leading-normal">Recipient Phone Numbers</Label>
             <span className="text-xs font-semibold text-muted">
               {recipientNumbers.length} number{recipientNumbers.length === 1 ? "" : "s"}
             </span>
@@ -330,14 +345,16 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                   className="gap-1.5 border-blue-200 bg-blue-50 px-2.5 py-1 text-blue-900 font-mono text-xs"
                 >
                   <span>+{phone}</span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="none"
                     title="Remove number"
                     className="ml-1 rounded text-blue-700 hover:bg-blue-200 hover:text-blue-950 p-0.5 transition-colors"
                     onClick={() => removeRecipientNumber(phone)}
                   >
                     <X size={12} />
-                  </button>
+                  </Button>
                 </Badge>
               ))}
             </div>
@@ -347,7 +364,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
         {/* Template Selection Dropdown */}
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <label htmlFor="ticket-whatsapp-template-select" className="text-sm font-medium text-slate-800">WhatsApp Template for Ticket Raised</label>
+            <Label htmlFor="ticket-whatsapp-template-select" className="text-sm font-medium text-slate-800 leading-normal">WhatsApp Template for Ticket Raised</Label>
             <Button
               type="button"
               variant="outline"
@@ -366,19 +383,25 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
             control={form.control}
             name="ticketCreatedTemplateId"
             render={({ field }) => (
-              <select
-                id="ticket-whatsapp-template-select"
-                value={field.value || ""}
-                onChange={field.onChange}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+              <Select
+                value={field.value || NO_TEMPLATE_VALUE}
+                onValueChange={(value) => field.onChange(value === NO_TEMPLATE_VALUE ? "" : value)}
               >
-                <option value="">-- Select a WhatsApp Template --</option>
-                {templatesQuery.data?.map((tmpl) => (
-                  <option key={tmpl.id} value={tmpl.id}>
-                    {tmpl.displayName} ({tmpl.name}) [{tmpl.language}]
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id="ticket-whatsapp-template-select"
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <SelectValue placeholder="-- Select a WhatsApp Template --" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_TEMPLATE_VALUE}>-- Select a WhatsApp Template --</SelectItem>
+                  {templatesQuery.data?.map((tmpl) => (
+                    <SelectItem key={tmpl.id} value={tmpl.id}>
+                      {tmpl.displayName} ({tmpl.name}) [{tmpl.language}]
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           />
 
@@ -425,53 +448,59 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
               >
                 <h4 className="text-xs font-semibold text-slate-800">{editingTemplateId ? "Edit WhatsApp Template" : "Add Approved WhatsApp Template"}</h4>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-700">Approved Template Name</span>
-                    <Input
-                      placeholder="e.g. support_ticket_raised"
-                      {...templateForm.register("name")}
-                      className="mt-0.5 text-xs font-mono"
-                    />
-                    {templateForm.formState.errors.name && (
-                      <p className="mt-0.5 text-[11px] text-red-600">
-                        {templateForm.formState.errors.name.message}
-                      </p>
+                  <Field
+                    label="Approved Template Name"
+                    labelClassName="text-xs text-slate-700"
+                    error={templateForm.formState.errors.name?.message}
+                  >
+                    {(id) => (
+                      <Input
+                        id={id}
+                        placeholder="e.g. support_ticket_raised"
+                        {...templateForm.register("name")}
+                        className="text-xs font-mono"
+                      />
                     )}
-                  </label>
+                  </Field>
 
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-700">Display Name</span>
-                    <Input
-                      placeholder="e.g. Support Ticket Raised"
-                      {...templateForm.register("displayName")}
-                      className="mt-0.5 text-xs"
-                    />
-                    {templateForm.formState.errors.displayName && (
-                      <p className="mt-0.5 text-[11px] text-red-600">
-                        {templateForm.formState.errors.displayName.message}
-                      </p>
+                  <Field
+                    label="Display Name"
+                    labelClassName="text-xs text-slate-700"
+                    error={templateForm.formState.errors.displayName?.message}
+                  >
+                    {(id) => (
+                      <Input
+                        id={id}
+                        placeholder="e.g. Support Ticket Raised"
+                        {...templateForm.register("displayName")}
+                        className="text-xs"
+                      />
                     )}
-                  </label>
+                  </Field>
                 </div>
 
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-700">Language Code</span>
-                    <Input
-                      placeholder="en_US"
-                      {...templateForm.register("language")}
-                      className="mt-0.5 text-xs"
-                    />
-                  </label>
+                  <Field label="Language Code" labelClassName="text-xs text-slate-700">
+                    {(id) => (
+                      <Input
+                        id={id}
+                        placeholder="en_US"
+                        {...templateForm.register("language")}
+                        className="text-xs"
+                      />
+                    )}
+                  </Field>
 
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-700">Description (Optional)</span>
-                    <Input
-                      placeholder="e.g. Sent for urgent tickets"
-                      {...templateForm.register("description")}
-                      className="mt-0.5 text-xs"
-                    />
-                  </label>
+                  <Field label="Description (Optional)" labelClassName="text-xs text-slate-700">
+                    {(id) => (
+                      <Input
+                        id={id}
+                        placeholder="e.g. Sent for urgent tickets"
+                        {...templateForm.register("description")}
+                        className="text-xs"
+                      />
+                    )}
+                  </Field>
                 </div>
 
                 <div className="flex justify-end pt-1">
@@ -508,8 +537,10 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     className="h-7 w-7 shrink-0 rounded grid place-items-center text-slate-500 hover:text-blue-700 hover:bg-blue-50"
                     title="Edit template"
                     aria-label={`Edit ${tmpl.displayName}`}
@@ -520,16 +551,18 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                     }}
                   >
                     <Pencil size={13} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     className="h-7 w-7 rounded grid place-items-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                     title="Delete template"
                     aria-label={`Delete ${tmpl.displayName}`}
                     onClick={() => handleDeleteTemplate(tmpl.id, tmpl.displayName)}
                   >
                     <Trash2 size={13} />
-                  </button>
+                  </Button>
                   </div>
                 </div>
               ))}
@@ -539,8 +572,10 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
 
         {/* Collapsible Gateway Settings */}
         <div className="rounded-lg border border-slate-200">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="none"
             className="flex w-full items-center justify-between p-3 text-left hover:bg-slate-50 transition-colors"
             onClick={() => setShowGatewayConfig(!showGatewayConfig)}
           >
@@ -551,7 +586,7 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
               </span>
             </div>
             {showGatewayConfig ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+          </Button>
 
           {showGatewayConfig && (
             <div className="border-t border-slate-200 p-3 space-y-3 bg-slate-50/50">
@@ -559,50 +594,58 @@ export function TicketWhatsappPanel({ projectId }: { projectId?: string }) {
                 Configure the WhatsApp gateway for this project. Ticket WhatsApp messages are sent only when this project has its own Vendor ID and Access Token.
               </p>
 
-              <label className="block">
-                <span className="text-xs font-medium text-slate-700">Whaps Base URL (Optional)</span>
-                <Input
-                  placeholder="https://whaps.in/api"
-                  {...form.register("providerUrl")}
-                  className="mt-1 text-xs"
-                />
-              </label>
+              <Field label="Whaps Base URL (Optional)" labelClassName="text-xs text-slate-700">
+                {(id) => (
+                  <Input
+                    id={id}
+                    placeholder="https://whaps.in/api"
+                    {...form.register("providerUrl")}
+                    className="text-xs"
+                  />
+                )}
+              </Field>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-xs font-medium text-slate-700">Whaps Vendor ID</span>
-                  <Input
-                    placeholder="Project vendor ID"
-                    {...form.register("vendorId")}
-                    className="mt-1 text-xs"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-medium text-slate-700">Whaps Access Token</span>
-                  <div className="relative mt-1">
+                <Field label="Whaps Vendor ID" labelClassName="text-xs text-slate-700">
+                  {(id) => (
                     <Input
-                      type={showToken ? "text" : "password"}
-                      placeholder={
-                        settingsQuery.data?.hasCustomToken
-                          ? "Leave blank to keep existing token"
-                          : "Whaps access token"
-                      }
-                      className="pr-9 text-xs"
-                      autoComplete="new-password"
-                      {...form.register("accessToken")}
+                      id={id}
+                      placeholder="Project vendor ID"
+                      {...form.register("vendorId")}
+                      className="text-xs"
                     />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 grid w-8 place-items-center text-slate-400 hover:text-slate-600"
-                      aria-label={showToken ? "Hide access token" : "Show access token"}
-                      title={showToken ? "Hide access token" : "Show access token"}
-                      onClick={() => setShowToken(!showToken)}
-                    >
-                      {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                </label>
+                  )}
+                </Field>
+
+                <Field label="Whaps Access Token" labelClassName="text-xs text-slate-700">
+                  {(id) => (
+                    <div className="relative">
+                      <Input
+                        id={id}
+                        type={showToken ? "text" : "password"}
+                        placeholder={
+                          settingsQuery.data?.hasCustomToken
+                            ? "Leave blank to keep existing token"
+                            : "Whaps access token"
+                        }
+                        className="pr-9 text-xs"
+                        autoComplete="new-password"
+                        {...form.register("accessToken")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="none"
+                        className="absolute inset-y-0 right-0 grid w-8 place-items-center text-slate-400 hover:text-slate-600"
+                        aria-label={showToken ? "Hide access token" : "Show access token"}
+                        title={showToken ? "Hide access token" : "Show access token"}
+                        onClick={() => setShowToken(!showToken)}
+                      >
+                        {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </Button>
+                    </div>
+                  )}
+                </Field>
               </div>
             </div>
           )}

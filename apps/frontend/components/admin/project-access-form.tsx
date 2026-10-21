@@ -3,16 +3,16 @@
 import { UserRole } from "@support-hub/shared-types";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
-import { Button, Input, Select } from "@support-hub/ui";
+import { Button, Field, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@support-hub/ui";
 import { api } from "@/lib/api";
 import { useCreateAgent, useMe } from "@/lib/queries";
 import { displayToast } from "@/lib/display-toast";
 import { CheckboxField } from "../checkbox-field";
-import { agentSchema, FieldError } from "./project-access-shared";
+import { agentSchema } from "./project-access-shared";
 
 export function ProjectAccessForm({ projectId, onSuccess }: { projectId?: string; onSuccess?: () => void }) {
   const createAgent = useCreateAgent(projectId);
@@ -95,44 +95,61 @@ export function ProjectAccessForm({ projectId, onSuccess }: { projectId?: string
       })}
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm font-medium">Name</span>
-          <Input className="mt-1" placeholder="Priya Sharma" autoComplete="new-password" {...agentForm.register("name")} />
-          <FieldError message={agentForm.formState.errors.name?.message} />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Email</span>
-          <Input className="mt-1" placeholder="agent@example.com" autoComplete="new-password" {...agentForm.register("email")} />
-          {isLookingUpAgent && <p className="mt-1 text-xs text-muted">Checking email...</p>}
-          {agentEmailExists && <p className="mt-1 text-xs font-medium text-blue-700">Existing user. Password is already set.</p>}
-          <FieldError message={agentForm.formState.errors.email?.message} />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Mobile number (optional)</span>
-          <Input className="mt-1" type="tel" placeholder="+91 9876543210" {...agentForm.register("mobileNumber")} />
-          <p className="mt-1 text-xs text-muted">Include the country code, e.g. +91 9876543210. To receive WhatsApp alerts, also check the WhatsApp notifications box below.</p>
-          <FieldError message={agentForm.formState.errors.mobileNumber?.message} />
-        </label>
+        <Field label="Name" error={agentForm.formState.errors.name?.message}>
+          {(id) => <Input id={id} placeholder="Priya Sharma" autoComplete="new-password" {...agentForm.register("name")} />}
+        </Field>
+        <Field
+          label="Email"
+          description={
+            isLookingUpAgent || agentEmailExists ? (
+              <span className="block space-y-1">
+                {isLookingUpAgent && <span className="block">Checking email...</span>}
+                {agentEmailExists && <span className="block font-medium text-blue-700">Existing user. Password is already set.</span>}
+              </span>
+            ) : undefined
+          }
+          error={agentForm.formState.errors.email?.message}
+        >
+          {(id) => <Input id={id} placeholder="agent@example.com" autoComplete="new-password" {...agentForm.register("email")} />}
+        </Field>
+        <Field
+          label="Mobile number (optional)"
+          description="Include the country code, e.g. +91 9876543210. To receive WhatsApp alerts, also check the WhatsApp notifications box below."
+          error={agentForm.formState.errors.mobileNumber?.message}
+        >
+          {(id) => <Input id={id} type="tel" placeholder="+91 9876543210" {...agentForm.register("mobileNumber")} />}
+        </Field>
         {!agentEmailExists && (
-          <label className="block">
-            <span className="text-sm font-medium">Password</span>
-            <div className="relative mt-1">
-              <Input type={showAgentPassword ? "text" : "password"} placeholder="Minimum 8 characters" className="pr-10" autoComplete="new-password" {...agentForm.register("password")} />
-              <button type="button" className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-400 hover:text-slate-600" onClick={() => setShowAgentPassword(!showAgentPassword)}>
-                {showAgentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <FieldError message={agentForm.formState.errors.password?.message} />
-          </label>
+          <Field label="Password" error={agentForm.formState.errors.password?.message}>
+            {(id) => (
+              <div className="relative">
+                <Input id={id} type={showAgentPassword ? "text" : "password"} placeholder="Minimum 8 characters" className="pr-10" autoComplete="new-password" {...agentForm.register("password")} />
+                <Button type="button" variant="ghost" size="none" className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-400 hover:text-slate-600" onClick={() => setShowAgentPassword(!showAgentPassword)}>
+                  {showAgentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </Button>
+              </div>
+            )}
+          </Field>
         )}
-        <label className="block">
-          <span className="text-sm font-medium">Role</span>
-          <Select className="mt-1" {...agentForm.register("role")}>
-            {me.data?.role === UserRole.ADMIN && <option value="PROJECT_ADMIN">Project Admin</option>}
-            <option value="PROJECT_AGENT">Project Agent</option>
-          </Select>
-          <FieldError message={agentForm.formState.errors.role?.message} />
-        </label>
+        <Field label="Role" error={agentForm.formState.errors.role?.message}>
+          {(id) => (
+            <Controller
+              control={agentForm.control}
+              name="role"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id={id}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {me.data?.role === UserRole.ADMIN && <SelectItem value="PROJECT_ADMIN">Project Admin</SelectItem>}
+                    <SelectItem value="PROJECT_AGENT">Project Agent</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          )}
+        </Field>
         <div className="flex flex-col justify-end gap-3 pb-2">
           <CheckboxField control={agentForm.control} name="emailNotificationsEnabled" label="Receive ticket email notifications" disabled={!validEmail} />
           <CheckboxField control={agentForm.control} name="whatsappNotificationsEnabled" label="Receive ticket WhatsApp notifications" disabled={!validMobile} />

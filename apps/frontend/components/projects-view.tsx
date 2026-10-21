@@ -4,7 +4,7 @@ import { UserRole } from "@support-hub/shared-types";
 
 import Link from "next/link";
 import { Folder, Globe2, LayoutGrid, List, Plus, Settings, Ticket, Trash2, Users } from "lucide-react";
-import { Badge, Button, Card, Input } from "@support-hub/ui";
+import { Badge, Button, Card, Field, Input } from "@support-hub/ui";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +13,6 @@ import { useInboxSelectionStore } from "../lib/inbox-selection-store";
 import { displayToast } from "../lib/display-toast";
 import { useState } from "react";
 import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
-import { FieldError } from "./admin/project-access-shared";
 
 const projectSchema = z.object({
   name: z.string().min(2, "Project name must be at least 2 characters.")
@@ -63,7 +62,9 @@ export function ProjectsView() {
           <p className="mt-1 text-sm text-slate-500">Create and manage your support workspaces.</p>
         </div>
         <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm">
-          <button
+          <Button
+            variant="ghost"
+            size="none"
             type="button"
             onClick={() => setViewMode("grid")}
             className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
@@ -71,8 +72,10 @@ export function ProjectsView() {
             }`}
           >
             <LayoutGrid size={14} /> Grid
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="none"
             type="button"
             onClick={() => setViewMode("list")}
             className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
@@ -80,7 +83,7 @@ export function ProjectsView() {
             }`}
           >
             <List size={14} /> List
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -145,11 +148,9 @@ export function ProjectsView() {
               })
             )}
           >
-            <label className="block">
-              <span className="text-xs font-bold text-slate-700">Project Name</span>
-              <Input className="mt-1" placeholder="e.g. Project Name" {...projectForm.register("name")} />
-              <FieldError message={projectForm.formState.errors.name?.message} />
-            </label>
+            <Field label="Project Name" labelClassName="text-xs font-bold text-slate-700" error={projectForm.formState.errors.name?.message}>
+              {(id) => <Input id={id} placeholder="e.g. Project Name" {...projectForm.register("name")} />}
+            </Field>
             <Button className="w-full gap-2 bg-brand text-white hover:bg-brand/90" disabled={createProject.isPending}>
               <Plus size={16} /> {createProject.isPending ? "Creating..." : "Create Project"}
             </Button>

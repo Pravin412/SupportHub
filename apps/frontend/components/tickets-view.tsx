@@ -141,7 +141,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
               key={ticket.id}
               className="grid grid-cols-[minmax(220px,1fr)_140px_120px_110px] items-center gap-3 border-b border-slate-100 bg-white px-4 py-4 text-sm last:border-b-0 hover:bg-blue-50/30"
             >
-              <button
+              <Button variant="ghost" size="none"
                 type="button"
                 className="flex min-w-0 items-center gap-3 text-left"
                 onClick={() => openConversation(ticket.conversationId)}
@@ -154,7 +154,7 @@ export const TicketsView = ({ projectId, projectName }: { projectId: string; pro
                   <span className="mt-0.5 block truncate text-[11px] text-muted">{ticket.customerPhone ?? "Mobile not provided"}</span>
                   <span className="mt-1 block break-all font-mono text-[10px] text-blue-700">ID: {ticket.id}</span>
                 </span>
-              </button>
+              </Button>
 
               <StatusDropdown value={ticket.status as TicketStatus} onChange={(status) => updateStatus(ticket.id, status)} />
 

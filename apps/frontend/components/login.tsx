@@ -55,14 +55,14 @@ export function Login({ onDone }: { onDone: () => void }) {
               placeholder="Password"
               {...form.register("password")}
             />
-            <button
+            <Button variant="ghost" size="none"
               type="button"
               title={showPassword ? "Hide password" : "Show password"}
               className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-md text-slate-500 hover:bg-blue-50 hover:text-brand focus-visible:outline-offset-[-4px]"
               onClick={() => setShowPassword((current) => !current)}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+            </Button>
           </div>
           <Button className="h-12 w-full border-brand bg-brand text-base font-semibold text-white shadow-md hover:bg-blue-800" disabled={form.formState.isSubmitting}>
             Sign in

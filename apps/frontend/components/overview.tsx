@@ -51,7 +51,7 @@ export function Overview({
             {dashboardRangeOptions.map((option) => {
               const active = option.value === range;
               return (
-                <button
+                <Button variant="ghost" size="none"
                   key={option.value}
                   type="button"
                   aria-pressed={active}
@@ -61,7 +61,7 @@ export function Overview({
                   onClick={() => onRangeChange(option.value)}
                 >
                   {option.label}
-                </button>
+                </Button>
               );
             })}
           </div>

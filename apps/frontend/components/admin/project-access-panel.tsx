@@ -3,8 +3,24 @@
 import { UserRole } from "@support-hub/shared-types";
 
 import { useState } from "react";
-import { ChevronDown, Edit2, Eye, EyeOff, Save, UserPlus, Users, X } from "lucide-react";
-import { Badge, Button, Card, Input, Select } from "@support-hub/ui";
+import { Edit2, Eye, EyeOff, Save, UserPlus, Users, X } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Badge,
+  Button,
+  Card,
+  LabeledCheckbox,
+  Field,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@support-hub/ui";
 import type { ProjectAccessMember } from "../../lib/api/agents";
 import { api } from "../../lib/api";
 import { useAgents, useMe, useUpdateAgent } from "../../lib/queries";
@@ -58,23 +74,22 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
       {showAddAccess && <div id="add-project-access" className="border-t">
         <ProjectAccessForm projectId={projectId} onSuccess={() => setShowAddAccess(false)} />
       </div>}
-      <div className="space-y-2 border-t bg-slate-50 p-4">
+      <Accordion
+        type="single"
+        collapsible
+        className="space-y-2 border-t bg-slate-50 p-4"
+        value={expandedAgentId ?? ""}
+        onValueChange={(v) => setExpandedAgentId(v || null)}
+      >
         {agents.data?.filter(agent => agent.role !== UserRole.ADMIN).map((agent) => (
-          <div key={agent.id} className="overflow-hidden rounded-md border bg-white text-sm">
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
-              aria-expanded={expandedAgentId === agent.id}
-              aria-controls={`project-access-${agent.id}`}
-              onClick={() => setExpandedAgentId((current) => current === agent.id ? null : agent.id)}
-            >
+          <AccordionItem key={agent.id} value={agent.id} className="overflow-hidden rounded-md border bg-white text-sm last:border-b">
+            <AccordionTrigger className="px-3 py-3 font-normal hover:bg-slate-50 hover:no-underline">
               <span className="min-w-0">
                 <span className="block truncate font-medium text-slate-900">{agent.user.name}</span>
                 <span className="block truncate text-xs text-muted">{agent.user.email}</span>
               </span>
-              <ChevronDown size={16} className={`shrink-0 text-slate-500 transition-transform ${expandedAgentId === agent.id ? "rotate-180" : ""}`} />
-            </button>
-            <div id={`project-access-${agent.id}`} hidden={expandedAgentId !== agent.id} className="border-t px-3 py-3">
+            </AccordionTrigger>
+            <AccordionContent className="border-t px-3 py-3">
             {editingAgentId === agent.id ? (
               <div className="grid min-w-0 gap-2 sm:grid-cols-2">
                 <Input
@@ -95,41 +110,44 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                     updateAgentEdit(agent, { email, ...(!valid ? { emailNotificationsEnabled: false } : {}) });
                   }}
                 />
-                <label className="block space-y-1 text-xs text-muted">
-                  <span>Mobile number (optional)</span>
-                  <Input type="tel" className="h-9" placeholder="+91 9876543210"
-                    value={agentEdits[agent.id]?.mobileNumber ?? agent.mobileNumber ?? ""}
-                    onChange={(event) => {
-                      const mobileNumber = event.target.value;
-                      const valid = /^[1-9]\d{8,14}$/.test(mobileNumber.replace(/[\s()+-]/g, ""));
-                      updateAgentEdit(agent, { mobileNumber, ...(!valid ? { whatsappNotificationsEnabled: false } : {}) });
-                    }} />
-                </label>
+                <Field label="Mobile number (optional)" labelClassName="text-xs font-normal text-muted">
+                  {(id) => (
+                    <Input id={id} type="tel" className="h-9" placeholder="+91 9876543210"
+                      value={agentEdits[agent.id]?.mobileNumber ?? agent.mobileNumber ?? ""}
+                      onChange={(event) => {
+                        const mobileNumber = event.target.value;
+                        const valid = /^[1-9]\d{8,14}$/.test(mobileNumber.replace(/[\s()+-]/g, ""));
+                        updateAgentEdit(agent, { mobileNumber, ...(!valid ? { whatsappNotificationsEnabled: false } : {}) });
+                      }} />
+                  )}
+                </Field>
                 <Select
-                  className="h-9"
                   value={agentEdits[agent.id]?.role ?? agent.role}
-                  onChange={(event) => updateAgentEdit(agent, { role: event.target.value as "PROJECT_ADMIN" | "PROJECT_AGENT" })}
+                  onValueChange={(value) => updateAgentEdit(agent, { role: value as "PROJECT_ADMIN" | "PROJECT_AGENT" })}
                 >
-                  {me.data?.role === UserRole.ADMIN && <option value="PROJECT_ADMIN">Project Admin</option>}
-                  <option value="PROJECT_AGENT">Project Agent</option>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {me.data?.role === UserRole.ADMIN && <SelectItem value="PROJECT_ADMIN">Project Admin</SelectItem>}
+                    <SelectItem value="PROJECT_AGENT">Project Agent</SelectItem>
+                  </SelectContent>
                 </Select>
-                <label className="flex min-h-9 items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 accent-blue-700"
-                    disabled={!agentSchema.shape.email.safeParse(agentEdits[agent.id]?.email ?? agent.user.email).success}
-                    checked={agentEdits[agent.id]?.emailNotificationsEnabled ?? agent.emailNotificationsEnabled}
-                    onChange={(event) => updateAgentEdit(agent, { emailNotificationsEnabled: event.target.checked })}
-                  />
-                  <span>Ticket emails</span>
-                </label>
-                <label className="flex min-h-9 items-center gap-2 text-sm">
-                  <input type="checkbox" className="h-4 w-4 accent-blue-700"
-                    disabled={!/^[1-9]\d{8,14}$/.test((agentEdits[agent.id]?.mobileNumber ?? agent.mobileNumber ?? "").replace(/[\s()+-]/g, ""))}
-                    checked={agentEdits[agent.id]?.whatsappNotificationsEnabled ?? agent.whatsappNotificationsEnabled}
-                    onChange={(event) => updateAgentEdit(agent, { whatsappNotificationsEnabled: event.target.checked })} />
-                  <span>Ticket WhatsApp notifications</span>
-                </label>
+                <LabeledCheckbox
+                  label="Ticket emails"
+                  className="min-h-9"
+                  checkboxClassName="rounded border-slate-300"
+                  disabled={!agentSchema.shape.email.safeParse(agentEdits[agent.id]?.email ?? agent.user.email).success}
+                  checked={agentEdits[agent.id]?.emailNotificationsEnabled ?? agent.emailNotificationsEnabled}
+                  onCheckedChange={(checked) => updateAgentEdit(agent, { emailNotificationsEnabled: checked === true })}
+                />
+                <LabeledCheckbox
+                  label="Ticket WhatsApp notifications"
+                  className="min-h-9"
+                  disabled={!/^[1-9]\d{8,14}$/.test((agentEdits[agent.id]?.mobileNumber ?? agent.mobileNumber ?? "").replace(/[\s()+-]/g, ""))}
+                  checked={agentEdits[agent.id]?.whatsappNotificationsEnabled ?? agent.whatsappNotificationsEnabled}
+                  onCheckedChange={(checked) => updateAgentEdit(agent, { whatsappNotificationsEnabled: checked === true })}
+                />
                 <div className="flex gap-2 sm:col-span-2">
                   <Button
                     type="button"
@@ -217,13 +235,15 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                   value={resetPasswords[agent.id] ?? ""}
                   onChange={(event) => setResetPasswords((current) => ({ ...current, [agent.id]: event.target.value }))}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="none"
                   className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-400 hover:text-slate-600"
                   onClick={() => setShowResetPasswords((current) => ({ ...current, [agent.id]: !current[agent.id] }))}
                 >
                   {showResetPasswords[agent.id] ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                </Button>
               </div>
               <Button
                 type="button"
@@ -265,10 +285,10 @@ export function ProjectAccessPanel({ projectId }: { projectId?: string }) {
                 Remove
               </Button>
             </div>
-            </div>
-          </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </Card>
   );
 }

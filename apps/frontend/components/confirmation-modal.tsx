@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
-import { Button } from "@support-hub/ui";
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@support-hub/ui";
 import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 
 type ConfirmationModalProps = {
@@ -30,22 +30,20 @@ export function ConfirmationModal({
   onCancel,
   onConfirm
 }: ConfirmationModalProps) {
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/40 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+    <Dialog open={open} onOpenChange={(next) => { if (!next && !isLoading) onCancel(); }}>
+      <DialogContent className="gap-0">
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-error-surface text-error">
             {icon ?? <AlertTriangle size={18} />}
           </span>
           <div>
-            <h2 className="text-base font-semibold text-slate-950">{title}</h2>
-            <p className="mt-1 text-sm text-muted">{message}</p>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription className="mt-1">{message}</DialogDescription>
           </div>
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-error-muted">{error}</p>}
-        <div className="mt-5 flex justify-end gap-2">
+        <DialogFooter className="mt-5">
           <Button
             className="h-9 border-slate-200 bg-white px-4 text-sm text-slate-900"
             disabled={isLoading}
@@ -60,9 +58,9 @@ export function ConfirmationModal({
           >
             {isLoading ? "Please wait..." : confirmLabel}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

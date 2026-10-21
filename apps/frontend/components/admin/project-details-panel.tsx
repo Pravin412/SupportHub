@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Folder, Save } from "lucide-react";
-import { Button, Card, Input } from "@support-hub/ui";
+import { Button, Card, Field, Input } from "@support-hub/ui";
 import { api } from "../../lib/api";
 import { keys } from "../../lib/queries";
 import { displayToast } from "../../lib/display-toast";
@@ -30,10 +30,9 @@ export function ProjectDetailsPanel({ project }: { project: { id: string; name: 
         event.preventDefault();
         if (name.trim().length >= 2 && name.trim() !== project.name && !rename.isPending) rename.mutate(name.trim());
       }}>
-        <label className="block space-y-1 text-sm" htmlFor="project-name">
-          <span>Project name</span>
-          <Input id="project-name" value={name} onChange={(event) => setDraftName(event.target.value)} required minLength={2} disabled={rename.isPending} />
-        </label>
+        <Field label="Project name" id="project-name">
+          {(id) => <Input id={id} value={name} onChange={(event) => setDraftName(event.target.value)} required minLength={2} disabled={rename.isPending} />}
+        </Field>
         <Button type="submit" className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={rename.isPending || name.trim().length < 2 || name.trim() === project.name}>
           <Save size={16} /> {rename.isPending ? "Saving..." : "Save name"}
         </Button>

@@ -1,4 +1,5 @@
 import { Bot, ChevronRight } from "lucide-react";
+import { Button } from "@support-hub/ui";
 import { WidgetVisitorForm } from "./widget-form-and-loading";
 
 export function NewConversationScreen({
@@ -41,10 +42,10 @@ export function NewConversationScreen({
           <div>
             <div className="text-sm font-bold text-slate-950">We are away at the moment</div>
             <div className="mt-2 text-sm text-slate-500">Typically replies in a few minutes</div>
-            <button type="button" onClick={onStart} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: themeColor }}>
+            <Button variant="link" size="none" type="button" onClick={onStart} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: themeColor }}>
               Start conversation
               <ChevronRight size={16} />
-            </button>
+            </Button>
           </div>
         )}
       </div>

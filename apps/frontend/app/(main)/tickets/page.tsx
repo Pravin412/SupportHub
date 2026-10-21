@@ -1,7 +1,7 @@
 "use client";
 
 import { Folder, TicketCheck } from "lucide-react";
-import { Badge } from "@support-hub/ui";
+import { Badge, Button } from "@support-hub/ui";
 import { useRouter } from "next/navigation";
 import { LoadingIndicator } from "../../../components/loading-indicator";
 import { useProjects, useTickets } from "../../../lib/queries";
@@ -66,7 +66,7 @@ function ProjectTicketNavItem({
   const openTickets = tickets.data?.filter((ticket) => !["RESOLVED", "CLOSED"].includes(ticket.status)).length ?? 0;
 
   return (
-    <button
+    <Button variant="ghost" size="none"
       type="button"
       className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors ${
         active ? "border-l-4 border-l-brand bg-blue-50" : "border-l-4 border-l-transparent bg-white hover:bg-slate-50"
@@ -85,6 +85,6 @@ function ProjectTicketNavItem({
       <Badge className={active ? "border-blue-200 bg-white text-brand" : "border-slate-200 bg-slate-50 text-slate-600"}>
         {openTickets}
       </Badge>
-    </button>
+    </Button>
   );
 }

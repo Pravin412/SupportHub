@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { UserRound } from "lucide-react";
-import { Button, Input } from "@support-hub/ui";
+import { Button, Input, Label } from "@support-hub/ui";
 import { LoadingIndicator } from "./loading-indicator";
 
 type VisitorFormValues = {
@@ -38,7 +38,7 @@ export function WidgetVisitorForm({
       </div>
       <div className="space-y-2">
         {config?.visitorNameEnabled && (
-          <label className="block">
+          <Label className="block font-normal leading-normal">
             <Input
               {...form.register("name", {
                 validate: (value) => !config?.visitorNameEnabled || Boolean(value.trim()) || "Name is required"
@@ -47,10 +47,10 @@ export function WidgetVisitorForm({
               className="h-9 text-sm"
             />
             <FieldError message={form.formState.errors.name?.message} />
-          </label>
+          </Label>
         )}
         {config?.visitorEmailEnabled && (
-          <label className="block">
+          <Label className="block font-normal leading-normal">
             <Input
               type="email"
               {...form.register("email", {
@@ -64,10 +64,10 @@ export function WidgetVisitorForm({
               className="h-9 text-sm"
             />
             <FieldError message={form.formState.errors.email?.message} />
-          </label>
+          </Label>
         )}
         {config?.visitorPhoneEnabled && (
-          <label className="block">
+          <Label className="block font-normal leading-normal">
             <Input
               {...form.register("number", {
                 validate: (value) => !config?.visitorPhoneEnabled || Boolean(value.trim()) || "Phone number is required"
@@ -76,7 +76,7 @@ export function WidgetVisitorForm({
               className="h-9 text-sm"
             />
             <FieldError message={form.formState.errors.number?.message} />
-          </label>
+          </Label>
         )}
       </div>
       <Button type="submit" style={{ backgroundColor: themeColor }} className="mt-3 h-9 w-full border-0 text-sm text-white">

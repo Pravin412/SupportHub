@@ -98,14 +98,14 @@ export function InboxChatView({
     <div className="flex h-full flex-col">
       <div className="flex min-h-14 items-center justify-between border-b border-border bg-white/95 px-4 py-2 shadow-sm backdrop-blur-sm shrink-0">
         <div className="flex flex-1 min-w-0 items-center gap-3">
-          <button 
+          <Button variant="ghost" size="none" 
             type="button"
             className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-600 hover:bg-slate-200" 
             onClick={() => setConversation("")}
             title="Back to inbox"
           >
             <ArrowLeft size={16} />
-          </button>
+          </Button>
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-100 text-brand">
             <User size={16} />
           </span>

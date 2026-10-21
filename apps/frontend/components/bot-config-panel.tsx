@@ -1,14 +1,13 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Bot, Save } from "lucide-react";
-import { Button, Card, Input, Select, Textarea } from "@support-hub/ui";
+import { Button, Card, Field, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@support-hub/ui";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../lib/api";
 import { keys, useBotConfig } from "../lib/queries";
-import { FieldError } from "./admin/project-access-shared";
 import { displayToast } from "../lib/display-toast";
 
 const botSchema = z.object({
@@ -110,9 +109,9 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="cursor-pointer rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
+              <Label className="cursor-pointer rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-medium leading-normal text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
                 Upload Profile Picture
-                <input
+                <Input
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -121,9 +120,11 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
                     if (file) handleAvatarFile(file);
                   }}
                 />
-              </label>
+              </Label>
               {avatarPreview && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="none"
                   type="button"
                   className="h-8 px-2 text-xs font-medium text-error hover:text-error-muted hover:bg-error-surface rounded-md transition-colors"
                   onClick={() => {
@@ -132,30 +133,38 @@ export function BotConfigPanel({ projectId }: { projectId?: string }) {
                   }}
                 >
                   Remove
-                </button>
+                </Button>
               )}
             </div>
           </div>
         </div>
 
-        <label className="block">
-          <span className="text-sm font-medium">Response Mode</span>
-          <Select className="mt-1" {...form.register("responseMode")}>
-            <option value="AUTOMATED">Webhook automation</option>
-            <option value="HUMAN">Human only</option>
-            <option value="AI">AI ready, disabled by default</option>
-          </Select>
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Bot Name</span>
-          <Input className="mt-1" {...form.register("botName")} />
-          <FieldError message={form.formState.errors.botName?.message} />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Fallback Message</span>
-          <Textarea className="mt-1" {...form.register("fallbackMessage")} />
-          <FieldError message={form.formState.errors.fallbackMessage?.message} />
-        </label>
+        <Field label="Response Mode">
+          {(id) => (
+            <Controller
+              control={form.control}
+              name="responseMode"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id={id}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AUTOMATED">Webhook automation</SelectItem>
+                    <SelectItem value="HUMAN">Human only</SelectItem>
+                    <SelectItem value="AI">AI ready, disabled by default</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          )}
+        </Field>
+        <Field label="Bot Name" error={form.formState.errors.botName?.message}>
+          {(id) => <Input id={id} {...form.register("botName")} />}
+        </Field>
+        <Field label="Fallback Message" error={form.formState.errors.fallbackMessage?.message}>
+          {(id) => <Textarea id={id} {...form.register("fallbackMessage")} />}
+        </Field>
         <Button className="gap-2 bg-brand text-white hover:bg-brand/90" disabled={!projectId || form.formState.isSubmitting}>
           <Save size={16} /> {form.formState.isSubmitting ? "Saving..." : "Save Bot Configuration"}
         </Button>

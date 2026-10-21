@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Plus, Trash2, Edit2, KeyRound, Check, Copy } from "lucide-react";
 import { useWebhooks } from "../lib/queries";
 import { api } from "../lib/api";
-import { Button, Card, Input } from "@support-hub/ui";
+import { Button, Card, Field, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@support-hub/ui";
 import { displayToast } from "../lib/display-toast";
 import { useConfirmationModalStore } from "../lib/confirmation-modal-store";
 import { FieldError } from "./admin/project-access-shared";
@@ -107,18 +107,21 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
         {webhooks && webhooks.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Active Webhook (Auto-Reply Bot)</label>
+              <Label className="text-sm font-medium leading-normal">Active Webhook (Auto-Reply Bot)</Label>
               <div className="flex gap-2">
-                <select
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                <Select
                   value={selectedActiveId ?? activeWebhook?.id ?? ""}
-                  onChange={(e: any) => setSelectedActiveId(e.target.value)}
+                  onValueChange={setSelectedActiveId}
                 >
-                  <option value="" disabled>Select an active webhook...</option>
-                  {webhooks.map(w => (
-                    <option key={w.id} value={w.id}>{w.name} ({w.url})</option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
+                    <SelectValue placeholder="Select an active webhook..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {webhooks.map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name} ({w.url})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   type="button"
                   label="Save"
@@ -140,14 +143,14 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
                   {editingId === w.id ? (
                     <form className="space-y-3" noValidate onSubmit={editForm.handleSubmit(data => handleUpdate(w.id, data))}>
                       <div>
-                        <label className="text-xs font-medium text-slate-700">Bot Name</label>
-                        <Input className="mt-1 h-8 text-sm" {...editForm.register("name")} aria-invalid={!!editForm.formState.errors.name} />
-                        <FieldError message={editForm.formState.errors.name?.message} />
+                        <Field label="Bot Name" labelClassName="text-xs font-medium text-slate-700" error={editForm.formState.errors.name?.message}>
+                          {(id) => <Input id={id} className="h-8 text-sm" {...editForm.register("name")} aria-invalid={!!editForm.formState.errors.name} />}
+                        </Field>
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-slate-700">Webhook URL</label>
-                        <Input className="mt-1 h-8 text-sm" {...editForm.register("url")} aria-invalid={!!editForm.formState.errors.url} />
-                        <FieldError message={editForm.formState.errors.url?.message} />
+                        <Field label="Webhook URL" labelClassName="text-xs font-medium text-slate-700" error={editForm.formState.errors.url?.message}>
+                          {(id) => <Input id={id} className="h-8 text-sm" {...editForm.register("url")} aria-invalid={!!editForm.formState.errors.url} />}
+                        </Field>
                       </div>
                       <FieldError message={editForm.formState.errors.root?.message} />
                       <div className="flex gap-2">
@@ -183,14 +186,14 @@ export function WebhookSettingsPanel({ projectId }: { projectId?: string }) {
         {isAdding ? (
           <form className="rounded-md border border-slate-200 p-4 space-y-4 bg-slate-50" noValidate onSubmit={createForm.handleSubmit(handleCreate)}>
             <div>
-              <label className="text-xs font-medium text-slate-700">Bot Name</label>
-              <Input className="mt-1 bg-white" placeholder="e.g. My Custom AI" {...createForm.register("name")} aria-invalid={!!createForm.formState.errors.name} />
-              <FieldError message={createForm.formState.errors.name?.message} />
+              <Field label="Bot Name" labelClassName="text-xs font-medium text-slate-700" error={createForm.formState.errors.name?.message}>
+                {(id) => <Input id={id} className="bg-white" placeholder="e.g. My Custom AI" {...createForm.register("name")} aria-invalid={!!createForm.formState.errors.name} />}
+              </Field>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-700">Webhook URL</label>
-              <Input className="mt-1 bg-white" placeholder="https://..." {...createForm.register("url")} aria-invalid={!!createForm.formState.errors.url} />
-              <FieldError message={createForm.formState.errors.url?.message} />
+              <Field label="Webhook URL" labelClassName="text-xs font-medium text-slate-700" error={createForm.formState.errors.url?.message}>
+                {(id) => <Input id={id} className="bg-white" placeholder="https://..." {...createForm.register("url")} aria-invalid={!!createForm.formState.errors.url} />}
+              </Field>
             </div>
             <FieldError message={createForm.formState.errors.root?.message} />
             <div className="flex gap-2">

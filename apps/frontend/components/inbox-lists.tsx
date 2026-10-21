@@ -1,6 +1,6 @@
 "use client";
 import { Folder, Search, User } from "lucide-react";
-import { Badge, Input } from "@support-hub/ui";
+import { Badge, Button, Input } from "@support-hub/ui";
 import { displayMessageContent } from "../lib/messages";
 import { BackButton } from "./back-button";
 
@@ -35,7 +35,7 @@ export function InboxProjectsList({
           <div className="p-4 text-center text-xs text-muted">Loading projects...</div>
         )}
         {projects.data?.map((p: any) => (
-          <button
+          <Button variant="ghost" size="none"
             key={p.id}
             type="button"
             className="group flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-blue-50/70"
@@ -57,7 +57,7 @@ export function InboxProjectsList({
             <div className="ml-2 text-xs font-medium text-brand opacity-0 transition-opacity group-hover:opacity-100">
               Open &rarr;
             </div>
-          </button>
+          </Button>
         ))}
         {!projects.isLoading && !projects.data?.length && (
           <div className="p-6 text-center text-xs text-muted">
@@ -117,7 +117,7 @@ export function InboxConversationsList({
         {conversations.data?.map((c: any) => {
           const isSelected = c.id === activeId;
           return (
-            <button
+            <Button variant="ghost" size="none"
               key={c.id}
               type="button"
               className={`block w-full border-b border-border/70 p-3.5 text-left transition-colors ${
@@ -167,7 +167,7 @@ export function InboxConversationsList({
                   {displayMessageContent(c.preview) || "No message content"}
                 </p>
               </div>
-            </button>
+            </Button>
           );
         })}
         {!conversations.isLoading && !conversations.data?.length && (

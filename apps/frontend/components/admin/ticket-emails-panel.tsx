@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AlertCircle, Bell, Plus, Save, X } from "lucide-react";
-import { Badge, Button, Card, Input } from "@support-hub/ui";
+import { Badge, Button, Card, Field, Input } from "@support-hub/ui";
 import { parseEmailList } from "@support-hub/utils";
 import { api } from "../../lib/api";
 import { useEmailSettings, useNotificationSettings } from "../../lib/queries";
@@ -21,11 +21,6 @@ const notificationSchema = z.object({
   ticketCreatedEnabled: z.boolean(),
   ticketAssignedEnabled: z.boolean()
 });
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <p className="mt-1 text-xs font-medium text-red-700">{message}</p>;
-}
 
 export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
   const notificationSettings = useNotificationSettings(projectId);
@@ -97,29 +92,38 @@ export function TicketEmailsPanel({ projectId }: { projectId?: string }) {
           }
         })}
       >
-        <label className="block">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium">Mail recipients</span>
-            <span className="text-xs font-semibold text-muted">{notificationRecipients.length} recipient{notificationRecipients.length === 1 ? "" : "s"}</span>
-          </div>
-          <input type="hidden" {...notificationForm.register("notificationEmail")} />
-          <div className="mt-1 flex gap-2">
-            <Input
-              value={emailInput}
-              placeholder="support@example.com"
-              onChange={(event) => setEmailInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter") return;
-                event.preventDefault();
-                addNotificationRecipients();
-              }}
-            />
-            <Button type="button" className="gap-2 bg-brand text-white hover:bg-brand/90" onClick={addNotificationRecipients}>
-              <Plus size={16} /> Add
-            </Button>
-          </div>
-          <FieldError message={notificationForm.formState.errors.notificationEmail?.message} />
-        </label>
+        <Field
+          label={
+            <span className="flex w-full items-center justify-between gap-3">
+              <span>Mail recipients</span>
+              <span className="text-xs font-semibold text-muted">{notificationRecipients.length} recipient{notificationRecipients.length === 1 ? "" : "s"}</span>
+            </span>
+          }
+          labelClassName="w-full"
+          error={notificationForm.formState.errors.notificationEmail?.message}
+        >
+          {(id) => (
+            <>
+              <input type="hidden" {...notificationForm.register("notificationEmail")} />
+              <div className="flex gap-2">
+                <Input
+                  id={id}
+                  value={emailInput}
+                  placeholder="support@example.com"
+                  onChange={(event) => setEmailInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return;
+                    event.preventDefault();
+                    addNotificationRecipients();
+                  }}
+                />
+                <Button type="button" className="gap-2 bg-brand text-white hover:bg-brand/90" onClick={addNotificationRecipients}>
+                  <Plus size={16} /> Add
+                </Button>
+              </div>
+            </>
+          )}
+        </Field>
         {notificationRecipients.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {notificationRecipients.map((email) => (

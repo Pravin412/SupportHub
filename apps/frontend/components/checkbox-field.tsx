@@ -1,5 +1,5 @@
 import { Controller, Control, FieldValues, Path } from "react-hook-form";
-import { Checkbox } from "@support-hub/ui";
+import { LabeledCheckbox } from "@support-hub/ui";
 
 export function CheckboxField<T extends FieldValues>({
   control,
@@ -13,20 +13,18 @@ export function CheckboxField<T extends FieldValues>({
   disabled?: boolean;
 }) {
   return (
-    <label className={`flex items-center gap-2 text-sm ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
-      <Controller
-        control={control}
-        name={name}
-        render={({ field }) => (
-          <Checkbox 
-            checked={field.value} 
-            disabled={disabled}
-            onCheckedChange={field.onChange} 
-            id={name}
-          />
-        )}
-      />
-      <span>{label}</span>
-    </label>
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <LabeledCheckbox
+          id={name}
+          label={label}
+          checked={field.value}
+          disabled={disabled}
+          onCheckedChange={field.onChange}
+        />
+      )}
+    />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 import { Check, CheckCheck, Clock3, CircleAlert } from "lucide-react";
+import { Button } from "@support-hub/ui";
 
 export function WidgetMessagesList({
   messages,
@@ -53,8 +54,10 @@ export function WidgetMessagesList({
                 {optionsList.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 pt-1 border-t border-slate-100">
                     {optionsList.map((opt, i) => (
-                      <button
+                      <Button
                         key={i}
+                        variant="ghost"
+                        size="none"
                         type="button"
                         onClick={async () => {
                           const optionText = opt.value || opt.title;
@@ -65,7 +68,7 @@ export function WidgetMessagesList({
                         className="rounded-full border bg-white px-3 py-1 text-xs font-semibold shadow-2xs transition-all hover:bg-slate-50 active:scale-95 cursor-pointer"
                       >
                         {opt.title}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}

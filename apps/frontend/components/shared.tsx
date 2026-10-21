@@ -1,3 +1,4 @@
+import { Button } from "@support-hub/ui";
 import React from "react";
 import Link from "next/link";
 import { TrendingUp } from "lucide-react";
@@ -43,7 +44,7 @@ export function NavButton({
   onClick?: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="none"
       className={`flex h-[38px] w-full items-center gap-3 rounded-r-lg px-4 text-left text-sm font-semibold transition-colors ${
         active 
           ? "border-l-4 border-brand bg-blue-50 text-brand" 
@@ -53,7 +54,7 @@ export function NavButton({
     >
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 

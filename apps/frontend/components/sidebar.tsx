@@ -1,5 +1,6 @@
 "use client";
 import { Gauge, HelpCircle, Inbox, LogOut, Folder, TicketCheck, X, MessageSquare } from "lucide-react";
+import { Button } from "@support-hub/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebarStore } from "../lib/sidebar-store";
 import { useInboxSelectionStore } from "../lib/inbox-selection-store";
@@ -44,13 +45,13 @@ export function Sidebar() {
               <div className="text-3xs font-medium text-muted-light">Customer Support</div>
             </div>
           </div>
-          <button
+          <Button variant="ghost" size="none"
             type="button"
             className="md:hidden grid h-8 w-8 place-items-center rounded bg-slate-100 text-slate-500 hover:bg-slate-200"
             onClick={() => sidebar.setSidebar(false)}
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
         <nav className="space-y-1 py-3 pr-3">
           <NavLink

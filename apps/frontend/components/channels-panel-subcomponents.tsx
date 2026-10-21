@@ -1,6 +1,6 @@
 "use client";
 import { MessageCircle } from "lucide-react";
-import { Button, Input } from "@support-hub/ui";
+import { Button, Input, Label, LabeledCheckbox } from "@support-hub/ui";
 
 export function ChannelLogoUpload({
   channelId,
@@ -37,9 +37,9 @@ export function ChannelLogoUpload({
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="cursor-pointer rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
+          <Label className="cursor-pointer rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-medium leading-normal text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
             Upload Launcher Image
-            <input
+            <Input
               type="file"
               accept="image/*"
               className="hidden"
@@ -48,15 +48,17 @@ export function ChannelLogoUpload({
                 if (file) onImageFile(channelId, file);
               }}
             />
-          </label>
+          </Label>
           {currentLogo && (
-            <button
+            <Button
+              variant="ghost"
+              size="none"
               type="button"
               className="h-8 px-2 text-xs font-medium text-error hover:text-error-muted hover:bg-error-surface rounded-md transition-colors"
               onClick={() => onLogoUrlChange("")}
             >
               Remove
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -95,15 +97,12 @@ export function ChannelVisitorSettingsForm({
           <h4 className="text-sm font-semibold">New conversation form</h4>
           <p className="text-xs text-muted">Show a name, email, and phone form before the visitor starts chatting.</p>
         </div>
-        <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-blue-700"
-            checked={settings.collectVisitorInfo}
-            onChange={(e) => onUpdateSetting("collectVisitorInfo", e.target.checked)}
-          />
-          Ask details on new conversation
-        </label>
+        <LabeledCheckbox
+          label="Ask details on new conversation"
+          labelClassName="text-xs font-semibold"
+          checked={settings.collectVisitorInfo}
+          onCheckedChange={(v) => onUpdateSetting("collectVisitorInfo", v === true)}
+        />
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div>
@@ -113,16 +112,14 @@ export function ChannelVisitorSettingsForm({
               ["visitorEmailEnabled", "Email"],
               ["visitorPhoneEnabled", "Phone"]
             ].map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-blue-700"
-                  checked={settings[key as keyof typeof settings]}
-                  disabled={!settings.collectVisitorInfo}
-                  onChange={(e) => onUpdateSetting(key as any, e.target.checked)}
-                />
-                {label}
-              </label>
+              <LabeledCheckbox
+                key={key}
+                label={label}
+                labelClassName="text-xs font-medium"
+                checked={settings[key as keyof typeof settings]}
+                disabled={!settings.collectVisitorInfo}
+                onCheckedChange={(v) => onUpdateSetting(key as any, v === true)}
+              />
             ))}
           </div>
           <p className="mt-2 text-xs text-muted">If name is off or left empty, the inbox contact name is generated automatically.</p>

@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import { Folder, TicketCheck } from "lucide-react";
-import { Badge } from "@support-hub/ui";
+import { Badge, Button } from "@support-hub/ui";
 import { useRouter } from "next/navigation";
 import { LoadingIndicator } from "../../../../components/loading-indicator";
 import { TicketsView } from "../../../../components/tickets-view";
@@ -72,7 +72,7 @@ function ProjectTicketNavItem({
   const openTickets = tickets.data?.filter((ticket) => !["RESOLVED", "CLOSED"].includes(ticket.status)).length ?? 0;
 
   return (
-    <button
+    <Button variant="ghost" size="none"
       type="button"
       className={`relative flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-3 text-left transition-colors ${
         active ? "border-blue-100 bg-blue-50/70 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-blue-500" : "border-slate-200 bg-white hover:bg-slate-50"
@@ -91,6 +91,6 @@ function ProjectTicketNavItem({
       <Badge className={active ? "shrink-0 border-blue-100 bg-blue-100 text-brand" : "shrink-0 border-slate-100 bg-slate-100 text-slate-500"}>
         {openTickets}
       </Badge>
-    </button>
+    </Button>
   );
 }

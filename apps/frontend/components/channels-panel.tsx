@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Code2, Copy, Globe, MessageCircle, Save } from "lucide-react";
-import { Badge, Button, Card, Input } from "@support-hub/ui";
+import { Badge, Button, Card, Field, Input } from "@support-hub/ui";
 import { buildWidgetSnippet } from "@support-hub/utils";
 import { api } from "../lib/api";
 import { keys, useBotConfig, useChannels, useUpdateWidget } from "../lib/queries";
@@ -137,21 +137,20 @@ export function ChannelsPanel({ projectId }: { projectId?: string }) {
                 />
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-sm font-medium">Bot Name</span>
-                    <Input className="mt-1" value={currentBotName} onChange={(e) => setBotName((prev) => ({ ...prev, [channel.id]: e.target.value }))} />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium">Welcome Message</span>
-                    <Input className="mt-1" value={welcomeMessage[channel.id] ?? channel.welcomeMessage ?? ""} onChange={(e) => setWelcomeMessage(prev => ({ ...prev, [channel.id]: e.target.value }))} />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium">Color Theme (Hex)</span>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Input type="color" className="h-10 w-12 cursor-pointer rounded-md border" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
-                      <Input className="flex-1 font-mono uppercase" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
-                    </div>
-                  </label>
+                  <Field label="Bot Name">
+                    {(id) => <Input id={id} value={currentBotName} onChange={(e) => setBotName((prev) => ({ ...prev, [channel.id]: e.target.value }))} />}
+                  </Field>
+                  <Field label="Welcome Message">
+                    {(id) => <Input id={id} value={welcomeMessage[channel.id] ?? channel.welcomeMessage ?? ""} onChange={(e) => setWelcomeMessage(prev => ({ ...prev, [channel.id]: e.target.value }))} />}
+                  </Field>
+                  <Field label="Color Theme (Hex)">
+                    {(id) => (
+                      <div className="flex items-center gap-2">
+                        <Input type="color" className="h-10 w-12 cursor-pointer rounded-md border" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
+                        <Input id={id} className="flex-1 font-mono uppercase" value={colorTheme[channel.id] ?? channel.colorTheme ?? "#2563EB"} onChange={(e) => setColorTheme(prev => ({ ...prev, [channel.id]: e.target.value }))} />
+                      </div>
+                    )}
+                  </Field>
                 </div>
 
                 <ChannelVisitorSettingsForm

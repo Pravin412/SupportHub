@@ -3,7 +3,7 @@
 import { canManageProjectSettings } from "@support-hub/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Save, Send, Eye, EyeOff } from "lucide-react";
-import { Button, Card, Input } from "@support-hub/ui";
+import { Button, Card, Field, Input } from "@support-hub/ui";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -95,76 +95,68 @@ export function EmailSmtpPanel({ projectId }: { projectId?: string }) {
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-medium">SMTP Host</span>
-            <Input className="mt-1" placeholder="smtp.gmail.com" {...form.register("smtpHost")} />
-            {form.formState.errors.smtpHost && (
-              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpHost.message}</p>
-            )}
-          </label>
-          
-          <label className="block">
-            <span className="text-sm font-medium">SMTP Port</span>
-            <Input
-              className="mt-1"
-              type="number"
-              placeholder="587"
-              {...form.register("smtpPort", {
-                valueAsNumber: true,
-                onChange: (e) => {
-                  const port = Number(e.target.value);
-                  if (port === 465) {
-                    form.setValue("smtpSecure", true);
-                  } else if (port === 587 || port === 25) {
-                    form.setValue("smtpSecure", false);
+          <Field label="SMTP Host" error={form.formState.errors.smtpHost?.message}>
+            {(id) => <Input id={id} placeholder="smtp.gmail.com" {...form.register("smtpHost")} />}
+          </Field>
+
+          <Field label="SMTP Port" error={form.formState.errors.smtpPort?.message}>
+            {(id) => (
+              <Input
+                id={id}
+                type="number"
+                placeholder="587"
+                {...form.register("smtpPort", {
+                  valueAsNumber: true,
+                  onChange: (e) => {
+                    const port = Number(e.target.value);
+                    if (port === 465) {
+                      form.setValue("smtpSecure", true);
+                    } else if (port === 587 || port === 25) {
+                      form.setValue("smtpSecure", false);
+                    }
                   }
-                }
-              })}
-            />
-            {form.formState.errors.smtpPort && (
-              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpPort.message}</p>
+                })}
+              />
             )}
-          </label>
+          </Field>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-medium">SMTP User</span>
-            <Input className="mt-1" placeholder="project@example.com" autoComplete="off" {...form.register("smtpUser")} />
-            {form.formState.errors.smtpUser && (
-              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpUser.message}</p>
+          <Field label="SMTP User" error={form.formState.errors.smtpUser?.message}>
+            {(id) => <Input id={id} placeholder="project@example.com" autoComplete="off" {...form.register("smtpUser")} />}
+          </Field>
+
+          <Field label="SMTP Password" error={form.formState.errors.smtpPassword?.message}>
+            {(id) => (
+              <div className="relative">
+                <Input
+                  id={id}
+                  type={showPassword ? "text" : "password"}
+                  placeholder={settings.data ? "Leave blank to keep existing password" : "Password"}
+                  className="pr-10"
+                  autoComplete="new-password"
+                  {...form.register("smtpPassword")}
+                />
+                <Button
+                  variant="ghost"
+                  size="none"
+                  type="button"
+                  className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-400 hover:text-slate-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </Button>
+              </div>
             )}
-          </label>
-          
-          <label className="block">
-            <span className="text-sm font-medium">SMTP Password</span>
-            <div className="relative mt-1">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder={settings.data ? "Leave blank to keep existing password" : "Password"}
-                className="pr-10"
-                autoComplete="new-password"
-                {...form.register("smtpPassword")}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-400 hover:text-slate-600"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            {form.formState.errors.smtpPassword && (
-              <p className="mt-1 text-xs font-medium text-error-muted">{form.formState.errors.smtpPassword.message}</p>
-            )}
-          </label>
+          </Field>
         </div>
 
-        <label className="block">
-          <span className="text-sm font-medium">Sender Name (Optional)</span>
-          <Input className="mt-1" placeholder="e.g. Support Team" {...form.register("fromName")} />
-          <span className="text-xs text-muted">Displayed as the sender name in recipient inboxes (e.g. "Support Team" &lt;noreply@example.com&gt;).</span>
-        </label>
+        <Field
+          label="Sender Name (Optional)"
+          description={<>Displayed as the sender name in recipient inboxes (e.g. "Support Team" &lt;noreply@example.com&gt;).</>}
+        >
+          {(id) => <Input id={id} placeholder="e.g. Support Team" {...form.register("fromName")} />}
+        </Field>
 
         <div className="space-y-1">
           <CheckboxField 
