@@ -1,31 +1,32 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+﻿import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { CoreService } from "./support.service";
+import { SkipAuth } from "../../common/decorators/skip-auth.decorator";
+import { WidgetService } from "./widget.service";
 import { WidgetDeliveryDto, WidgetMessageDto } from "./widget.dto";
 
+@SkipAuth()
 @ApiTags("widget")
 @Controller("widget/:channelId")
 export class WidgetController {
-  constructor(private core: CoreService) {}
+  constructor(private widget: WidgetService) {}
 
   @Post("delivered")
   delivered(@Param("channelId") channelId: string, @Body() dto: WidgetDeliveryDto) {
-    return this.core.widgetDelivered(channelId, dto.profileId, dto.messageIds);
+    return this.widget.widgetDelivered(channelId, dto.profileId, dto.messageIds);
   }
 
   @Get("config")
   config(@Param("channelId") channelId: string) {
-    return this.core.widgetConfig(channelId);
+    return this.widget.widgetConfig(channelId);
   }
 
   @Get("messages")
   messages(@Param("channelId") channelId: string, @Query("profileId") profileId: string) {
-    return this.core.widgetMessages(channelId, profileId);
+    return this.widget.widgetMessages(channelId, profileId);
   }
 
   @Post("messages")
   send(@Param("channelId") channelId: string, @Body() dto: WidgetMessageDto) {
-    return this.core.widgetSendMessage(channelId, dto.profileId, dto.content, dto.name, dto.email, dto.number);
+    return this.widget.widgetSendMessage(channelId, dto.profileId, dto.content, dto.name, dto.email, dto.number);
   }
 }
-

@@ -1,23 +1,23 @@
-import { Body, Controller, Headers, Param, Post, UnauthorizedException } from "@nestjs/common";
+﻿import { Body, Controller, Headers, Param, Post, UnauthorizedException } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { CoreService } from "../support/support.service";
-
+import { SkipAuth } from "../../common/decorators/skip-auth.decorator";
 import { CryptoService } from "../../common/crypto/crypto.service";
 import { PrismaService } from "../../common/database/prisma.service";
 import { SupportEvent } from "../../common/events/support-events";
 import { QueueService } from "../../common/queue/queue.service";
 import { RealtimeGateway } from "../../common/realtime/realtime.gateway";
-import { ConversationStatusDto, CustomerMessageDto } from "./integration.dto";
+import { TicketService } from "../tickets/ticket.service";
 
+@SkipAuth()
 @ApiTags("integrations")
 @Controller("integrations/:projectKey")
 export class IntegrationController {
-    constructor(
+  constructor(
     private prisma: PrismaService,
     private crypto: CryptoService,
     private queues: QueueService,
     private realtime: RealtimeGateway,
-    private core: CoreService
+    private tickets: TicketService
   ) {}
 
   @Post("messages")
@@ -86,8 +86,8 @@ export class IntegrationController {
             }
           });
           this.realtime.emitProject(project.id, SupportEvent.TicketCreated, ticket);
-          await this.core.queueTicketEmail(project.id, "created", ticket);
-          await this.core.queueTicketWhatsapp(project.id, "created", ticket);
+          await this.tickets.queueTicketEmail(project.id, "created", ticket);
+          await this.tickets.queueTicketWhatsapp(project.id, "created", ticket);
         }
       }
     }
@@ -160,8 +160,8 @@ export class IntegrationController {
             }
           });
           this.realtime.emitProject(project.id, SupportEvent.TicketCreated, ticket);
-          await this.core.queueTicketEmail(project.id, "created", ticket);
-          await this.core.queueTicketWhatsapp(project.id, "created", ticket);
+          await this.tickets.queueTicketEmail(project.id, "created", ticket);
+          await this.tickets.queueTicketWhatsapp(project.id, "created", ticket);
         }
       }
     }
