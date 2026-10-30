@@ -32,9 +32,11 @@ async function bootstrap() {
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalInterceptors(new ApiResponseInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-  const config = new DocumentBuilder().setTitle("SupportHub API").setVersion("0.1.0").addBearerAuth().build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("docs", app, document);
+  if (process.env.NODE_ENV !== "production") {
+    const config = new DocumentBuilder().setTitle("SupportHub API").setVersion("0.1.0").addBearerAuth().build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("docs", app, document);
+  }
   app.enableShutdownHooks();
   await app.listen(process.env.PORT ? Number(process.env.PORT) : 4000, "0.0.0.0");
 }
